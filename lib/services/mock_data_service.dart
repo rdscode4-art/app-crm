@@ -1,0 +1,606 @@
+import 'package:flutter/material.dart';
+import '../models/employee.dart';
+import '../models/lead.dart';
+import '../models/attendance.dart';
+import '../models/leave.dart';
+import '../models/task.dart';
+import '../models/performance.dart';
+import '../models/notification.dart';
+
+class MockDataService extends ChangeNotifier {
+  // Global Singleton
+  static final MockDataService _instance = MockDataService._internal();
+  factory MockDataService() => _instance;
+  MockDataService._internal() {
+    _initializeData();
+  }
+
+  // App State Flags
+  bool _isOnboarded = false;
+  bool _isLoggedIn = false;
+  int _currentMenuIndex = 0; // Sidebar navigation index
+
+  // Auth User Session (Simulated)
+  Employee? _currentUser;
+
+  // CRM Data tables
+  final List<Employee> _employees = [];
+  final List<Lead> _leads = [];
+  final List<Attendance> _attendanceLogs = [];
+  final List<Leave> _leaveRequests = [];
+  final List<CRMTask> _tasks = [];
+  final List<Performance> _performanceRecords = [];
+  final List<CRMNotification> _notifications = [];
+
+  // Getters
+  bool get isOnboarded => _isOnboarded;
+  bool get isLoggedIn => _isLoggedIn;
+  int get currentMenuIndex => _currentMenuIndex;
+  Employee? get currentUser => _currentUser;
+
+  List<Employee> get employees => List.unmodifiable(_employees);
+  List<Lead> get leads => List.unmodifiable(_leads);
+  List<Attendance> get attendanceLogs => List.unmodifiable(_attendanceLogs);
+  List<Leave> get leaveRequests => List.unmodifiable(_leaveRequests);
+  List<CRMTask> get tasks => List.unmodifiable(_tasks);
+  List<Performance> get performanceRecords => List.unmodifiable(_performanceRecords);
+  List<CRMNotification> get notifications => List.unmodifiable(_notifications);
+
+  // Computed state for current user
+  bool get isPunchedIn {
+    if (_currentUser == null) return false;
+    final today = DateTime.now();
+    return _attendanceLogs.any((a) =>
+        a.employeeId == _currentUser!.id &&
+        a.date.year == today.year &&
+        a.date.month == today.month &&
+        a.date.day == today.day &&
+        a.checkOutTime == null);
+  }
+
+  Attendance? get todayAttendance {
+    if (_currentUser == null) return null;
+    final today = DateTime.now();
+    try {
+      return _attendanceLogs.firstWhere((a) =>
+          a.employeeId == _currentUser!.id &&
+          a.date.year == today.year &&
+          a.date.month == today.month &&
+          a.date.day == today.day &&
+          a.checkOutTime == null);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // Setters & Navigation
+  void setOnboarded(bool value) {
+    _isOnboarded = value;
+    notifyListeners();
+  }
+
+  void setMenuIndex(int index) {
+    _currentMenuIndex = index;
+    notifyListeners();
+  }
+
+  // Auth Actions
+  bool login(String email, String password) {
+    // Standard mock user logins
+    try {
+      final user = _employees.firstWhere(
+        (e) => e.email.toLowerCase() == email.toLowerCase(),
+      );
+      _currentUser = user;
+      _isLoggedIn = true;
+      addNotification("Welcome Back!", "You have successfully signed in as ${user.name}.");
+      notifyListeners();
+      return true;
+    } catch (_) {
+      // Create fallback admin if user list doesn't match
+      if (email.toLowerCase() == "admin@crm.com") {
+        _currentUser = Employee(
+          id: "EMP-001",
+          name: "Diana Prince",
+          email: "admin@crm.com",
+          role: "HR Director",
+          department: "Human Resources",
+          status: "Active",
+          salary: 120000,
+          performanceRating: 4.9,
+          dateJoined: "2024-01-15",
+          phone: "+1 555-0199",
+          avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+        );
+        _isLoggedIn = true;
+        addNotification("Welcome Back!", "Signed in as Diana Prince (HR Director).");
+        notifyListeners();
+        return true;
+      }
+      return false;
+    }
+  }
+
+  void signup(String name, String email, String role, String department, String phone) {
+    final newId = "EMP-00${_employees.length + 1}";
+    final newUser = Employee(
+      id: newId,
+      name: name,
+      email: email,
+      role: role,
+      department: department,
+      status: "Active",
+      salary: 75000,
+      performanceRating: 5.0,
+      dateJoined: DateTime.now().toString().split(' ')[0],
+      phone: phone,
+      avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+    );
+    _employees.add(newUser);
+    _currentUser = newUser;
+    _isLoggedIn = true;
+    addNotification("Account Created", "Welcome to CRM, $name! Your profile is ready.");
+    notifyListeners();
+  }
+
+  void logout() {
+    _isLoggedIn = false;
+    _currentUser = null;
+    _currentMenuIndex = 0;
+    notifyListeners();
+  }
+
+  // Employee Actions
+  void addEmployee(Employee emp) {
+    _employees.insert(0, emp);
+    addNotification("New Employee Boarded", "${emp.name} has been added to the ${emp.department} department.");
+    // Auto-create initial performance record
+    _performanceRecords.add(Performance(
+      id: "PERF-0${_performanceRecords.length + 1}",
+      employeeId: emp.id,
+      employeeName: emp.name,
+      period: "Q2 2026",
+      kpiScore: 80.0,
+      managerFeedback: "Newly onboarded. Under training.",
+      ratingStars: 4,
+    ));
+    notifyListeners();
+  }
+
+  void updateEmployee(Employee updated) {
+    final idx = _employees.indexWhere((e) => e.id == updated.id);
+    if (idx != -1) {
+      _employees[idx] = updated;
+      notifyListeners();
+    }
+  }
+
+  // Lead Actions
+  void addLead(Lead lead) {
+    _leads.insert(0, lead);
+    addNotification("New Sales Lead", "New prospect ${lead.name} from ${lead.company} registered.");
+    notifyListeners();
+  }
+
+  void updateLeadStatus(String leadId, String newStatus) {
+    final idx = _leads.indexWhere((l) => l.id == leadId);
+    if (idx != -1) {
+      final oldLead = _leads[idx];
+      _leads[idx] = oldLead.copyWith(status: newStatus);
+      addNotification("Lead Progressed", "${oldLead.name}'s deal status updated to: $newStatus.");
+      notifyListeners();
+    }
+  }
+
+  // Attendance Actions
+  void punchIn() {
+    if (_currentUser == null) return;
+    final now = DateTime.now();
+    final timeStr = "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
+    final isLate = now.hour > 9 || (now.hour == 9 && now.minute > 30);
+
+    final log = Attendance(
+      id: "ATT-${_attendanceLogs.length + 1}",
+      employeeId: _currentUser!.id,
+      employeeName: _currentUser!.name,
+      date: now,
+      checkInTime: timeStr,
+      status: isLate ? "Late" : "On Time",
+    );
+    _attendanceLogs.insert(0, log);
+    addNotification("Clock-In Successful", "Punched in at $timeStr. Status: ${log.status}.");
+    notifyListeners();
+  }
+
+  void punchOut() {
+    if (_currentUser == null) return;
+    final now = DateTime.now();
+    final today = DateTime.now();
+    final timeStr = "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
+
+    final idx = _attendanceLogs.indexWhere((a) =>
+        a.employeeId == _currentUser!.id &&
+        a.date.year == today.year &&
+        a.date.month == today.month &&
+        a.date.day == today.day &&
+        a.checkOutTime == null);
+
+    if (idx != -1) {
+      final inLog = _attendanceLogs[idx];
+      // Calculate duration hours roughly
+      final inParts = inLog.checkInTime.split(':');
+      final inHour = int.parse(inParts[0]);
+      final inMin = int.parse(inParts[1]);
+      final duration = (now.hour - inHour) + ((now.minute - inMin) / 60.0);
+
+      _attendanceLogs[idx] = inLog.copyWith(
+        checkOutTime: timeStr,
+        durationHours: double.parse(duration.toStringAsFixed(1)),
+      );
+      addNotification("Clock-Out Successful", "Punched out at $timeStr. Worked for ${duration.toStringAsFixed(1)} hours.");
+      notifyListeners();
+    }
+  }
+
+  // Leave Actions
+  void submitLeaveRequest(String type, DateTime start, DateTime end, String reason) {
+    if (_currentUser == null) return;
+    final req = Leave(
+      id: "LV-${_leaveRequests.length + 100}",
+      employeeId: _currentUser!.id,
+      employeeName: _currentUser!.name,
+      type: type,
+      startDate: start,
+      endDate: end,
+      reason: reason,
+      status: "Pending",
+    );
+    _leaveRequests.insert(0, req);
+    addNotification("Leave Request Submitted", "$type request sent for approval ($reason).");
+    notifyListeners();
+  }
+
+  void updateLeaveStatus(String id, String status) {
+    final idx = _leaveRequests.indexWhere((l) => l.id == id);
+    if (idx != -1) {
+      final oldReq = _leaveRequests[idx];
+      _leaveRequests[idx] = oldReq.copyWith(status: status);
+      addNotification("Leave Request Update", "Your $status status for leave has been updated: $status.");
+      notifyListeners();
+    }
+  }
+
+  // Task Actions
+  void addTask(CRMTask task) {
+    _tasks.insert(0, task);
+    addNotification("Task Assigned", "New task '${task.title}' assigned to ${task.assignedTo}.");
+    notifyListeners();
+  }
+
+  void updateTaskStatus(String id, String newStatus) {
+    final idx = _tasks.indexWhere((t) => t.id == id);
+    if (idx != -1) {
+      final oldTask = _tasks[idx];
+      _tasks[idx] = oldTask.copyWith(status: newStatus);
+      notifyListeners();
+    }
+  }
+
+  // Notifications helper
+  void addNotification(String title, String message) {
+    _notifications.insert(
+      0,
+      CRMNotification(
+        id: "NOTIF-${_notifications.length + 1}",
+        title: title,
+        message: message,
+        timestamp: DateTime.now(),
+        isRead: false,
+      ),
+    );
+    notifyListeners();
+  }
+
+  void markNotificationsAsRead() {
+    for (int i = 0; i < _notifications.length; i++) {
+      _notifications[i] = _notifications[i].copyWith(isRead: true);
+    }
+    notifyListeners();
+  }
+
+  // Initialize Dummy Data
+  void _initializeData() {
+    // 1. Core Employees
+    _employees.addAll([
+      Employee(
+        id: "EMP-001",
+        name: "Diana Prince",
+        email: "diana.prince@company.com",
+        role: "HR Director",
+        department: "Human Resources",
+        status: "Active",
+        salary: 120000,
+        performanceRating: 4.9,
+        dateJoined: "2024-01-15",
+        phone: "+1 (555) 010-9921",
+        avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+      ),
+      Employee(
+        id: "EMP-002",
+        name: "Marcus Aurelius",
+        email: "marcus.aurelius@company.com",
+        role: "VP of Sales",
+        department: "Sales & Marketing",
+        status: "Active",
+        salary: 110000,
+        performanceRating: 4.7,
+        dateJoined: "2024-02-10",
+        phone: "+1 (555) 014-4421",
+        avatarUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150",
+      ),
+      Employee(
+        id: "EMP-003",
+        name: "Sarah Jenkins",
+        email: "sarah.jenkins@company.com",
+        role: "Senior Account Executive",
+        department: "Sales & Marketing",
+        status: "Active",
+        salary: 85000,
+        performanceRating: 4.8,
+        dateJoined: "2024-05-20",
+        phone: "+1 (555) 018-9932",
+        avatarUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150",
+      ),
+      Employee(
+        id: "EMP-004",
+        name: "David Chen",
+        email: "david.chen@company.com",
+        role: "Customer Success Lead",
+        department: "Customer Relations",
+        status: "Active",
+        salary: 80000,
+        performanceRating: 4.4,
+        dateJoined: "2024-08-11",
+        phone: "+1 (555) 021-9988",
+        avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
+      ),
+      Employee(
+        id: "EMP-005",
+        name: "Elena Rostova",
+        email: "elena.rostova@company.com",
+        role: "HR Generalist",
+        department: "Human Resources",
+        status: "Active",
+        salary: 70000,
+        performanceRating: 4.5,
+        dateJoined: "2025-01-08",
+        phone: "+1 (555) 032-4411",
+        avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+      ),
+    ]);
+
+    // Initial default user session
+    _currentUser = _employees[0];
+
+    // 2. Sales Leads
+    _leads.addAll([
+      Lead(
+        id: "LD-101",
+        name: "Robert Downey",
+        company: "Stark Industries",
+        email: "tony@stark.com",
+        phone: "+1 (555) 911-3000",
+        value: 45000.00,
+        status: "Won",
+        source: "Website",
+        dateCreated: DateTime.now().subtract(const Duration(days: 30)),
+        owner: "Sarah Jenkins",
+      ),
+      Lead(
+        id: "LD-102",
+        name: "Bruce Wayne",
+        company: "Wayne Enterprises",
+        email: "bruce@wayne.com",
+        phone: "+1 (555) 443-1200",
+        value: 120000.00,
+        status: "Proposal",
+        source: "Referral",
+        dateCreated: DateTime.now().subtract(const Duration(days: 15)),
+        owner: "Marcus Aurelius",
+      ),
+      Lead(
+        id: "LD-103",
+        name: "Clark Kent",
+        company: "Daily Planet",
+        email: "clark@dailyplanet.com",
+        phone: "+1 (555) 902-8833",
+        value: 15000.00,
+        status: "Contacted",
+        source: "LinkedIn",
+        dateCreated: DateTime.now().subtract(const Duration(days: 10)),
+        owner: "Sarah Jenkins",
+      ),
+      Lead(
+        id: "LD-104",
+        name: "Steve Rogers",
+        company: "Shield Corp",
+        email: "steve@shield.gov",
+        phone: "+1 (555) 177-6600",
+        value: 30000.00,
+        status: "New",
+        source: "Cold Call",
+        dateCreated: DateTime.now().subtract(const Duration(days: 2)),
+        owner: "David Chen",
+      ),
+      Lead(
+        id: "LD-105",
+        name: "Peter Parker",
+        company: "Daily Bugle",
+        email: "peter@bugle.com",
+        phone: "+1 (555) 232-1100",
+        value: 5000.00,
+        status: "Lost",
+        source: "Website",
+        dateCreated: DateTime.now().subtract(const Duration(days: 40)),
+        owner: "David Chen",
+      ),
+    ]);
+
+    // 3. Tasks
+    _tasks.addAll([
+      CRMTask(
+        id: "TSK-201",
+        title: "Send Proposal to Bruce Wayne",
+        description: "Draft Enterprise SLA package for Wayne Enterprises smart grid integration and email PDF.",
+        assignedTo: "Marcus Aurelius",
+        dueDate: DateTime.now().add(const Duration(days: 2)),
+        priority: "High",
+        status: "In Progress",
+      ),
+      CRMTask(
+        id: "TSK-202",
+        title: "Onboard Elena Rostova",
+        description: "Arrange orientation session, workspace setup, and system login credentials.",
+        assignedTo: "Diana Prince",
+        dueDate: DateTime.now().subtract(const Duration(days: 1)),
+        priority: "Medium",
+        status: "Done",
+      ),
+      CRMTask(
+        id: "TSK-203",
+        title: "Schedule Call with Clark Kent",
+        description: "Initial introductory call to understand Daily Planet CRM scalability needs.",
+        assignedTo: "Sarah Jenkins",
+        dueDate: DateTime.now().add(const Duration(days: 5)),
+        priority: "Low",
+        status: "Todo",
+      ),
+      CRMTask(
+        id: "TSK-204",
+        title: "Review Quarterly Leave Reports",
+        description: "HR alignment check on casual/annual leave balances before the end of the half-year.",
+        assignedTo: "Diana Prince",
+        dueDate: DateTime.now().add(const Duration(days: 3)),
+        priority: "High",
+        status: "Review",
+      ),
+    ]);
+
+    // 4. Attendance
+    _attendanceLogs.addAll([
+      Attendance(
+        id: "ATT-10",
+        employeeId: "EMP-001",
+        employeeName: "Diana Prince",
+        date: DateTime.now().subtract(const Duration(days: 1)),
+        checkInTime: "08:45",
+        checkOutTime: "17:30",
+        durationHours: 8.8,
+        status: "On Time",
+      ),
+      Attendance(
+        id: "ATT-11",
+        employeeId: "EMP-002",
+        employeeName: "Marcus Aurelius",
+        date: DateTime.now().subtract(const Duration(days: 1)),
+        checkInTime: "09:42",
+        checkOutTime: "18:00",
+        durationHours: 8.3,
+        status: "Late",
+      ),
+      Attendance(
+        id: "ATT-12",
+        employeeId: "EMP-003",
+        employeeName: "Sarah Jenkins",
+        date: DateTime.now().subtract(const Duration(days: 1)),
+        checkInTime: "08:55",
+        checkOutTime: "17:00",
+        durationHours: 8.1,
+        status: "On Time",
+      ),
+    ]);
+
+    // 5. Leaves
+    _leaveRequests.addAll([
+      Leave(
+        id: "LV-100",
+        employeeId: "EMP-003",
+        employeeName: "Sarah Jenkins",
+        type: "Annual",
+        startDate: DateTime.now().add(const Duration(days: 10)),
+        endDate: DateTime.now().add(const Duration(days: 15)),
+        reason: "Family summer vacation cruise",
+        status: "Approved",
+      ),
+      Leave(
+        id: "LV-101",
+        employeeId: "EMP-004",
+        employeeName: "David Chen",
+        type: "Sick",
+        startDate: DateTime.now().subtract(const Duration(days: 5)),
+        endDate: DateTime.now().subtract(const Duration(days: 4)),
+        reason: "Dental wisdom teeth surgery extraction",
+        status: "Approved",
+      ),
+      Leave(
+        id: "LV-102",
+        employeeId: "EMP-005",
+        employeeName: "Elena Rostova",
+        type: "Casual",
+        startDate: DateTime.now().add(const Duration(days: 4)),
+        endDate: DateTime.now().add(const Duration(days: 5)),
+        reason: "Moving house/apartment settling",
+        status: "Pending",
+      ),
+    ]);
+
+    // 6. Performance Records
+    _performanceRecords.addAll([
+      Performance(
+        id: "PERF-101",
+        employeeId: "EMP-001",
+        employeeName: "Diana Prince",
+        period: "Q1 2026",
+        kpiScore: 98.0,
+        managerFeedback: "Excellent HR administration, managed onboarding of 3 key additions seamlessly.",
+        ratingStars: 5,
+      ),
+      Performance(
+        id: "PERF-102",
+        employeeId: "EMP-002",
+        employeeName: "Marcus Aurelius",
+        period: "Q1 2026",
+        kpiScore: 92.5,
+        managerFeedback: "Exceeded team sales revenue goals by 15%. Exemplary leadership.",
+        ratingStars: 5,
+      ),
+      Performance(
+        id: "PERF-103",
+        employeeId: "EMP-003",
+        employeeName: "Sarah Jenkins",
+        period: "Q1 2026",
+        kpiScore: 89.0,
+        managerFeedback: "Consistent performer, excellent lead conversion speed. Keep it up.",
+        ratingStars: 4,
+      ),
+    ]);
+
+    // 7. Initial notifications
+    _notifications.addAll([
+      CRMNotification(
+        id: "NOTIF-1",
+        title: "App Initialized",
+        message: "CRM database and structures have successfully loaded.",
+        timestamp: DateTime.now().subtract(const Duration(hours: 2)),
+        isRead: false,
+      ),
+      CRMNotification(
+        id: "NOTIF-2",
+        title: "Leave Pending Approval",
+        message: "Elena Rostova requested 1-day Casual leave. Check Leaves screen.",
+        timestamp: DateTime.now().subtract(const Duration(hours: 1)),
+        isRead: false,
+      ),
+    ]);
+  }
+}
