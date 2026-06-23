@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/widgets/custom_button.dart';
 import '../../core/widgets/custom_text_field.dart';
@@ -12,6 +13,14 @@ class LeaveScreen extends StatefulWidget {
 }
 
 class _LeaveScreenState extends State<LeaveScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      MockDataService().fetchLeavesFromApi();
+    });
+  }
+
   void _showRequestLeaveDialog(BuildContext context, MockDataService state) {
     final formKey = GlobalKey<FormState>();
     final reasonCtrl = TextEditingController();
@@ -165,9 +174,8 @@ class _LeaveScreenState extends State<LeaveScreen> {
     final cardWidth = screenWidth < 600 ? double.infinity : 220.0;
     final badgeText = screenWidth < 600 ? "Admin" : "HR Administrator View";
 
-    return AnimatedBuilder(
-      animation: state,
-      builder: (context, child) {
+    return Obx(
+      () {
         final currentRequests = state.leaveRequests;
         // Balance values (mocked representation)
         final casualUsed = currentRequests.where((l) => l.employeeId == state.currentUser?.id && l.type == 'Casual' && l.status == 'Approved').length * 2;
@@ -218,6 +226,56 @@ class _LeaveScreenState extends State<LeaveScreen> {
                   ),
                 ],
               ),
+              if (state.isLoadingLeaves) ...[
+                const SizedBox(height: 16),
+                const ClipRRect(
+                  borderRadius: BorderRadius.all(Radius.circular(4)),
+                  child: LinearProgressIndicator(
+                    minHeight: 4,
+                    backgroundColor: AppColors.border,
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                  ),
+                ),
+              ],
+              if (state.leavesError != null) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.danger.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.danger.withOpacity(0.2)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline, color: AppColors.danger, size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          state.leavesError!,
+                          style: const TextStyle(
+                            color: AppColors.danger,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      TextButton.icon(
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.danger,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          backgroundColor: AppColors.danger.withOpacity(0.1),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                        ),
+                        icon: const Icon(Icons.refresh, size: 16),
+                        label: const Text("Retry", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        onPressed: () => state.fetchLeavesFromApi(),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 24),
 
               // Balances Gauge Section (Responsive)

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'core/constants/app_colors.dart';
+import 'controllers/crm_controller.dart';
 import 'screens/splash_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/main_layout.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  Get.put(CrmController());
   runApp(const MyApp());
 }
 
@@ -13,7 +17,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return GetMaterialApp(
       title: 'RidealCRM Portal',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(

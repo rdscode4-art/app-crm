@@ -15,6 +15,10 @@ import 'tasks/task_screen.dart';
 import 'performance/performance_screen.dart';
 import 'calendar/calendar_screen.dart';
 import 'settings/settings_screen.dart';
+import 'documents/document_screen.dart';
+import 'assets/asset_screen.dart';
+import 'daily_reports/daily_report_screen.dart';
+import 'role_management/role_management_screen.dart';
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
@@ -37,6 +41,10 @@ class _MainLayoutState extends State<MainLayout> {
     "Performance Tracker",
     "Calendar Schedule",
     "Account Settings",
+    "Document Management Hub",
+    "Asset Management Tracker",
+    "Daily Report Logger",
+    "Role Management Console",
   ];
 
   Widget _getCurrentScreen(int index) {
@@ -61,6 +69,14 @@ class _MainLayoutState extends State<MainLayout> {
         return const CalendarScreen();
       case 9:
         return const SettingsScreen();
+      case 10:
+        return const DocumentScreen();
+      case 11:
+        return const AssetScreen();
+      case 12:
+        return const DailyReportScreen();
+      case 13:
+        return const RoleManagementScreen();
       default:
         return const DashboardScreen();
     }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../models/employee.dart';
 import '../models/lead.dart';
 import '../models/attendance.dart';
@@ -6,6 +7,12 @@ import '../models/leave.dart';
 import '../models/task.dart';
 import '../models/performance.dart';
 import '../models/notification.dart';
+import '../models/asset.dart';
+import '../models/daily_report.dart';
+import '../models/user_role_info.dart';
+import '../controllers/crm_controller.dart';
+
+enum UserRole { superAdmin, hr, employee }
 
 class MockDataService extends ChangeNotifier {
   // Global Singleton
@@ -19,6 +26,8 @@ class MockDataService extends ChangeNotifier {
   bool _isOnboarded = false;
   bool _isLoggedIn = false;
   int _currentMenuIndex = 0; // Sidebar navigation index
+  bool _isLoadingLeaves = false;
+  String? _leavesError;
 
   // Auth User Session (Simulated)
   Employee? _currentUser;
@@ -31,20 +40,62 @@ class MockDataService extends ChangeNotifier {
   final List<CRMTask> _tasks = [];
   final List<Performance> _performanceRecords = [];
   final List<CRMNotification> _notifications = [];
+  final List<CRMAsset> _assets = [];
+  final List<DailyReport> _dailyReports = [];
+  final List<UserRoleInfo> _userRoles = [];
 
   // Getters
   bool get isOnboarded => _isOnboarded;
   bool get isLoggedIn => _isLoggedIn;
   int get currentMenuIndex => _currentMenuIndex;
   Employee? get currentUser => _currentUser;
+  bool get isLoadingLeaves => Get.isRegistered<CrmController>()
+      ? Get.find<CrmController>().isLoadingLeaves.value
+      : _isLoadingLeaves;
+  String? get leavesError => Get.isRegistered<CrmController>()
+      ? Get.find<CrmController>().leavesError.value
+      : _leavesError;
 
   List<Employee> get employees => List.unmodifiable(_employees);
-  List<Lead> get leads => List.unmodifiable(_leads);
+  List<Lead> get leads => Get.isRegistered<CrmController>()
+      ? Get.find<CrmController>().leads
+      : List.unmodifiable(_leads);
   List<Attendance> get attendanceLogs => List.unmodifiable(_attendanceLogs);
-  List<Leave> get leaveRequests => List.unmodifiable(_leaveRequests);
-  List<CRMTask> get tasks => List.unmodifiable(_tasks);
+  List<Leave> get leaveRequests => Get.isRegistered<CrmController>()
+      ? Get.find<CrmController>().leaveRequests
+      : List.unmodifiable(_leaveRequests);
+  List<CRMTask> get tasks => Get.isRegistered<CrmController>()
+      ? Get.find<CrmController>().tasks
+      : List.unmodifiable(_tasks);
   List<Performance> get performanceRecords => List.unmodifiable(_performanceRecords);
   List<CRMNotification> get notifications => List.unmodifiable(_notifications);
+
+  List<CRMAsset> get assets => Get.isRegistered<CrmController>()
+      ? Get.find<CrmController>().assets
+      : List.unmodifiable(_assets);
+
+  List<DailyReport> get dailyReports => Get.isRegistered<CrmController>()
+      ? Get.find<CrmController>().dailyReports
+      : List.unmodifiable(_dailyReports);
+
+  List<UserRoleInfo> get userRoles => Get.isRegistered<CrmController>()
+      ? Get.find<CrmController>().userRoles
+      : List.unmodifiable(_userRoles);
+
+  UserRole get currentRole {
+    if (_currentUser == null) return UserRole.employee;
+    final email = _currentUser!.email.toLowerCase();
+    final role = _currentUser!.role.toLowerCase();
+    final name = _currentUser!.name.toLowerCase();
+
+    if (email.contains("superadmin") || role.contains("super admin") || name.contains("marcus") || email == "marcus.aurelius@company.com") {
+      return UserRole.superAdmin;
+    } else if (email.contains("admin") || role.contains("hr") || role.contains("director") || name.contains("diana") || email == "diana.prince@company.com") {
+      return UserRole.hr;
+    } else {
+      return UserRole.employee;
+    }
+  }
 
   // Computed state for current user
   bool get isPunchedIn {
@@ -177,18 +228,28 @@ class MockDataService extends ChangeNotifier {
 
   // Lead Actions
   void addLead(Lead lead) {
-    _leads.insert(0, lead);
-    addNotification("New Sales Lead", "New prospect ${lead.name} from ${lead.company} registered.");
-    notifyListeners();
+    if (Get.isRegistered<CrmController>()) {
+      Get.find<CrmController>().submitLead(lead);
+      addNotification("New Sales Lead", "New prospect ${lead.name} from ${lead.company} registered.");
+    } else {
+      _leads.insert(0, lead);
+      addNotification("New Sales Lead", "New prospect ${lead.name} from ${lead.company} registered.");
+      notifyListeners();
+    }
   }
 
   void updateLeadStatus(String leadId, String newStatus) {
-    final idx = _leads.indexWhere((l) => l.id == leadId);
-    if (idx != -1) {
-      final oldLead = _leads[idx];
-      _leads[idx] = oldLead.copyWith(status: newStatus);
-      addNotification("Lead Progressed", "${oldLead.name}'s deal status updated to: $newStatus.");
-      notifyListeners();
+    if (Get.isRegistered<CrmController>()) {
+      Get.find<CrmController>().updateLeadStatus(leadId, newStatus);
+      addNotification("Lead Progressed", "Lead status updated to: $newStatus.");
+    } else {
+      final idx = _leads.indexWhere((l) => l.id == leadId);
+      if (idx != -1) {
+        final oldLead = _leads[idx];
+        _leads[idx] = oldLead.copyWith(status: newStatus);
+        addNotification("Lead Progressed", "${oldLead.name}'s deal status updated to: $newStatus.");
+        notifyListeners();
+      }
     }
   }
 
@@ -243,21 +304,37 @@ class MockDataService extends ChangeNotifier {
   }
 
   // Leave Actions
-  void submitLeaveRequest(String type, DateTime start, DateTime end, String reason) {
+  Future<void> fetchLeavesFromApi() async {
+    if (Get.isRegistered<CrmController>()) {
+      await Get.find<CrmController>().fetchLeaves();
+    }
+  }
+
+  Future<void> submitLeaveRequest(String type, DateTime start, DateTime end, String reason) async {
     if (_currentUser == null) return;
-    final req = Leave(
-      id: "LV-${_leaveRequests.length + 100}",
-      employeeId: _currentUser!.id,
-      employeeName: _currentUser!.name,
-      type: type,
-      startDate: start,
-      endDate: end,
-      reason: reason,
-      status: "Pending",
-    );
-    _leaveRequests.insert(0, req);
-    addNotification("Leave Request Submitted", "$type request sent for approval ($reason).");
-    notifyListeners();
+    if (Get.isRegistered<CrmController>()) {
+      await Get.find<CrmController>().submitLeave(
+        type,
+        start,
+        end,
+        reason,
+        _currentUser!.id,
+        _currentUser!.name,
+      );
+    } else {
+      final req = Leave(
+        id: "LV-${_leaveRequests.length + 100}",
+        employeeId: _currentUser!.id,
+        employeeName: _currentUser!.name,
+        type: type,
+        startDate: start,
+        endDate: end,
+        reason: reason,
+        status: "Pending",
+      );
+      _leaveRequests.insert(0, req);
+      notifyListeners();
+    }
   }
 
   void updateLeaveStatus(String id, String status) {
@@ -272,17 +349,26 @@ class MockDataService extends ChangeNotifier {
 
   // Task Actions
   void addTask(CRMTask task) {
-    _tasks.insert(0, task);
-    addNotification("Task Assigned", "New task '${task.title}' assigned to ${task.assignedTo}.");
-    notifyListeners();
+    if (Get.isRegistered<CrmController>()) {
+      Get.find<CrmController>().submitTask(task);
+      addNotification("Task Assigned", "New task '${task.title}' assigned to ${task.assignedTo}.");
+    } else {
+      _tasks.insert(0, task);
+      addNotification("Task Assigned", "New task '${task.title}' assigned to ${task.assignedTo}.");
+      notifyListeners();
+    }
   }
 
   void updateTaskStatus(String id, String newStatus) {
-    final idx = _tasks.indexWhere((t) => t.id == id);
-    if (idx != -1) {
-      final oldTask = _tasks[idx];
-      _tasks[idx] = oldTask.copyWith(status: newStatus);
-      notifyListeners();
+    if (Get.isRegistered<CrmController>()) {
+      Get.find<CrmController>().updateTaskStatus(id, newStatus);
+    } else {
+      final idx = _tasks.indexWhere((t) => t.id == id);
+      if (idx != -1) {
+        final oldTask = _tasks[idx];
+        _tasks[idx] = oldTask.copyWith(status: newStatus);
+        notifyListeners();
+      }
     }
   }
 
@@ -601,6 +687,74 @@ class MockDataService extends ChangeNotifier {
         timestamp: DateTime.now().subtract(const Duration(hours: 1)),
         isRead: false,
       ),
+    ]);
+
+    // 8. Assets
+    _assets.addAll([
+      CRMAsset(
+        id: "AST-101",
+        name: "MacBook Pro 16\"",
+        serialNumber: "C02DF123Q05D",
+        category: "Laptop",
+        assignedTo: "Diana Prince",
+        status: "Assigned",
+        dateAssigned: DateTime.now().subtract(const Duration(days: 120)),
+      ),
+      CRMAsset(
+        id: "AST-102",
+        name: "iPhone 15 Pro",
+        serialNumber: "IMEI88273618",
+        category: "Phone",
+        assignedTo: "Marcus Aurelius",
+        status: "Assigned",
+        dateAssigned: DateTime.now().subtract(const Duration(days: 90)),
+      ),
+      CRMAsset(
+        id: "AST-103",
+        name: "Dell UltraSharp 27\"",
+        serialNumber: "CN-0F142D-728",
+        category: "Accessory",
+        assignedTo: "Sarah Jenkins",
+        status: "Assigned",
+        dateAssigned: DateTime.now().subtract(const Duration(days: 60)),
+      ),
+    ]);
+
+    // 9. Daily Reports
+    _dailyReports.addAll([
+      DailyReport(
+        id: "REP-001",
+        employeeName: "Diana Prince",
+        date: DateTime.now().subtract(const Duration(days: 1)),
+        summary: "Completed HR onboarding guidelines draft and reviewed leave approval queues.",
+        tasksCompleted: "Onboarded Elena, Reviewed Leave balance reports",
+        blocks: "None",
+      ),
+      DailyReport(
+        id: "REP-002",
+        employeeName: "Marcus Aurelius",
+        date: DateTime.now().subtract(const Duration(days: 1)),
+        summary: "Conducted sales alignment meetings and updated the proposal pipelines.",
+        tasksCompleted: "Stark Proposal draft, Wayne proposal sent",
+        blocks: "Awaiting legal signature from Stark team",
+      ),
+      DailyReport(
+        id: "REP-003",
+        employeeName: "Sarah Jenkins",
+        date: DateTime.now().subtract(const Duration(days: 1)),
+        summary: "Followed up with Kent regarding CRM customization scope.",
+        tasksCompleted: "Kent call completed, CRM scopes documented",
+        blocks: "Waiting on Clark's confirmation on user count",
+      ),
+    ]);
+
+    // 10. User Roles Listing
+    _userRoles.addAll([
+      UserRoleInfo(id: "EMP-001", name: "Diana Prince", email: "diana.prince@company.com", role: "HR Director"),
+      UserRoleInfo(id: "EMP-002", name: "Marcus Aurelius", email: "marcus.aurelius@company.com", role: "VP of Sales"),
+      UserRoleInfo(id: "EMP-003", name: "Sarah Jenkins", email: "sarah.jenkins@company.com", role: "Senior Account Executive"),
+      UserRoleInfo(id: "EMP-004", name: "David Chen", email: "david.chen@company.com", role: "Customer Success Lead"),
+      UserRoleInfo(id: "EMP-005", name: "Elena Rostova", email: "elena.rostova@company.com", role: "HR Generalist"),
     ]);
   }
 }

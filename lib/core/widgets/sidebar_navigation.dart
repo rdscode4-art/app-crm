@@ -16,7 +16,7 @@ class SidebarNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final menuItems = [
+    final List<_SidebarItem> allItems = [
       _SidebarItem(index: 0, title: "Dashboard", icon: Icons.dashboard_outlined),
       _SidebarItem(index: 1, title: "Employees", icon: Icons.people_outline),
       _SidebarItem(index: 2, title: "Leads", icon: Icons.trending_up),
@@ -26,8 +26,23 @@ class SidebarNavigation extends StatelessWidget {
       _SidebarItem(index: 6, title: "Tasks", icon: Icons.task_alt_outlined),
       _SidebarItem(index: 7, title: "Performance", icon: Icons.insights_outlined),
       _SidebarItem(index: 8, title: "Calendar", icon: Icons.calendar_month_outlined),
+      _SidebarItem(index: 10, title: "Documents", icon: Icons.folder_open_outlined),
       _SidebarItem(index: 9, title: "Settings", icon: Icons.settings_outlined),
+      _SidebarItem(index: 11, title: "Asset Management", icon: Icons.devices_other_outlined),
+      _SidebarItem(index: 12, title: "Daily Report", icon: Icons.note_alt_outlined),
+      _SidebarItem(index: 13, title: "Role Management", icon: Icons.admin_panel_settings_outlined),
     ];
+
+    final role = state.currentRole;
+    final List<_SidebarItem> menuItems;
+
+    if (role == UserRole.superAdmin) {
+      menuItems = allItems.where((item) => [0, 1, 13, 2, 3, 4, 5, 6, 7, 8, 10, 12, 9].contains(item.index)).toList();
+    } else if (role == UserRole.hr) {
+      menuItems = allItems.where((item) => [0, 4, 6, 7, 11, 10, 12, 9].contains(item.index)).toList();
+    } else {
+      menuItems = allItems.where((item) => [0, 3, 4, 6, 10, 12, 9].contains(item.index)).toList();
+    }
 
     return Container(
       width: 260,

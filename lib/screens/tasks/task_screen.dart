@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/widgets/custom_button.dart';
 import '../../core/widgets/custom_text_field.dart';
 import '../../models/task.dart';
 import '../../services/mock_data_service.dart';
+import '../../controllers/crm_controller.dart';
 
 class TaskScreen extends StatefulWidget {
   const TaskScreen({super.key});
@@ -20,6 +22,9 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
   void initState() {
     super.initState();
     _tabController = TabController(length: _statuses.length, vsync: this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Get.find<CrmController>().fetchTasks();
+    });
   }
 
   @override
@@ -340,12 +345,12 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     final state = MockDataService();
+    final controller = Get.find<CrmController>();
     final width = MediaQuery.of(context).size.width;
     final isDesktop = width >= 1000;
 
-    return AnimatedBuilder(
-      animation: state,
-      builder: (context, child) {
+    return Obx(
+      () {
         return SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -386,6 +391,56 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
                   ),
                 ],
               ),
+              if (controller.isLoadingTasks.value) ...[
+                const SizedBox(height: 16),
+                const ClipRRect(
+                  borderRadius: BorderRadius.all(Radius.circular(4)),
+                  child: LinearProgressIndicator(
+                    minHeight: 4,
+                    backgroundColor: AppColors.border,
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                  ),
+                ),
+              ],
+              if (controller.tasksError.value != null) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.danger.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.danger.withOpacity(0.2)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline, color: AppColors.danger, size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          controller.tasksError.value!,
+                          style: const TextStyle(
+                            color: AppColors.danger,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      TextButton.icon(
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.danger,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          backgroundColor: AppColors.danger.withOpacity(0.1),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                        ),
+                        icon: const Icon(Icons.refresh, size: 16),
+                        label: const Text("Retry", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        onPressed: () => controller.fetchTasks(),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 24),
 
               // Responsive Columns Layout

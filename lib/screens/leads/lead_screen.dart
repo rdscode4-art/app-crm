@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/widgets/custom_button.dart';
 import '../../core/widgets/custom_text_field.dart';
 import '../../models/lead.dart';
 import '../../services/mock_data_service.dart';
+import '../../controllers/crm_controller.dart';
 
 class LeadScreen extends StatefulWidget {
   const LeadScreen({super.key});
@@ -20,6 +22,9 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
   void initState() {
     super.initState();
     _tabController = TabController(length: _stages.length, vsync: this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Get.find<CrmController>().fetchLeads();
+    });
   }
 
   @override
@@ -337,12 +342,12 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     final state = MockDataService();
+    final controller = Get.find<CrmController>();
     final width = MediaQuery.of(context).size.width;
     final isDesktop = width >= 1000;
 
-    return AnimatedBuilder(
-      animation: state,
-      builder: (context, child) {
+    return Obx(
+      () {
         return SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -383,6 +388,56 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                   ),
                 ],
               ),
+              if (controller.isLoadingLeads.value) ...[
+                const SizedBox(height: 16),
+                const ClipRRect(
+                  borderRadius: BorderRadius.all(Radius.circular(4)),
+                  child: LinearProgressIndicator(
+                    minHeight: 4,
+                    backgroundColor: AppColors.border,
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                  ),
+                ),
+              ],
+              if (controller.leadsError.value != null) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.danger.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.danger.withOpacity(0.2)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline, color: AppColors.danger, size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          controller.leadsError.value!,
+                          style: const TextStyle(
+                            color: AppColors.danger,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      TextButton.icon(
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.danger,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          backgroundColor: AppColors.danger.withOpacity(0.1),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                        ),
+                        icon: const Icon(Icons.refresh, size: 16),
+                        label: const Text("Retry", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        onPressed: () => controller.fetchLeads(),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 24),
 
               // Responsive Pipeline Container
