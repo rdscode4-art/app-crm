@@ -372,6 +372,13 @@ class MockDataService extends ChangeNotifier {
     }
   }
 
+  // Performance Actions
+  void addPerformanceRecord(Performance record) {
+    _performanceRecords.insert(0, record);
+    addNotification("Performance Review", "A new performance review was added for ${record.employeeName}.");
+    notifyListeners();
+  }
+
   // Notifications helper
   void addNotification(String title, String message) {
     _notifications.insert(

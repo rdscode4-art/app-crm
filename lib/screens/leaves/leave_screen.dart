@@ -278,16 +278,26 @@ class _LeaveScreenState extends State<LeaveScreen> {
               ],
               const SizedBox(height: 24),
 
-              // Balances Gauge Section (Responsive)
-              Wrap(
-                spacing: 16,
-                runSpacing: 16,
-                children: [
-                  _buildBalanceCard("Annual Leave Balance", annualUsed, annualTotal, Colors.blue, cardWidth),
-                  _buildBalanceCard("Sick Leave Balance", sickUsed, sickTotal, Colors.red, cardWidth),
-                  _buildBalanceCard("Casual Leave Balance", casualUsed, casualTotal, Colors.orange, cardWidth),
-                ],
-              ),
+              // Balances Gauge Section (Responsive Column on Mobile, Wrap on Desktop)
+              screenWidth < 600
+                  ? Column(
+                      children: [
+                        _buildBalanceCard("Annual Leave Balance", annualUsed, annualTotal, Colors.blue, double.infinity),
+                        const SizedBox(height: 16),
+                        _buildBalanceCard("Sick Leave Balance", sickUsed, sickTotal, Colors.red, double.infinity),
+                        const SizedBox(height: 16),
+                        _buildBalanceCard("Casual Leave Balance", casualUsed, casualTotal, Colors.orange, double.infinity),
+                      ],
+                    )
+                  : Wrap(
+                      spacing: 16,
+                      runSpacing: 16,
+                      children: [
+                        _buildBalanceCard("Annual Leave Balance", annualUsed, annualTotal, Colors.blue, cardWidth),
+                        _buildBalanceCard("Sick Leave Balance", sickUsed, sickTotal, Colors.red, cardWidth),
+                        _buildBalanceCard("Casual Leave Balance", casualUsed, casualTotal, Colors.orange, cardWidth),
+                      ],
+                    ),
               const SizedBox(height: 28),
 
               // Leaves Requests list card table

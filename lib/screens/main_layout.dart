@@ -372,12 +372,113 @@ class _MainLayoutState extends State<MainLayout> {
                       child: _getCurrentScreen(activeIndex),
                     ),
                   ),
+                  bottomNavigationBar: isMobile
+                      ? _buildBottomNavigationBar(context, state, activeIndex)
+                      : null,
                 ),
               ),
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _buildBottomNavigationBar(BuildContext context, MockDataService state, int activeIndex) {
+    final List<Map<String, dynamic>> items = [
+      {"icon": Icons.grid_view_rounded, "label": "Home", "index": 0},
+      {"icon": Icons.fingerprint_rounded, "label": "Clock", "index": 3},
+      {"icon": Icons.beach_access_rounded, "label": "Leave", "index": 4},
+      {"icon": Icons.person_rounded, "label": "Profile", "index": 9},
+    ];
+
+    return SafeArea(
+      child: Container(
+        height: 70,
+        margin: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.95),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white.withOpacity(0.6), width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
+            ),
+            BoxShadow(
+              color: AppColors.primary.withOpacity(0.04),
+              blurRadius: 8,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: items.map((item) {
+            final int itemMenuIdx = item["index"];
+            final bool isSelected = activeIndex == itemMenuIdx;
+
+            return GestureDetector(
+              onTap: () {
+                state.setMenuIndex(itemMenuIdx);
+              },
+              behavior: HitTestBehavior.opaque,
+              child: SizedBox(
+                width: 60,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeOutBack,
+                      padding: const EdgeInsets.all(8),
+                      transform: Matrix4.translationValues(0, isSelected ? -10 : 0, 0),
+                      decoration: BoxDecoration(
+                        color: isSelected ? AppColors.primary : Colors.transparent,
+                        shape: BoxShape.circle,
+                        boxShadow: isSelected
+                            ? [
+                                BoxShadow(
+                                  color: AppColors.primary.withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                )
+                              ]
+                            : [],
+                      ),
+                      child: Icon(
+                        item["icon"] as IconData,
+                        color: isSelected ? Colors.white : AppColors.textSecondary,
+                        size: 22,
+                      ),
+                    ),
+                    AnimatedSize(
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeInOut,
+                      child: isSelected
+                          ? Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: Text(
+                                item["label"] as String,
+                                style: const TextStyle(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 9,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ),
     );
   }
 }
