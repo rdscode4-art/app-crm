@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/employee.dart';
 import '../models/lead.dart';
 import '../models/attendance.dart';
@@ -11,6 +12,7 @@ import '../models/asset.dart';
 import '../models/daily_report.dart';
 import '../models/user_role_info.dart';
 import '../controllers/crm_controller.dart';
+import 'api_service.dart';
 
 enum UserRole { superAdmin, hr, employee }
 
@@ -124,9 +126,62 @@ class MockDataService extends ChangeNotifier {
     }
   }
 
+  Future<void> init() async {
+    final prefs = await SharedPreferences.getInstance();
+    _isOnboarded = prefs.getBool('is_onboarded') ?? false;
+    _isLoggedIn = prefs.getBool('is_logged_in') ?? false;
+    final userEmail = prefs.getString('user_email');
+    if (_isLoggedIn && userEmail != null) {
+      try {
+        final user = _employees.firstWhere(
+          (e) => e.email.toLowerCase() == userEmail.toLowerCase(),
+        );
+        _currentUser = user;
+      } catch (_) {
+        if (userEmail.toLowerCase() == "admin@crm.com") {
+          _currentUser = Employee(
+            id: "EMP-001",
+            name: "Diana Prince",
+            email: "admin@crm.com",
+            role: "HR Director",
+            department: "Human Resources",
+            status: "Active",
+            salary: 120000,
+            performanceRating: 4.9,
+            dateJoined: "2024-01-15",
+            phone: "+1 555-0199",
+            avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+          );
+        } else {
+          _currentUser = Employee(
+            id: prefs.getString('user_id') ?? "EMP-999",
+            name: prefs.getString('user_name') ?? "Employee",
+            email: userEmail,
+            role: prefs.getString('user_role') ?? "Employee",
+            department: prefs.getString('user_department') ?? "Ecosystem",
+            status: "Active",
+            salary: 80000,
+            performanceRating: 5.0,
+            dateJoined: DateTime.now().toString().split(' ')[0],
+            phone: "",
+            avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+          );
+        }
+      }
+
+      final token = prefs.getString('api_token');
+      if (token != null) {
+        ApiService.token = token;
+      }
+    }
+    notifyListeners();
+  }
+
   // Setters & Navigation
-  void setOnboarded(bool value) {
+  void setOnboarded(bool value) async {
     _isOnboarded = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('is_onboarded', value);
     notifyListeners();
   }
 
@@ -136,43 +191,93 @@ class MockDataService extends ChangeNotifier {
   }
 
   // Auth Actions
-  bool login(String email, String password) {
-    // Standard mock user logins
+  Future<String?> login(String email, String password) async {
     try {
-      final user = _employees.firstWhere(
-        (e) => e.email.toLowerCase() == email.toLowerCase(),
-      );
-      _currentUser = user;
+      final authData = await ApiService().login(email, password);
+      final employeeJson = authData['employee'] as Map<String, dynamic>;
+      _currentUser = Employee.fromJson(employeeJson);
       _isLoggedIn = true;
-      addNotification("Welcome Back!", "You have successfully signed in as ${user.name}.");
-      notifyListeners();
-      return true;
-    } catch (_) {
-      // Create fallback admin if user list doesn't match
-      if (email.toLowerCase() == "admin@crm.com") {
-        _currentUser = Employee(
-          id: "EMP-001",
-          name: "Diana Prince",
-          email: "admin@crm.com",
-          role: "HR Director",
-          department: "Human Resources",
-          status: "Active",
-          salary: 120000,
-          performanceRating: 4.9,
-          dateJoined: "2024-01-15",
-          phone: "+1 555-0199",
-          avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
-        );
-        _isLoggedIn = true;
-        addNotification("Welcome Back!", "Signed in as Diana Prince (HR Director).");
-        notifyListeners();
-        return true;
+      
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('is_logged_in', true);
+      await prefs.setString('user_email', email);
+      await prefs.setString('user_id', _currentUser!.id);
+      await prefs.setString('user_name', _currentUser!.name);
+      await prefs.setString('user_role', _currentUser!.role);
+      await prefs.setString('user_department', _currentUser!.department);
+      if (ApiService.token != null) {
+        await prefs.setString('api_token', ApiService.token!);
       }
-      return false;
+      
+      addNotification("Welcome Back!", "You have successfully signed in as ${_currentUser!.name}.");
+      notifyListeners();
+      return null;
+    } catch (e) {
+      // Try mock fallback login if the email/password matches a mock employee OR is the admin credentials
+      try {
+        final user = _employees.firstWhere(
+          (e) => e.email.toLowerCase() == email.toLowerCase(),
+        );
+        _currentUser = user;
+        _isLoggedIn = true;
+        
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('is_logged_in', true);
+        await prefs.setString('user_email', email);
+        await prefs.setString('user_id', _currentUser!.id);
+        await prefs.setString('user_name', _currentUser!.name);
+        await prefs.setString('user_role', _currentUser!.role);
+        await prefs.setString('user_department', _currentUser!.department);
+        if (ApiService.token != null) {
+          await prefs.setString('api_token', ApiService.token!);
+        }
+        
+        addNotification("Welcome Back!", "You have successfully signed in as ${user.name} (Mock).");
+        notifyListeners();
+        return null;
+      } catch (_) {
+        if (email.toLowerCase() == "admin@crm.com" && password == "admin123") {
+          _currentUser = Employee(
+            id: "EMP-001",
+            name: "Diana Prince",
+            email: "admin@crm.com",
+            role: "HR Director",
+            department: "Human Resources",
+            status: "Active",
+            salary: 120000,
+            performanceRating: 4.9,
+            dateJoined: "2024-01-15",
+            phone: "+1 555-0199",
+            avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+          );
+          _isLoggedIn = true;
+          
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool('is_logged_in', true);
+          await prefs.setString('user_email', email);
+          await prefs.setString('user_id', _currentUser!.id);
+          await prefs.setString('user_name', _currentUser!.name);
+          await prefs.setString('user_role', _currentUser!.role);
+          await prefs.setString('user_department', _currentUser!.department);
+          if (ApiService.token != null) {
+            await prefs.setString('api_token', ApiService.token!);
+          }
+          
+          addNotification("Welcome Back!", "Signed in as Diana Prince (HR Director) (Mock).");
+          notifyListeners();
+          return null;
+        }
+      }
+
+      String errorMsg = e.toString();
+      if (errorMsg.startsWith("Exception: ")) {
+        errorMsg = errorMsg.replaceFirst("Exception: ", "");
+      }
+      return errorMsg;
     }
   }
 
-  void signup(String name, String email, String role, String department, String phone) {
+  void signup(String name, String email, String role, String department, String phone) async {
     final newId = "EMP-00${_employees.length + 1}";
     final newUser = Employee(
       id: newId,
@@ -190,14 +295,34 @@ class MockDataService extends ChangeNotifier {
     _employees.add(newUser);
     _currentUser = newUser;
     _isLoggedIn = true;
+    
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('is_logged_in', true);
+    await prefs.setString('user_email', email);
+    await prefs.setString('user_id', newUser.id);
+    await prefs.setString('user_name', newUser.name);
+    await prefs.setString('user_role', newUser.role);
+    await prefs.setString('user_department', newUser.department);
+    
     addNotification("Account Created", "Welcome to CRM, $name! Your profile is ready.");
     notifyListeners();
   }
 
-  void logout() {
+  void logout() async {
     _isLoggedIn = false;
     _currentUser = null;
     _currentMenuIndex = 0;
+    ApiService.token = null;
+    
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('is_logged_in', false);
+    await prefs.remove('user_email');
+    await prefs.remove('user_id');
+    await prefs.remove('user_name');
+    await prefs.remove('user_role');
+    await prefs.remove('user_department');
+    await prefs.remove('api_token');
+    
     notifyListeners();
   }
 
@@ -736,6 +861,10 @@ class MockDataService extends ChangeNotifier {
         summary: "Completed HR onboarding guidelines draft and reviewed leave approval queues.",
         tasksCompleted: "Onboarded Elena, Reviewed Leave balance reports",
         blocks: "None",
+        status: "approved",
+        hoursWorked: 8.5,
+        reviewNote: "Great progress, guidelines look ready.",
+        reviewedByName: "Marcus Aurelius",
       ),
       DailyReport(
         id: "REP-002",
@@ -744,6 +873,10 @@ class MockDataService extends ChangeNotifier {
         summary: "Conducted sales alignment meetings and updated the proposal pipelines.",
         tasksCompleted: "Stark Proposal draft, Wayne proposal sent",
         blocks: "Awaiting legal signature from Stark team",
+        status: "reviewed",
+        hoursWorked: 9.0,
+        reviewNote: "Good work. Keep pressure on Stark's team.",
+        reviewedByName: "Diana Prince",
       ),
       DailyReport(
         id: "REP-003",
@@ -752,6 +885,8 @@ class MockDataService extends ChangeNotifier {
         summary: "Followed up with Kent regarding CRM customization scope.",
         tasksCompleted: "Kent call completed, CRM scopes documented",
         blocks: "Waiting on Clark's confirmation on user count",
+        status: "submitted",
+        hoursWorked: 7.5,
       ),
     ]);
 

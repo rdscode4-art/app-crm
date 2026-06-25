@@ -19,33 +19,54 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController(text: "admin@crm.com");
   final _passwordController = TextEditingController(text: "admin123");
   String? _errorMessage;
+  bool _isLoading = false;
 
-  void _handleLogin() {
+  void _handleLogin() async {
     setState(() {
       _errorMessage = null;
+      _isLoading = true;
     });
 
     if (_formKey.currentState!.validate()) {
-      final success = MockDataService().login(
-        _emailController.text,
-        _passwordController.text,
-      );
-
-      if (success) {
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => const MainLayout(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
-            transitionDuration: const Duration(milliseconds: 500),
-          ),
+      try {
+        final error = await MockDataService().login(
+          _emailController.text,
+          _passwordController.text,
         );
-      } else {
+
+        if (error == null) {
+          if (!mounted) return;
+          Navigator.of(context).pushReplacement(
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) => const MainLayout(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return FadeTransition(opacity: animation, child: child);
+              },
+              transitionDuration: const Duration(milliseconds: 500),
+            ),
+          );
+        } else {
+          if (!mounted) return;
+          setState(() {
+            _errorMessage = error;
+          });
+        }
+      } catch (e) {
+        if (!mounted) return;
         setState(() {
-          _errorMessage = "Invalid credentials. Tip: Use 'admin@crm.com' to log in.";
+          _errorMessage = e.toString();
         });
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
+    } else {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -227,6 +248,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       width: double.infinity,
                       text: "Sign In",
                       onPressed: _handleLogin,
+                      isLoading: _isLoading,
                     ),
                     const SizedBox(height: 24),
 

@@ -7,6 +7,7 @@ import '../models/asset.dart';
 import '../models/daily_report.dart';
 import '../models/user_role_info.dart';
 import '../services/api_service.dart';
+import '../services/mock_data_service.dart';
 
 class CrmController extends GetxController {
   final ApiService _apiService = ApiService();
@@ -244,6 +245,10 @@ class CrmController extends GetxController {
         summary: "Completed HR onboarding guidelines draft and reviewed leave approval queues.",
         tasksCompleted: "Onboarded Elena, Reviewed Leave balance reports",
         blocks: "None",
+        status: "approved",
+        hoursWorked: 8.5,
+        reviewNote: "Great progress, guidelines look ready.",
+        reviewedByName: "Marcus Aurelius",
       ),
       DailyReport(
         id: "REP-002",
@@ -252,6 +257,10 @@ class CrmController extends GetxController {
         summary: "Conducted sales alignment meetings and updated the proposal pipelines.",
         tasksCompleted: "Stark Proposal draft, Wayne proposal sent",
         blocks: "Awaiting legal signature from Stark team",
+        status: "reviewed",
+        hoursWorked: 9.0,
+        reviewNote: "Good work. Keep pressure on Stark's team.",
+        reviewedByName: "Diana Prince",
       ),
       DailyReport(
         id: "REP-003",
@@ -260,6 +269,8 @@ class CrmController extends GetxController {
         summary: "Followed up with Kent regarding CRM customization scope.",
         tasksCompleted: "Kent call completed, CRM scopes documented",
         blocks: "Waiting on Clark's confirmation on user count",
+        status: "submitted",
+        hoursWorked: 7.5,
       ),
     ]);
 
@@ -458,11 +469,24 @@ class CrmController extends GetxController {
   }
 
   // Daily Reports Methods
-  Future<void> fetchDailyReports() async {
+  Future<void> fetchDailyReports({String? employeeId, String? from, String? to}) async {
     isLoadingDailyReports.value = true;
     dailyReportsError.value = null;
     try {
-      final fetched = await _apiService.fetchDailyReports();
+      final role = MockDataService().currentRole;
+      List<DailyReport> fetched;
+      if (role == UserRole.superAdmin || role == UserRole.hr) {
+        fetched = await _apiService.fetchAllDailyReports(
+          employeeId: employeeId,
+          from: from,
+          to: to,
+        );
+      } else {
+        fetched = await _apiService.fetchMyDailyReports(
+          from: from,
+          to: to,
+        );
+      }
       dailyReports.assignAll(fetched);
     } catch (e) {
       dailyReportsError.value = e.toString();
@@ -475,11 +499,33 @@ class CrmController extends GetxController {
     try {
       final success = await _apiService.submitDailyReport(report);
       if (success) {
-        dailyReports.insert(0, report);
+        await fetchDailyReports();
         return true;
       }
     } catch (_) {}
     dailyReports.insert(0, report);
+    return true;
+  }
+
+  Future<bool> reviewDailyReport(String id, String status, String reviewNote) async {
+    try {
+      final success = await _apiService.reviewDailyReport(id, status, reviewNote);
+      if (success) {
+        await fetchDailyReports();
+        return true;
+      }
+    } catch (_) {}
+    // Fallback: update locally
+    final idx = dailyReports.indexWhere((r) => r.id == id);
+    if (idx != -1) {
+      final oldReport = dailyReports[idx];
+      dailyReports[idx] = oldReport.copyWith(
+        status: status,
+        reviewNote: reviewNote,
+        reviewedByName: MockDataService().currentUser?.name ?? "Admin/HR",
+      );
+      dailyReports.refresh();
+    }
     return true;
   }
 

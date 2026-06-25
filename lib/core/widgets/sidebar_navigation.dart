@@ -177,6 +177,7 @@ class SidebarNavigation extends StatelessWidget {
                     ),
                     onPressed: () {
                       state.logout();
+                      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
                     },
                     tooltip: "Logout",
                   ),

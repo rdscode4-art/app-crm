@@ -3,6 +3,7 @@ import '../core/constants/app_colors.dart';
 import '../../services/mock_data_service.dart';
 import 'onboarding_screen.dart';
 import 'auth/login_screen.dart';
+import 'main_layout.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -38,18 +39,19 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   }
 
   Future<void> _navigateToNext() async {
-    await Future.delayed(const Duration(milliseconds: 2500));
+    final state = MockDataService();
+    await state.init();
+
+    await Future.delayed(const Duration(milliseconds: 1500));
     if (!mounted) return;
 
-    final state = MockDataService();
     Widget nextScreen;
     if (!state.isOnboarded) {
       nextScreen = const OnboardingScreen();
     } else if (!state.isLoggedIn) {
       nextScreen = const LoginScreen();
     } else {
-      // In main app, it should be main layout
-      nextScreen = const LoginScreen(); // Fallback to login
+      nextScreen = const MainLayout();
     }
 
     Navigator.of(context).pushReplacement(

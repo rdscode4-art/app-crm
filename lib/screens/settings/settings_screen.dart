@@ -149,28 +149,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               validator: (val) => val == null || val.isEmpty ? "Required" : null,
                             ),
                             const SizedBox(height: 16),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: CustomTextField(
-                                    label: "Workspace Email Address",
-                                    hint: "email@company.com",
-                                    prefixIcon: Icons.email_outlined,
-                                    controller: _emailController,
-                                    validator: (val) => val == null || !val.contains('@') ? "Invalid email" : null,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: CustomTextField(
-                                    label: "Contact Number",
-                                    hint: "+1 555-0100",
-                                    prefixIcon: Icons.phone_outlined,
-                                    controller: _phoneController,
-                                    validator: (val) => val == null || val.isEmpty ? "Required" : null,
-                                  ),
-                                ),
-                              ],
+                            CustomTextField(
+                              label: "Workspace Email Address",
+                              hint: "email@company.com",
+                              prefixIcon: Icons.email_outlined,
+                              controller: _emailController,
+                              validator: (val) => val == null || !val.contains('@') ? "Invalid email" : null,
+                            ),
+                            const SizedBox(height: 16),
+                            CustomTextField(
+                              label: "Contact Number",
+                              hint: "+1 555-0100",
+                              prefixIcon: Icons.phone_outlined,
+                              controller: _phoneController,
+                              validator: (val) => val == null || val.isEmpty ? "Required" : null,
                             ),
                             const SizedBox(height: 20),
                             const Divider(color: AppColors.border),

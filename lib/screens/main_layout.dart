@@ -392,48 +392,53 @@ class _MainLayoutState extends State<MainLayout> {
       {"icon": Icons.person_rounded, "label": "Profile", "index": 9},
     ];
 
-    return SafeArea(
-      child: Container(
-        height: 70,
-        margin: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.95),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white.withOpacity(0.6), width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 15,
-              offset: const Offset(0, 8),
-            ),
-            BoxShadow(
-              color: AppColors.primary.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: items.map((item) {
-            final int itemMenuIdx = item["index"];
-            final bool isSelected = activeIndex == itemMenuIdx;
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final bottomMargin = bottomPadding > 0 ? bottomPadding : 16.0;
 
-            return GestureDetector(
+    return Container(
+      height: 65,
+      margin: EdgeInsets.fromLTRB(24, 0, 24, bottomMargin),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.95),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.6), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: items.map((item) {
+          final int itemMenuIdx = item["index"];
+          final bool isSelected = activeIndex == itemMenuIdx;
+
+          return Expanded(
+            child: GestureDetector(
               onTap: () {
                 state.setMenuIndex(itemMenuIdx);
               },
               behavior: HitTestBehavior.opaque,
-              child: SizedBox(
-                width: 60,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    AnimatedContainer(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOutBack,
+                    transform: Matrix4.translationValues(0, isSelected ? -6 : 0, 0),
+                    child: AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeOutBack,
-                      padding: const EdgeInsets.all(8),
-                      transform: Matrix4.translationValues(0, isSelected ? -10 : 0, 0),
+                      curve: Curves.easeInOut,
+                      padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
                         color: isSelected ? AppColors.primary : Colors.transparent,
                         shape: BoxShape.circle,
@@ -450,34 +455,38 @@ class _MainLayoutState extends State<MainLayout> {
                       child: Icon(
                         item["icon"] as IconData,
                         color: isSelected ? Colors.white : AppColors.textSecondary,
-                        size: 22,
+                        size: 20,
                       ),
                     ),
-                    AnimatedSize(
-                      duration: const Duration(milliseconds: 200),
-                      curve: Curves.easeInOut,
-                      child: isSelected
-                          ? Padding(
-                              padding: const EdgeInsets.only(top: 2),
-                              child: Text(
-                                item["label"] as String,
-                                style: const TextStyle(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 9,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            )
-                          : const SizedBox.shrink(),
+                  ),
+                  const SizedBox(height: 2),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeInOut,
+                    height: isSelected ? 13.0 : 0.0,
+                    alignment: Alignment.center,
+                    child: ClipRect(
+                      child: AnimatedOpacity(
+                        duration: const Duration(milliseconds: 150),
+                        opacity: isSelected ? 1.0 : 0.0,
+                        child: Text(
+                          item["label"] as String,
+                          style: const TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 9,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            );
-          }).toList(),
-        ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }

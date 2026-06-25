@@ -8,6 +8,7 @@ class CustomButton extends StatelessWidget {
   final IconData? icon;
   final double? width;
   final double height;
+  final bool isLoading;
 
   const CustomButton({
     super.key,
@@ -17,35 +18,44 @@ class CustomButton extends StatelessWidget {
     this.icon,
     this.width,
     this.height = 48,
+    this.isLoading = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final buttonColor = isSecondary ? Colors.white : AppColors.primary;
     final textColor = isSecondary ? AppColors.textPrimary : Colors.white;
     final borderSide = isSecondary
         ? const BorderSide(color: AppColors.border, width: 1.5)
         : BorderSide.none;
 
-    final childWidget = Row(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        if (icon != null) ...[
-          Icon(icon, size: 18, color: textColor),
-          const SizedBox(width: 8),
-        ],
-        Text(
-          text,
-          style: TextStyle(
-            color: textColor,
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
+    final childWidget = isLoading
+        ? SizedBox(
+            height: 20,
+            width: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(textColor),
+            ),
+          )
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 18, color: textColor),
+                const SizedBox(width: 8),
+              ],
+              Text(
+                text,
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          );
 
     return SizedBox(
       width: width,
@@ -77,7 +87,7 @@ class CustomButton extends StatelessWidget {
             },
           ),
         ),
-        onPressed: onPressed,
+        onPressed: isLoading ? null : onPressed,
         child: childWidget,
       ),
     );
