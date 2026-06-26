@@ -7,6 +7,10 @@ import '../models/task.dart';
 import '../models/asset.dart';
 import '../models/daily_report.dart';
 import '../models/user_role_info.dart';
+import '../models/performance.dart';
+import '../models/payroll.dart';
+import '../models/attendance.dart';
+import '../models/employee.dart';
 
 class ApiService {
   static const String baseUrl = 'https://crmb.ridealmobility.com/api';
@@ -88,8 +92,12 @@ class ApiService {
   }
 
   // Documents API
-  Future<List<CRMDocument>> fetchDocuments() async {
-    final response = await http.get(Uri.parse('$baseUrl/documents'), headers: _headers);
+  Future<List<CRMDocument>> fetchDocuments({String? documentType}) async {
+    String url = '$baseUrl/documents';
+    if (documentType != null && documentType != 'All' && documentType.isNotEmpty) {
+      url += '?documentType=${Uri.encodeComponent(documentType)}';
+    }
+    final response = await http.get(Uri.parse(url), headers: _headers);
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = json.decode(response.body);
       if (data['success'] == true && data['data'] is List) {
@@ -247,6 +255,144 @@ class ApiService {
       Uri.parse('$baseUrl/roles'),
       headers: _headers,
       body: json.encode(role.toJson()),
+    );
+    return response.statusCode == 200 || response.statusCode == 201;
+  }
+
+  // Performance API
+  Future<List<Performance>> fetchPerformanceReviews() async {
+    final response = await http.get(Uri.parse('$baseUrl/performance'), headers: _headers);
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      if (data['success'] == true && data['data'] is List) {
+        return (data['data'] as List)
+            .map((item) => Performance.fromJson(item as Map<String, dynamic>))
+            .toList();
+      }
+      throw Exception('Invalid API response structure');
+    }
+    throw Exception('Server returned status code ${response.statusCode}');
+  }
+
+  Future<bool> submitPerformanceReview(Performance review) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/performance'),
+      headers: _headers,
+      body: json.encode(review.toJson()),
+    );
+    return response.statusCode == 200 || response.statusCode == 201;
+  }
+
+  // Payroll API
+  Future<List<CRMPayroll>> fetchPayrolls({int? year, int? month}) async {
+    String url = '$baseUrl/payroll';
+    List<String> params = [];
+    if (year != null) params.add('year=$year');
+    if (month != null) params.add('month=$month');
+    if (params.isNotEmpty) {
+      url += '?${params.join('&')}';
+    }
+    final response = await http.get(Uri.parse(url), headers: _headers);
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      if (data['success'] == true && data['data'] is List) {
+        return (data['data'] as List)
+            .map((item) => CRMPayroll.fromJson(item as Map<String, dynamic>))
+            .toList();
+      }
+      throw Exception('Invalid API response structure');
+    }
+    throw Exception('Server returned status code ${response.statusCode}');
+  }
+
+  // Attendance API
+  Future<List<Attendance>> fetchAttendance({String? startDate, String? endDate}) async {
+    String url = '$baseUrl/attendance';
+    List<String> params = [];
+    if (startDate != null) params.add('startDate=$startDate');
+    if (endDate != null) params.add('endDate=$endDate');
+    if (params.isNotEmpty) {
+      url += '?${params.join('&')}';
+    }
+    final response = await http.get(Uri.parse(url), headers: _headers);
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      if (data['success'] == true && data['data'] is List) {
+        return (data['data'] as List)
+            .map((item) => Attendance.fromJson(item as Map<String, dynamic>))
+            .toList();
+      }
+      throw Exception('Invalid API response structure');
+    }
+    throw Exception('Server returned status code ${response.statusCode}');
+  }
+
+  Future<bool> punchIn() async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/attendance/checkin'),
+      headers: _headers,
+    );
+    return response.statusCode == 200 || response.statusCode == 201;
+  }
+
+  Future<bool> punchOut() async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/attendance/checkout'),
+      headers: _headers,
+    );
+    return response.statusCode == 200 || response.statusCode == 201;
+  }
+
+  // Employees API
+  Future<List<Employee>> fetchEmployees() async {
+    int retries = 3;
+    while (retries > 0) {
+      final client = http.Client();
+      try {
+        final response = await client.get(
+          Uri.parse('$baseUrl/employees'),
+          headers: {
+            ..._headers,
+            'Connection': 'close',
+          },
+        ).timeout(const Duration(seconds: 15));
+
+        if (response.statusCode == 200) {
+          final Map<String, dynamic> data = json.decode(response.body);
+          if (data['success'] == true && data['data'] is List) {
+            return (data['data'] as List)
+                .map((item) => Employee.fromJson(item as Map<String, dynamic>))
+                .toList();
+          }
+          throw Exception('Invalid API response structure');
+        }
+        throw Exception('Server returned status code ${response.statusCode}');
+      } catch (e) {
+        retries--;
+        if (retries == 0) {
+          rethrow;
+        }
+        await Future.delayed(const Duration(milliseconds: 500));
+      } finally {
+        client.close();
+      }
+    }
+    throw Exception('Failed to fetch employees');
+  }
+
+  Future<bool> submitEmployee(Employee employee) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/employees'),
+      headers: _headers,
+      body: json.encode({
+        'name': employee.name,
+        'email': employee.email,
+        'role': employee.role,
+        'department': employee.department,
+        'status': employee.status.toLowerCase(),
+        'salary': employee.salary,
+        'phone': employee.phone,
+      }),
     );
     return response.statusCode == 200 || response.statusCode == 201;
   }

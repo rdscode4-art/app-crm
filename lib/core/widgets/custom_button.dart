@@ -9,6 +9,8 @@ class CustomButton extends StatelessWidget {
   final double? width;
   final double height;
   final bool isLoading;
+  final Color? backgroundColor;
+  final Color? textColor;
 
   const CustomButton({
     super.key,
@@ -19,12 +21,14 @@ class CustomButton extends StatelessWidget {
     this.width,
     this.height = 48,
     this.isLoading = false,
+    this.backgroundColor,
+    this.textColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    final buttonColor = isSecondary ? Colors.white : AppColors.primary;
-    final textColor = isSecondary ? AppColors.textPrimary : Colors.white;
+    final buttonColor = backgroundColor ?? (isSecondary ? Colors.white : AppColors.primary);
+    final buttonTextColor = textColor ?? (isSecondary ? AppColors.textPrimary : Colors.white);
     final borderSide = isSecondary
         ? const BorderSide(color: AppColors.border, width: 1.5)
         : BorderSide.none;
@@ -35,7 +39,7 @@ class CustomButton extends StatelessWidget {
             width: 20,
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(textColor),
+              valueColor: AlwaysStoppedAnimation<Color>(buttonTextColor),
             ),
           )
         : Row(
@@ -43,13 +47,13 @@ class CustomButton extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (icon != null) ...[
-                Icon(icon, size: 18, color: textColor),
+                Icon(icon, size: 18, color: buttonTextColor),
                 const SizedBox(width: 8),
               ],
               Text(
                 text,
                 style: TextStyle(
-                  color: textColor,
+                  color: buttonTextColor,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),

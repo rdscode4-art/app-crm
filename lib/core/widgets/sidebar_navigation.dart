@@ -140,7 +140,12 @@ class SidebarNavigation extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 20,
-                    backgroundImage: NetworkImage(state.currentUser!.avatarUrl),
+                    backgroundColor: Colors.white.withOpacity(0.1),
+                    child: const Icon(
+                      Icons.person,
+                      color: Colors.white70,
+                      size: 20,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -158,7 +163,7 @@ class SidebarNavigation extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          state.currentUser!.role,
+                          state.currentUser!.designation ?? (state.currentUser!.role.isNotEmpty ? state.currentUser!.role[0].toUpperCase() + state.currentUser!.role.substring(1) : 'Employee'),
                           style: TextStyle(
                             color: Colors.grey[500],
                             fontSize: 11,

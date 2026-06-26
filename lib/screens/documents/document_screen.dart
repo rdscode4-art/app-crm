@@ -15,7 +15,7 @@ class DocumentScreen extends StatefulWidget {
 }
 
 class _DocumentScreenState extends State<DocumentScreen> {
-  final List<String> _categories = ['All', 'Contract', 'Invoice', 'SOP', 'Resume', 'Other'];
+  final List<String> _categories = ['All', 'Agreement', 'Offer Letter', 'Payslip', 'Other'];
   String _selectedCategory = 'All';
 
   @override
@@ -31,7 +31,7 @@ class _DocumentScreenState extends State<DocumentScreen> {
     final titleCtrl = TextEditingController();
     final urlCtrl = TextEditingController(text: "https://crmb.ridealmobility.com/uploads/doc.pdf");
     final sizeCtrl = TextEditingController(text: "1.2 MB");
-    String category = 'Contract';
+    String category = 'Agreement';
 
     showDialog(
       context: context,
@@ -83,7 +83,7 @@ class _DocumentScreenState extends State<DocumentScreen> {
                           child: DropdownButton<String>(
                             value: category,
                             isExpanded: true,
-                            items: ['Contract', 'Invoice', 'SOP', 'Resume', 'Other']
+                            items: ['Agreement', 'Offer Letter', 'Payslip', 'Other']
                                 .map((s) => DropdownMenuItem(
                                       value: s,
                                       child: Text(s, style: const TextStyle(fontSize: 14)),
@@ -161,7 +161,15 @@ class _DocumentScreenState extends State<DocumentScreen> {
       () {
         final filteredDocs = _selectedCategory == 'All'
             ? controller.documents
-            : controller.documents.where((d) => d.category == _selectedCategory).toList();
+            : controller.documents.where((d) {
+                final cat = d.category.toLowerCase();
+                final sel = _selectedCategory.toLowerCase();
+                if (cat == sel) return true;
+                if (sel == 'agreement' && (cat == 'contract' || cat == 'agreement')) return true;
+                if (sel == 'offer letter' && (cat == 'offer-letter' || cat == 'offer letter')) return true;
+                if (sel == 'payslip' && (cat == 'invoice' || cat == 'payslip')) return true;
+                return false;
+              }).toList();
 
         return SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -289,6 +297,11 @@ class _DocumentScreenState extends State<DocumentScreen> {
                             setState(() {
                               _selectedCategory = cat;
                             });
+                            String? docType;
+                            if (cat != 'All') {
+                              docType = cat.toLowerCase();
+                            }
+                            controller.fetchDocuments(documentType: docType);
                           }
                         },
                       ),
@@ -355,22 +368,27 @@ class _DocumentScreenState extends State<DocumentScreen> {
 
                           IconData fileIcon;
                           Color iconColor;
-                          switch (doc.category) {
-                            case 'Contract':
+                          final normalizedCat = doc.category.toLowerCase();
+                          switch (normalizedCat) {
+                            case 'agreement':
+                            case 'contract':
                               fileIcon = Icons.gavel_outlined;
                               iconColor = Colors.purple;
                               break;
-                            case 'Invoice':
+                            case 'offer letter':
+                            case 'offer-letter':
+                            case 'resume':
+                              fileIcon = Icons.badge_outlined;
+                              iconColor = Colors.orange;
+                              break;
+                            case 'payslip':
+                            case 'invoice':
                               fileIcon = Icons.receipt_long_outlined;
                               iconColor = Colors.green;
                               break;
-                            case 'SOP':
+                            case 'sop':
                               fileIcon = Icons.rule_folder_outlined;
                               iconColor = Colors.blue;
-                              break;
-                            case 'Resume':
-                              fileIcon = Icons.badge_outlined;
-                              iconColor = Colors.orange;
                               break;
                             default:
                               fileIcon = Icons.article_outlined;

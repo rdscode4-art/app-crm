@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/mock_data_service.dart';
 import '../../models/performance.dart';
 import '../../models/employee.dart';
 import '../../core/widgets/metric_card.dart';
 import '../../core/widgets/custom_button.dart';
+import '../../controllers/crm_controller.dart';
 
 class PerformanceScreen extends StatefulWidget {
   const PerformanceScreen({super.key});
@@ -25,6 +27,14 @@ class _PerformanceScreenState extends State<PerformanceScreen> {
     {"label": "Needs Improvement", "color": Colors.orange},
     {"label": "Unsatisfactory", "color": Colors.red},
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Get.find<CrmController>().fetchPerformanceReviews();
+    });
+  }
 
   @override
   void dispose() {
@@ -278,7 +288,7 @@ class _PerformanceScreenState extends State<PerformanceScreen> {
                               managerFeedback: feedbackController.text.trim(),
                               ratingStars: ratingStars,
                             );
-                            state.addPerformanceRecord(newRecord);
+                            Get.find<CrmController>().submitPerformanceReview(newRecord);
                             Navigator.pop(context);
                             
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -304,8 +314,11 @@ class _PerformanceScreenState extends State<PerformanceScreen> {
   @override
   Widget build(BuildContext context) {
     final state = MockDataService();
-    final records = state.performanceRecords;
+    final controller = Get.find<CrmController>();
     final width = MediaQuery.of(context).size.width;
+
+    return Obx(() {
+      final records = controller.performanceReviews;
 
     // KPI Summary Calculations
     final totalEvaluations = records.length;
@@ -520,141 +533,68 @@ class _PerformanceScreenState extends State<PerformanceScreen> {
           const SizedBox(height: 24),
 
           // Main Responsive Grid/Row Layout
-          Row(
+          Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Main evaluations checklist
-              Expanded(
-                flex: width < 1000 ? 1 : 2,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "Employee Evaluation Logs",
-                      style: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    if (filteredRecords.isEmpty)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(40),
-                        decoration: BoxDecoration(
-                          color: AppColors.cardBackground,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: const Column(
-                          children: [
-                            Icon(Icons.feed_outlined, size: 48, color: AppColors.textSecondary),
-                            SizedBox(height: 12),
-                            Text(
-                              "No matching performance records cataloged.",
-                              style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
-                            ),
-                          ],
-                        ),
-                      )
-                    else
-                      Column(
-                        children: filteredRecords.map((record) {
-                          // Find detailed info of employee
-                          final employee = state.employees.firstWhere(
-                            (e) => e.id == record.employeeId,
-                            orElse: () => Employee(
-                              id: record.employeeId,
-                              name: record.employeeName,
-                              email: '',
-                              role: 'Employee',
-                              department: 'General',
-                              status: 'Active',
-                              salary: 0,
-                              performanceRating: 0.0,
-                              dateJoined: '',
-                              phone: '',
-                              avatarUrl: '',
-                            ),
-                          );
-
-                          return _buildPerformanceCard(record, employee);
-                        }).toList(),
-                      ),
-                  ],
+              const Text(
+                "Employee Evaluation Logs",
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
                 ),
               ),
-
-              // KPI Metric scale details on desktop
-              if (width >= 1000) ...[
-                const SizedBox(width: 24),
-                Expanded(
-                  flex: 1,
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: AppColors.cardBackground,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "Corporate KPI Metric Scales",
-                          style: TextStyle(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        _buildKpiMetric("90% - 100%", "EXEMPLARY PERFORMER", "Consistently exceeds goals, exhibits strong leadership, guides teams.", Colors.green),
-                        _buildKpiMetric("75% - 89%", "SUCCESSFUL ACHIEVER", "Meets targets, delivers high quality work with minimal administration.", AppColors.primary),
-                        _buildKpiMetric("50% - 74%", "NEEDS IMPROVEMENT", "Fails to hit pipeline potential or registers recurrent lateness logs.", Colors.orange),
-                        _buildKpiMetric("0% - 49%", "UNSATISFACTORY", "Fails standard project checklists. Subject to formal review.", Colors.red),
-                      ],
-                    ),
+              const SizedBox(height: 16),
+              if (filteredRecords.isEmpty)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(40),
+                  decoration: BoxDecoration(
+                    color: AppColors.cardBackground,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.border),
                   ),
+                  child: const Column(
+                    children: [
+                      Icon(Icons.feed_outlined, size: 48, color: AppColors.textSecondary),
+                      SizedBox(height: 12),
+                      Text(
+                        "No matching performance records cataloged.",
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Column(
+                  children: filteredRecords.map((record) {
+                    // Find detailed info of employee
+                    final employee = state.employees.firstWhere(
+                      (e) => e.id == record.employeeId,
+                      orElse: () => Employee(
+                        id: record.employeeId,
+                        name: record.employeeName,
+                        email: '',
+                        role: 'Employee',
+                        department: 'General',
+                        status: 'Active',
+                        salary: 0,
+                        performanceRating: 0.0,
+                        dateJoined: '',
+                        phone: '',
+                        avatarUrl: '',
+                      ),
+                    );
+
+                    return _buildPerformanceCard(record, employee);
+                  }).toList(),
                 ),
-              ],
             ],
           ),
-
-          // KPI scale details below lists on mobile/tablet screens
-          if (width < 1000) ...[
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppColors.cardBackground,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "Corporate KPI Metric Scales",
-                    style: TextStyle(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildKpiMetric("90% - 100%", "EXEMPLARY PERFORMER", "Consistently exceeds goals, exhibits strong leadership, guides teams.", Colors.green),
-                  _buildKpiMetric("75% - 89%", "SUCCESSFUL ACHIEVER", "Meets targets, delivers high quality work with minimal administration.", AppColors.primary),
-                  _buildKpiMetric("50% - 74%", "NEEDS IMPROVEMENT", "Fails to hit pipeline potential or registers recurrent lateness logs.", Colors.orange),
-                  _buildKpiMetric("0% - 49%", "UNSATISFACTORY", "Fails standard project checklists. Subject to formal review.", Colors.red),
-                ],
-              ),
-            ),
-          ],
         ],
       ),
     );
+    });
   }
 
   Widget _buildPerformanceCard(Performance record, Employee employee) {
@@ -930,74 +870,4 @@ class _PerformanceScreenState extends State<PerformanceScreen> {
     );
   }
 
-  Widget _buildKpiMetric(String range, String label, String desc, Color color) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.03),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withOpacity(0.15)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: color.withOpacity(0.4),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                range,
-                style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                ),
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    color: color,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 9,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            desc,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 12,
-              height: 1.4,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

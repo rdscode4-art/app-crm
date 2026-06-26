@@ -118,24 +118,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               children: [
                                 CircleAvatar(
                                   radius: 36,
-                                  backgroundImage: NetworkImage(state.currentUser?.avatarUrl ?? "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150"),
+                                  backgroundColor: AppColors.primary.withOpacity(0.08),
+                                  child: const Icon(
+                                    Icons.person,
+                                    size: 36,
+                                    color: AppColors.primary,
+                                  ),
                                 ),
                                 const SizedBox(width: 20),
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    CustomButton(
-                                      text: "Upload Photo",
-                                      isSecondary: true,
-                                      height: 36,
-                                      onPressed: () {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text("Simulating local file selection gallery...")),
-                                        );
-                                      },
+                                    Text(
+                                      state.currentUser?.name ?? "Employee",
+                                      style: const TextStyle(
+                                        color: AppColors.textPrimary,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
                                     ),
-                                    const SizedBox(height: 6),
-                                    const Text("PNG, JPG up to 2MB supported.", style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      state.currentUser?.designation ?? (state.currentUser?.role.isNotEmpty == true ? state.currentUser!.role[0].toUpperCase() + state.currentUser!.role.substring(1) : "Employee"),
+                                      style: const TextStyle(
+                                        color: AppColors.textSecondary,
+                                        fontSize: 12,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ],

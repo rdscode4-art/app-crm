@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import '../../controllers/crm_controller.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/widgets/custom_button.dart';
 import '../../core/widgets/custom_text_field.dart';
@@ -195,9 +197,29 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
                   const SizedBox(height: 24),
                   Row(
                     children: [
-                      CircleAvatar(
-                        radius: 36,
-                        backgroundImage: NetworkImage(emp.avatarUrl),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppColors.primary.withOpacity(0.15)),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.badge_outlined, color: AppColors.primary, size: 24),
+                            const SizedBox(height: 4),
+                            Text(
+                              emp.employeeId.isNotEmpty ? emp.employeeId : emp.id,
+                              style: const TextStyle(
+                                color: AppColors.primary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(width: 20),
                       Expanded(
@@ -214,7 +236,7 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              "${emp.role} • ${emp.department}",
+                              "${emp.designation ?? (emp.role.isNotEmpty ? emp.role[0].toUpperCase() + emp.role.substring(1) : '')} • ${emp.department}",
                               style: const TextStyle(
                                 color: AppColors.textSecondary,
                                 fontSize: 14,
@@ -322,192 +344,230 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
     final state = MockDataService();
     final width = MediaQuery.of(context).size.width;
 
-    return AnimatedBuilder(
-      animation: state,
-      builder: (context, child) {
-        // Filter employees based on search bar text
-        final filteredList = state.employees.where((e) {
-          return e.name.toLowerCase().contains(_searchQuery) ||
-              e.role.toLowerCase().contains(_searchQuery) ||
-              e.department.toLowerCase().contains(_searchQuery);
-        }).toList();
+    return Obx(() {
+      final controller = Get.isRegistered<CrmController>() ? Get.find<CrmController>() : null;
+      final isLoading = controller?.isLoadingEmployees.value ?? false;
+      final error = controller?.employeesError.value;
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header & Add Employee Button
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Employee Directory",
-                          style: TextStyle(
-                            color: AppColors.textPrimary,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          "Manage directory profiles, roles, salaries, and details.",
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  CustomButton(
-                    text: "Add Employee",
-                    icon: Icons.add,
-                    onPressed: () => _showAddEmployeeDialog(context, state),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
+      final filteredList = state.employees.where((e) {
+        return e.name.toLowerCase().contains(_searchQuery) ||
+            e.role.toLowerCase().contains(_searchQuery) ||
+            (e.designation?.toLowerCase().contains(_searchQuery) ?? false) ||
+            e.department.toLowerCase().contains(_searchQuery);
+      }).toList();
 
-              // Search Input Card
-              Container(
-                decoration: BoxDecoration(
-                  color: AppColors.cardBackground,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: TextField(
-                  controller: _searchController,
-                  decoration: const InputDecoration(
-                    hintText: "Search by employee name, role, department...",
-                    prefixIcon: Icon(Icons.search, color: AppColors.textSecondary),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Responsive List/Table representation
-              Container(
-                decoration: BoxDecoration(
-                  color: AppColors.cardBackground,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.01),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    )
-                  ],
-                ),
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: filteredList.length,
-                  separatorBuilder: (context, index) => const Divider(color: AppColors.border, height: 1),
-                  itemBuilder: (context, index) {
-                    final emp = filteredList[index];
-
-                    return InkWell(
-                      onTap: () => _showEmployeeDetails(context, emp),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                        child: Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 20,
-                              backgroundImage: NetworkImage(emp.avatarUrl),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              flex: 3,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    emp.name,
-                                    style: const TextStyle(
-                                      color: AppColors.textPrimary,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    emp.email,
-                                    style: const TextStyle(
-                                      color: AppColors.textSecondary,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            if (width > 600) ...[
-                              Expanded(
-                                flex: 2,
-                                child: Text(
-                                  emp.role,
-                                  style: const TextStyle(
-                                    color: AppColors.textPrimary,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 2,
-                                child: Text(
-                                  emp.department,
-                                  style: const TextStyle(
-                                    color: AppColors.textSecondary,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ),
-                            ],
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: emp.status == 'Active'
-                                    ? AppColors.primary.withOpacity(0.1)
-                                    : Colors.grey.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                emp.status,
-                                style: TextStyle(
-                                  color: emp.status == 'Active'
-                                      ? AppColors.primary
-                                      : Colors.grey[600],
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            const Icon(
-                              Icons.chevron_right,
-                              color: AppColors.textSecondary,
-                              size: 18,
-                            ),
-                          ],
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header & Add Employee Button
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Employee Directory",
+                        style: TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    );
-                  },
+                      SizedBox(height: 4),
+                      Text(
+                        "Manage directory profiles, roles, salaries, and details.",
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                CustomButton(
+                  text: "Add Employee",
+                  icon: Icons.add,
+                  onPressed: () => _showAddEmployeeDialog(context, state),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // Search Input Card
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.cardBackground,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: TextField(
+                controller: _searchController,
+                decoration: const InputDecoration(
+                  hintText: "Search by employee name, role, department...",
+                  prefixIcon: Icon(Icons.search, color: AppColors.textSecondary),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(vertical: 14, horizontal: 16),
                 ),
               ),
-            ],
-          ),
-        );
-      },
-    );
+            ),
+            const SizedBox(height: 24),
+
+            // Responsive List/Table representation
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.cardBackground,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.01),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  )
+                ],
+              ),
+              child: isLoading
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 40),
+                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                      ),
+                    )
+                  : error != null
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 40),
+                            child: Text(
+                              "Error loading employees: $error",
+                              style: const TextStyle(color: AppColors.danger),
+                            ),
+                          ),
+                        )
+                      : filteredList.isEmpty
+                          ? const Center(
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(vertical: 40),
+                                child: Text("No employees found.", style: TextStyle(color: AppColors.textSecondary)),
+                              ),
+                            )
+                          : ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: filteredList.length,
+                              separatorBuilder: (context, index) => const Divider(color: AppColors.border, height: 1),
+                              itemBuilder: (context, index) {
+                                final emp = filteredList[index];
+
+                                return InkWell(
+                                  onTap: () => _showEmployeeDetails(context, emp),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                                    child: Row(
+                                      children: [
+                                         Container(
+                                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                           decoration: BoxDecoration(
+                                             color: AppColors.primary.withOpacity(0.08),
+                                             borderRadius: BorderRadius.circular(6),
+                                             border: Border.all(color: AppColors.primary.withOpacity(0.15)),
+                                           ),
+                                           child: Text(
+                                             emp.employeeId.isNotEmpty ? emp.employeeId : emp.id,
+                                             style: const TextStyle(
+                                               color: AppColors.primary,
+                                               fontSize: 11,
+                                               fontWeight: FontWeight.bold,
+                                               letterSpacing: 0.3,
+                                             ),
+                                           ),
+                                         ),
+                                        const SizedBox(width: 16),
+                                        Expanded(
+                                          flex: 3,
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                emp.name,
+                                                style: const TextStyle(
+                                                  color: AppColors.textPrimary,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                emp.email,
+                                                style: const TextStyle(
+                                                  color: AppColors.textSecondary,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        if (width > 600) ...[
+                                          Expanded(
+                                            flex: 2,
+                                            child: Text(
+                                              emp.designation ?? (emp.role.isNotEmpty ? emp.role[0].toUpperCase() + emp.role.substring(1) : ''),
+                                              style: const TextStyle(
+                                                color: AppColors.textPrimary,
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 2,
+                                            child: Text(
+                                              emp.department,
+                                              style: const TextStyle(
+                                                color: AppColors.textSecondary,
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: emp.status == 'Active'
+                                                ? AppColors.primary.withOpacity(0.1)
+                                                : Colors.grey.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: Text(
+                                            emp.status,
+                                            style: TextStyle(
+                                              color: emp.status == 'Active'
+                                                  ? AppColors.primary
+                                                  : Colors.grey[600],
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        const Icon(
+                                          Icons.chevron_right,
+                                          color: AppColors.textSecondary,
+                                          size: 18,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+            ),
+          ],
+        ),
+      );
+    });
   }
 }

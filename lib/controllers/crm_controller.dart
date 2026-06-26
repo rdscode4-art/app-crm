@@ -6,6 +6,10 @@ import '../models/task.dart';
 import '../models/asset.dart';
 import '../models/daily_report.dart';
 import '../models/user_role_info.dart';
+import '../models/performance.dart';
+import '../models/payroll.dart';
+import '../models/attendance.dart';
+import '../models/employee.dart';
 import '../services/api_service.dart';
 import '../services/mock_data_service.dart';
 
@@ -47,12 +51,38 @@ class CrmController extends GetxController {
   final RxBool isLoadingRoles = false.obs;
   final RxnString rolesError = RxnString();
 
+  // Performance state
+  final RxList<Performance> performanceReviews = <Performance>[].obs;
+  final RxBool isLoadingPerformance = false.obs;
+  final RxnString performanceError = RxnString();
+
+  // Payroll state
+  final RxList<CRMPayroll> payrolls = <CRMPayroll>[].obs;
+  final RxBool isLoadingPayroll = false.obs;
+  final RxnString payrollError = RxnString();
+
+  // Attendance state
+  final RxList<Attendance> attendanceLogs = <Attendance>[].obs;
+  final RxBool isLoadingAttendance = false.obs;
+  final RxnString attendanceError = RxnString();
+
+  // Employees state
+  final RxList<Employee> employees = <Employee>[].obs;
+  final RxBool isLoadingEmployees = false.obs;
+  final RxnString employeesError = RxnString();
+
   @override
   void onInit() {
     super.onInit();
     // Load local mock fallbacks initially
     _loadLocalMockData();
-    // Auto-fetch remote data when the controller initializes
+    // Auto-fetch remote data if token is already loaded
+    if (ApiService.token != null) {
+      onTokenLoaded();
+    }
+  }
+
+  void onTokenLoaded() {
     fetchLeaves();
     fetchLeads();
     fetchDocuments();
@@ -60,6 +90,14 @@ class CrmController extends GetxController {
     fetchAssets();
     fetchDailyReports();
     fetchRoles();
+    fetchPerformanceReviews();
+    fetchPayrolls(year: 2026, month: 7);
+    
+    final today = DateTime.now();
+    final todayStr = "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
+    fetchAttendance(startDate: '2026-06-01', endDate: todayStr);
+    
+    fetchEmployees();
   }
 
   void _loadLocalMockData() {
@@ -370,11 +408,11 @@ class CrmController extends GetxController {
   }
 
   // Fetch Documents
-  Future<void> fetchDocuments() async {
+  Future<void> fetchDocuments({String? documentType}) async {
     isLoadingDocuments.value = true;
     documentsError.value = null;
     try {
-      final data = await _apiService.fetchDocuments();
+      final data = await _apiService.fetchDocuments(documentType: documentType);
       documents.assignAll(data);
     } catch (e) {
       documentsError.value = e.toString();
@@ -563,5 +601,118 @@ class CrmController extends GetxController {
       userRoles.add(role);
     }
     return true;
+  }
+
+  // Fetch Performance Reviews
+  Future<void> fetchPerformanceReviews() async {
+    isLoadingPerformance.value = true;
+    performanceError.value = null;
+    try {
+      final fetched = await _apiService.fetchPerformanceReviews();
+      performanceReviews.assignAll(fetched);
+    } catch (e) {
+      performanceError.value = e.toString();
+    } finally {
+      isLoadingPerformance.value = false;
+    }
+  }
+
+  // Submit Performance Review
+  Future<bool> submitPerformanceReview(Performance review) async {
+    performanceReviews.insert(0, review);
+    try {
+      final success = await _apiService.submitPerformanceReview(review);
+      if (success) {
+        await fetchPerformanceReviews();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Fetch Payrolls
+  Future<void> fetchPayrolls({int? year, int? month}) async {
+    isLoadingPayroll.value = true;
+    payrollError.value = null;
+    try {
+      final fetched = await _apiService.fetchPayrolls(year: year, month: month);
+      payrolls.assignAll(fetched);
+    } catch (e) {
+      payrollError.value = e.toString();
+    } finally {
+      isLoadingPayroll.value = false;
+    }
+  }
+
+  // Fetch Attendance
+  Future<void> fetchAttendance({String? startDate, String? endDate}) async {
+    isLoadingAttendance.value = true;
+    attendanceError.value = null;
+    try {
+      final fetched = await _apiService.fetchAttendance(startDate: startDate, endDate: endDate);
+      attendanceLogs.assignAll(fetched);
+    } catch (e) {
+      attendanceError.value = e.toString();
+    } finally {
+      isLoadingAttendance.value = false;
+    }
+  }
+
+  // Punch In/Out API Actions
+  Future<bool> punchIn() async {
+    try {
+      final success = await _apiService.punchIn();
+      if (success) {
+        final today = DateTime.now();
+        final todayStr = "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
+        await fetchAttendance(startDate: '2026-06-01', endDate: todayStr);
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  Future<bool> punchOut() async {
+    try {
+      final success = await _apiService.punchOut();
+      if (success) {
+        final today = DateTime.now();
+        final todayStr = "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
+        await fetchAttendance(startDate: '2026-06-01', endDate: todayStr);
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  // Fetch Employees
+  Future<void> fetchEmployees() async {
+    isLoadingEmployees.value = true;
+    employeesError.value = null;
+    try {
+      final fetched = await _apiService.fetchEmployees();
+      employees.assignAll(fetched);
+    } catch (e) {
+      employeesError.value = e.toString();
+    } finally {
+      isLoadingEmployees.value = false;
+    }
+  }
+
+  // Submit Employee
+  Future<bool> submitEmployee(Employee employee) async {
+    employees.insert(0, employee);
+    try {
+      final success = await _apiService.submitEmployee(employee);
+      if (success) {
+        await fetchEmployees();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
   }
 }

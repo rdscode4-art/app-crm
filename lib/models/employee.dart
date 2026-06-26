@@ -1,8 +1,10 @@
 class Employee {
   final String id;
+  final String employeeId;
   final String name;
   final String email;
   final String role;
+  final String? designation;
   final String department;
   final String status; // 'Active' or 'Inactive'
   final double salary;
@@ -13,9 +15,11 @@ class Employee {
 
   Employee({
     required this.id,
+    String? employeeId,
     required this.name,
     required this.email,
     required this.role,
+    this.designation,
     required this.department,
     required this.status,
     required this.salary,
@@ -23,13 +27,15 @@ class Employee {
     required this.dateJoined,
     required this.phone,
     required this.avatarUrl,
-  });
+  }) : employeeId = employeeId ?? id;
 
   Employee copyWith({
     String? id,
+    String? employeeId,
     String? name,
     String? email,
     String? role,
+    String? designation,
     String? department,
     String? status,
     double? salary,
@@ -40,9 +46,11 @@ class Employee {
   }) {
     return Employee(
       id: id ?? this.id,
+      employeeId: employeeId ?? this.employeeId,
       name: name ?? this.name,
       email: email ?? this.email,
       role: role ?? this.role,
+      designation: designation ?? this.designation,
       department: department ?? this.department,
       status: status ?? this.status,
       salary: salary ?? this.salary,
@@ -68,16 +76,47 @@ class Employee {
       }
     }
 
+    String? designationName;
+    if (json['designation'] != null && json['designation'].toString().isNotEmpty) {
+      String rawDesignation = json['designation'].toString();
+      designationName = rawDesignation.split(' ').map((word) {
+        if (word.isEmpty) return '';
+        if (word.toUpperCase() == 'MD' || word.toUpperCase() == 'HO' || word.toUpperCase() == 'HR') {
+          return word.toUpperCase();
+        }
+        return word[0].toUpperCase() + word.substring(1).toLowerCase();
+      }).join(' ');
+    }
+
+    String parsedDate = '';
+    if (json['joiningDate'] != null) {
+      try {
+        parsedDate = DateTime.parse(json['joiningDate'].toString()).toLocal().toString().split(' ')[0];
+      } catch (_) {
+        parsedDate = json['joiningDate'].toString();
+      }
+    } else if (json['createdAt'] != null) {
+      try {
+        parsedDate = DateTime.parse(json['createdAt'].toString()).toLocal().toString().split(' ')[0];
+      } catch (_) {
+        parsedDate = json['createdAt'].toString();
+      }
+    } else {
+      parsedDate = DateTime.now().toString().split(' ')[0];
+    }
+
     return Employee(
-      id: json['employeeId'] ?? json['id'] ?? '',
+      id: json['id']?.toString() ?? json['_id']?.toString() ?? json['employeeId']?.toString() ?? '',
+      employeeId: json['employeeId']?.toString() ?? json['_id']?.toString() ?? '',
       name: json['name'] ?? '',
       email: json['email'] ?? '',
       role: roleName,
+      designation: designationName,
       department: json['department'] ?? 'General',
       status: capitalizedStatus,
       salary: (json['salary'] ?? 0.0).toDouble(),
       performanceRating: (json['performanceRating'] ?? 5.0).toDouble(),
-      dateJoined: json['joiningDate'] ?? json['createdAt'] ?? DateTime.now().toString(),
+      dateJoined: parsedDate,
       phone: json['phone'] ?? '',
       avatarUrl: json['profileImage'] ?? 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
     );

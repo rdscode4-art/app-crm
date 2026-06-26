@@ -58,18 +58,24 @@ class MockDataService extends ChangeNotifier {
       ? Get.find<CrmController>().leavesError.value
       : _leavesError;
 
-  List<Employee> get employees => List.unmodifiable(_employees);
+  List<Employee> get employees => Get.isRegistered<CrmController>()
+      ? Get.find<CrmController>().employees
+      : List.unmodifiable(_employees);
   List<Lead> get leads => Get.isRegistered<CrmController>()
       ? Get.find<CrmController>().leads
       : List.unmodifiable(_leads);
-  List<Attendance> get attendanceLogs => List.unmodifiable(_attendanceLogs);
+  List<Attendance> get attendanceLogs => Get.isRegistered<CrmController>()
+      ? Get.find<CrmController>().attendanceLogs
+      : List.unmodifiable(_attendanceLogs);
   List<Leave> get leaveRequests => Get.isRegistered<CrmController>()
       ? Get.find<CrmController>().leaveRequests
       : List.unmodifiable(_leaveRequests);
   List<CRMTask> get tasks => Get.isRegistered<CrmController>()
       ? Get.find<CrmController>().tasks
       : List.unmodifiable(_tasks);
-  List<Performance> get performanceRecords => List.unmodifiable(_performanceRecords);
+  List<Performance> get performanceRecords => Get.isRegistered<CrmController>()
+      ? Get.find<CrmController>().performanceReviews
+      : List.unmodifiable(_performanceRecords);
   List<CRMNotification> get notifications => List.unmodifiable(_notifications);
 
   List<CRMAsset> get assets => Get.isRegistered<CrmController>()
@@ -103,7 +109,7 @@ class MockDataService extends ChangeNotifier {
   bool get isPunchedIn {
     if (_currentUser == null) return false;
     final today = DateTime.now();
-    return _attendanceLogs.any((a) =>
+    return attendanceLogs.any((a) =>
         a.employeeId == _currentUser!.id &&
         a.date.year == today.year &&
         a.date.month == today.month &&
@@ -115,7 +121,7 @@ class MockDataService extends ChangeNotifier {
     if (_currentUser == null) return null;
     final today = DateTime.now();
     try {
-      return _attendanceLogs.firstWhere((a) =>
+      return attendanceLogs.firstWhere((a) =>
           a.employeeId == _currentUser!.id &&
           a.date.year == today.year &&
           a.date.month == today.month &&
@@ -172,6 +178,9 @@ class MockDataService extends ChangeNotifier {
       final token = prefs.getString('api_token');
       if (token != null) {
         ApiService.token = token;
+        if (Get.isRegistered<CrmController>()) {
+          Get.find<CrmController>().onTokenLoaded();
+        }
       }
     }
     notifyListeners();
@@ -207,6 +216,9 @@ class MockDataService extends ChangeNotifier {
       await prefs.setString('user_department', _currentUser!.department);
       if (ApiService.token != null) {
         await prefs.setString('api_token', ApiService.token!);
+        if (Get.isRegistered<CrmController>()) {
+          Get.find<CrmController>().onTokenLoaded();
+        }
       }
       
       addNotification("Welcome Back!", "You have successfully signed in as ${_currentUser!.name}.");
@@ -328,6 +340,11 @@ class MockDataService extends ChangeNotifier {
 
   // Employee Actions
   void addEmployee(Employee emp) {
+    if (Get.isRegistered<CrmController>()) {
+      Get.find<CrmController>().submitEmployee(emp);
+      addNotification("New Employee Boarded", "${emp.name} has been added to the ${emp.department} department.");
+      return;
+    }
     _employees.insert(0, emp);
     addNotification("New Employee Boarded", "${emp.name} has been added to the ${emp.department} department.");
     // Auto-create initial performance record
@@ -381,6 +398,10 @@ class MockDataService extends ChangeNotifier {
   // Attendance Actions
   void punchIn() {
     if (_currentUser == null) return;
+    if (Get.isRegistered<CrmController>()) {
+      Get.find<CrmController>().punchIn();
+      return;
+    }
     final now = DateTime.now();
     final timeStr = "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
     final isLate = now.hour > 9 || (now.hour == 9 && now.minute > 30);
@@ -400,6 +421,10 @@ class MockDataService extends ChangeNotifier {
 
   void punchOut() {
     if (_currentUser == null) return;
+    if (Get.isRegistered<CrmController>()) {
+      Get.find<CrmController>().punchOut();
+      return;
+    }
     final now = DateTime.now();
     final today = DateTime.now();
     final timeStr = "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
@@ -413,7 +438,6 @@ class MockDataService extends ChangeNotifier {
 
     if (idx != -1) {
       final inLog = _attendanceLogs[idx];
-      // Calculate duration hours roughly
       final inParts = inLog.checkInTime.split(':');
       final inHour = int.parse(inParts[0]);
       final inMin = int.parse(inParts[1]);

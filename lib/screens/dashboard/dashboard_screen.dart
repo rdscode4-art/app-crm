@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../core/constants/app_colors.dart';
@@ -524,56 +525,7 @@ class DashboardScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  "Shift Timesheet Check-In",
-                                  style: TextStyle(
-                                    color: AppColors.textPrimary,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  state.isPunchedIn
-                                      ? "You punched in at ${state.todayAttendance?.checkInTime ?? ''}."
-                                      : "You are not clocked in for work today yet.",
-                                  style: const TextStyle(
-                                    color: AppColors.textSecondary,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          CustomButton(
-                            text: state.isPunchedIn ? "Clock Out" : "Clock In",
-                            icon: Icons.fingerprint,
-                            onPressed: () {
-                              if (state.isPunchedIn) {
-                                state.punchOut();
-                              } else {
-                                state.punchIn();
-                              }
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
+                    _DashboardAttendanceCard(state: state),
                     const SizedBox(height: 24),
                     Container(
                       padding: const EdgeInsets.all(20),
@@ -944,6 +896,199 @@ class _LeadBarChart extends StatelessWidget {
           ],
         );
       }).toList(),
+    );
+  }
+}
+
+class _DashboardAttendanceCard extends StatefulWidget {
+  final MockDataService state;
+  const _DashboardAttendanceCard({super.key, required this.state});
+
+  @override
+  State<_DashboardAttendanceCard> createState() => _DashboardAttendanceCardState();
+}
+
+class _DashboardAttendanceCardState extends State<_DashboardAttendanceCard> {
+  Timer? _timer;
+  Duration _elapsed = Duration.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimer();
+  }
+
+  @override
+  void didUpdateWidget(covariant _DashboardAttendanceCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _startTimer();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
+    if (widget.state.isPunchedIn) {
+      _calculateElapsed();
+      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (mounted) {
+          setState(() {
+            _calculateElapsed();
+          });
+        }
+      });
+    } else {
+      _elapsed = Duration.zero;
+    }
+  }
+
+  void _calculateElapsed() {
+    final att = widget.state.todayAttendance;
+    if (att != null && att.checkInTime != '--:--') {
+      try {
+        final parts = att.checkInTime.split(':');
+        final hour = int.parse(parts[0]);
+        final min = int.parse(parts[1]);
+        final now = DateTime.now();
+        final checkInDateTime = DateTime(now.year, now.month, now.day, hour, min);
+        final diff = now.difference(checkInDateTime);
+        if (diff.isNegative) {
+          _elapsed = Duration.zero;
+        } else {
+          _elapsed = diff;
+        }
+      } catch (_) {
+        _elapsed = Duration.zero;
+      }
+    } else {
+      _elapsed = Duration.zero;
+    }
+  }
+
+  String _formatDuration(Duration d) {
+    final h = d.inHours.toString().padLeft(2, '0');
+    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return "$h:$m:$s";
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isPunched = widget.state.isPunchedIn;
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
+    final infoColumn = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          isPunched ? "Active Work Shift" : "Shift Attendance",
+          style: const TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        if (isPunched) ...[
+          Row(
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  "Working Hours: ${_formatDuration(_elapsed)}",
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'monospace',
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            "Checked in at ${widget.state.todayAttendance?.checkInTime ?? ''}",
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 12,
+            ),
+          ),
+        ] else ...[
+          const Text(
+            "You are not clocked in for work today yet.",
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 13,
+            ),
+          ),
+        ],
+      ],
+    );
+
+    final actionButton = CustomButton(
+      text: isPunched ? "Check Out" : "Check In",
+      icon: isPunched ? Icons.logout : Icons.login,
+      backgroundColor: isPunched ? AppColors.danger : AppColors.primary,
+      width: isMobile ? double.infinity : null,
+      onPressed: () {
+        if (isPunched) {
+          widget.state.punchOut();
+        } else {
+          widget.state.punchIn();
+        }
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (mounted) _startTimer();
+        });
+      },
+    );
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.01),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: isMobile
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                infoColumn,
+                const SizedBox(height: 16),
+                actionButton,
+              ],
+            )
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(child: infoColumn),
+                const SizedBox(width: 16),
+                actionButton,
+              ],
+            ),
     );
   }
 }
