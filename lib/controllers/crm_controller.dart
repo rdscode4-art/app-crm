@@ -71,6 +71,11 @@ class CrmController extends GetxController {
   final RxBool isLoadingEmployees = false.obs;
   final RxnString employeesError = RxnString();
 
+  // Dashboard Stats state
+  final Rxn<Map<String, dynamic>> dashboardStats = Rxn<Map<String, dynamic>>();
+  final RxBool isLoadingDashboardStats = false.obs;
+  final RxnString dashboardStatsError = RxnString();
+
   @override
   void onInit() {
     super.onInit();
@@ -83,6 +88,7 @@ class CrmController extends GetxController {
   }
 
   void onTokenLoaded() {
+    fetchDashboardStats();
     fetchLeaves();
     fetchLeads();
     fetchDocuments();
@@ -142,10 +148,20 @@ class CrmController extends GetxController {
         email: "tony@stark.com",
         phone: "+1 (555) 911-3000",
         value: 45000.00,
-        status: "Won",
+        status: "Converted",
         source: "Website",
         dateCreated: DateTime.now().subtract(const Duration(days: 30)),
         owner: "Sarah Jenkins",
+        alternatePhone: "+1 (555) 911-3001",
+        salesStage: "Booking",
+        probability: 95.0,
+        timeline: "Within 1 Month",
+        priority: "High",
+        requirement: "Premium suite integration with automated email system",
+        street: "10880 Wilshire Blvd",
+        city: "Los Angeles",
+        state: "California",
+        pincode: "90024",
       ),
       Lead(
         id: "LD-102",
@@ -154,10 +170,19 @@ class CrmController extends GetxController {
         email: "bruce@wayne.com",
         phone: "+1 (555) 443-1200",
         value: 120000.00,
-        status: "Proposal",
+        status: "Hot",
         source: "Referral",
         dateCreated: DateTime.now().subtract(const Duration(days: 15)),
         owner: "Marcus Aurelius",
+        salesStage: "Negotiation",
+        probability: 80.0,
+        timeline: "Immediate",
+        priority: "Critical",
+        requirement: "Highly secure private server deployment",
+        street: "1007 Mountain Drive",
+        city: "Gotham",
+        state: "New Jersey",
+        pincode: "07001",
       ),
       Lead(
         id: "LD-103",
@@ -166,10 +191,19 @@ class CrmController extends GetxController {
         email: "clark@dailyplanet.com",
         phone: "+1 (555) 902-8833",
         value: 15000.00,
-        status: "Contacted",
-        source: "LinkedIn",
+        status: "Follow-up",
+        source: "Website",
         dateCreated: DateTime.now().subtract(const Duration(days: 10)),
         owner: "Sarah Jenkins",
+        salesStage: "Demo",
+        probability: 50.0,
+        timeline: "1-3 Months",
+        priority: "Medium",
+        requirement: "Cloud CRM with mobile app tracking",
+        street: "Metropolis St 40",
+        city: "Metropolis",
+        state: "New York",
+        pincode: "10001",
       ),
       Lead(
         id: "LD-104",
@@ -179,9 +213,39 @@ class CrmController extends GetxController {
         phone: "+1 (555) 177-6600",
         value: 30000.00,
         status: "New",
-        source: "Cold Call",
+        source: "Call",
         dateCreated: DateTime.now().subtract(const Duration(days: 2)),
         owner: "David Chen",
+        salesStage: "Inquiry",
+        probability: 30.0,
+        timeline: "Immediate",
+        priority: "Medium",
+        requirement: "Standard multi-user license and call tracking support",
+        street: "Brooklyn Plaza",
+        city: "Brooklyn",
+        state: "New York",
+        pincode: "11201",
+      ),
+      Lead(
+        id: "LD-105",
+        name: "Peter Parker",
+        company: "Daily Bugle",
+        email: "peter@bugle.com",
+        phone: "+1 (555) 232-1100",
+        value: 5000.00,
+        status: "Lost",
+        source: "Website",
+        dateCreated: DateTime.now().subtract(const Duration(days: 40)),
+        owner: "David Chen",
+        salesStage: "Lost",
+        probability: 0.0,
+        timeline: "3-6 Months",
+        priority: "Low",
+        requirement: "Single user setup (cancelled due to budget constraints)",
+        street: "Forest Hills",
+        city: "Queens",
+        state: "New York",
+        pincode: "11375",
       ),
     ]);
 
@@ -392,6 +456,51 @@ class CrmController extends GetxController {
     }
   }
 
+  // Update Lead
+  Future<bool> updateLead(Lead lead) async {
+    final idx = leads.indexWhere((l) => l.id == lead.id);
+    if (idx != -1) {
+      leads[idx] = lead;
+      leads.refresh();
+    }
+    try {
+      final success = await _apiService.updateLead(lead);
+      if (success) {
+        await fetchLeads();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Delete Lead
+  Future<bool> deleteLead(String id) async {
+    final deletedLeadIdx = leads.indexWhere((l) => l.id == id);
+    Lead? deletedLead;
+    if (deletedLeadIdx != -1) {
+      deletedLead = leads[deletedLeadIdx];
+      leads.removeAt(deletedLeadIdx);
+    }
+    try {
+      final success = await _apiService.deleteLead(id);
+      if (success) {
+        await fetchLeads();
+        return true;
+      }
+      if (deletedLeadIdx != -1 && deletedLead != null) {
+        leads.insert(deletedLeadIdx, deletedLead);
+      }
+      return false;
+    } catch (e) {
+      if (deletedLeadIdx != -1 && deletedLead != null) {
+        leads.insert(deletedLeadIdx, deletedLead);
+      }
+      return false;
+    }
+  }
+
   // Update Lead Status
   Future<void> updateLeadStatus(String leadId, String newStatus) async {
     final idx = leads.indexWhere((l) => l.id == leadId);
@@ -401,7 +510,7 @@ class CrmController extends GetxController {
       leads[idx] = updated;
       leads.refresh();
       try {
-        await _apiService.submitLead(updated);
+        await _apiService.updateLead(updated);
         await fetchLeads();
       } catch (_) {}
     }
@@ -712,6 +821,52 @@ class CrmController extends GetxController {
       }
       return false;
     } catch (e) {
+      return false;
+    }
+  }
+
+  // Fetch Dashboard Stats
+  Future<void> fetchDashboardStats() async {
+    isLoadingDashboardStats.value = true;
+    dashboardStatsError.value = null;
+    try {
+      final data = await _apiService.fetchDashboardStats();
+      dashboardStats.value = data;
+    } catch (e) {
+      dashboardStatsError.value = e.toString();
+    } finally {
+      isLoadingDashboardStats.value = false;
+    }
+  }
+
+  // Update Employee
+  Future<bool> updateEmployee(String id, Employee employee) async {
+    try {
+      final success = await _apiService.updateEmployee(id, employee);
+      if (success) {
+        await fetchEmployees();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Delete Employee
+  Future<bool> deleteEmployee(String id) async {
+    final originalList = List<Employee>.from(employees);
+    employees.removeWhere((e) => e.id == id || e.employeeId == id);
+    try {
+      final success = await _apiService.deleteEmployee(id);
+      if (success) {
+        await fetchEmployees();
+        return true;
+      }
+      employees.assignAll(originalList);
+      return false;
+    } catch (e) {
+      employees.assignAll(originalList);
       return false;
     }
   }

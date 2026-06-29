@@ -360,12 +360,41 @@ class MockDataService extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateEmployee(Employee updated) {
+  Future<bool> updateEmployee(Employee updated) async {
+    if (Get.isRegistered<CrmController>()) {
+      final success = await Get.find<CrmController>().updateEmployee(updated.id, updated);
+      if (success) {
+        addNotification("Employee Updated", "${updated.name}'s profile has been updated.");
+      }
+      return success;
+    }
     final idx = _employees.indexWhere((e) => e.id == updated.id);
     if (idx != -1) {
       _employees[idx] = updated;
+      addNotification("Employee Updated", "${updated.name}'s profile has been updated.");
       notifyListeners();
+      return true;
     }
+    return false;
+  }
+
+  Future<bool> deleteEmployee(String id) async {
+    if (Get.isRegistered<CrmController>()) {
+      final success = await Get.find<CrmController>().deleteEmployee(id);
+      if (success) {
+        addNotification("Employee Deleted", "Employee record removed from directory.");
+      }
+      return success;
+    }
+    final idx = _employees.indexWhere((e) => e.id == id);
+    if (idx != -1) {
+      final emp = _employees[idx];
+      _employees.removeAt(idx);
+      addNotification("Employee Deleted", "${emp.name} has been removed from directory.");
+      notifyListeners();
+      return true;
+    }
+    return false;
   }
 
   // Lead Actions
@@ -390,6 +419,35 @@ class MockDataService extends ChangeNotifier {
         final oldLead = _leads[idx];
         _leads[idx] = oldLead.copyWith(status: newStatus);
         addNotification("Lead Progressed", "${oldLead.name}'s deal status updated to: $newStatus.");
+        notifyListeners();
+      }
+    }
+  }
+
+  void updateLead(Lead lead) {
+    if (Get.isRegistered<CrmController>()) {
+      Get.find<CrmController>().updateLead(lead);
+      addNotification("Lead Updated", "Prospect ${lead.name} details have been updated.");
+    } else {
+      final idx = _leads.indexWhere((l) => l.id == lead.id);
+      if (idx != -1) {
+        _leads[idx] = lead;
+        addNotification("Lead Updated", "Prospect ${lead.name} details have been updated.");
+        notifyListeners();
+      }
+    }
+  }
+
+  void deleteLead(String id) {
+    if (Get.isRegistered<CrmController>()) {
+      Get.find<CrmController>().deleteLead(id);
+      addNotification("Lead Deleted", "Sales lead has been deleted.");
+    } else {
+      final idx = _leads.indexWhere((l) => l.id == id);
+      if (idx != -1) {
+        final oldLead = _leads[idx];
+        _leads.removeAt(idx);
+        addNotification("Lead Deleted", "Prospect ${oldLead.name} has been deleted.");
         notifyListeners();
       }
     }
@@ -633,10 +691,20 @@ class MockDataService extends ChangeNotifier {
         email: "tony@stark.com",
         phone: "+1 (555) 911-3000",
         value: 45000.00,
-        status: "Won",
+        status: "Converted",
         source: "Website",
         dateCreated: DateTime.now().subtract(const Duration(days: 30)),
         owner: "Sarah Jenkins",
+        alternatePhone: "+1 (555) 911-3001",
+        salesStage: "Booking",
+        probability: 95.0,
+        timeline: "Within 1 Month",
+        priority: "High",
+        requirement: "Premium suite integration with automated email system",
+        street: "10880 Wilshire Blvd",
+        city: "Los Angeles",
+        state: "California",
+        pincode: "90024",
       ),
       Lead(
         id: "LD-102",
@@ -645,10 +713,19 @@ class MockDataService extends ChangeNotifier {
         email: "bruce@wayne.com",
         phone: "+1 (555) 443-1200",
         value: 120000.00,
-        status: "Proposal",
+        status: "Hot",
         source: "Referral",
         dateCreated: DateTime.now().subtract(const Duration(days: 15)),
         owner: "Marcus Aurelius",
+        salesStage: "Negotiation",
+        probability: 80.0,
+        timeline: "Immediate",
+        priority: "Critical",
+        requirement: "Highly secure private server deployment",
+        street: "1007 Mountain Drive",
+        city: "Gotham",
+        state: "New Jersey",
+        pincode: "07001",
       ),
       Lead(
         id: "LD-103",
@@ -657,10 +734,19 @@ class MockDataService extends ChangeNotifier {
         email: "clark@dailyplanet.com",
         phone: "+1 (555) 902-8833",
         value: 15000.00,
-        status: "Contacted",
-        source: "LinkedIn",
+        status: "Follow-up",
+        source: "Website",
         dateCreated: DateTime.now().subtract(const Duration(days: 10)),
         owner: "Sarah Jenkins",
+        salesStage: "Demo",
+        probability: 50.0,
+        timeline: "1-3 Months",
+        priority: "Medium",
+        requirement: "Cloud CRM with mobile app tracking",
+        street: "Metropolis St 40",
+        city: "Metropolis",
+        state: "New York",
+        pincode: "10001",
       ),
       Lead(
         id: "LD-104",
@@ -670,9 +756,18 @@ class MockDataService extends ChangeNotifier {
         phone: "+1 (555) 177-6600",
         value: 30000.00,
         status: "New",
-        source: "Cold Call",
+        source: "Call",
         dateCreated: DateTime.now().subtract(const Duration(days: 2)),
         owner: "David Chen",
+        salesStage: "Inquiry",
+        probability: 30.0,
+        timeline: "Immediate",
+        priority: "Medium",
+        requirement: "Standard multi-user license and call tracking support",
+        street: "Brooklyn Plaza",
+        city: "Brooklyn",
+        state: "New York",
+        pincode: "11201",
       ),
       Lead(
         id: "LD-105",
@@ -685,6 +780,15 @@ class MockDataService extends ChangeNotifier {
         source: "Website",
         dateCreated: DateTime.now().subtract(const Duration(days: 40)),
         owner: "David Chen",
+        salesStage: "Lost",
+        probability: 0.0,
+        timeline: "3-6 Months",
+        priority: "Low",
+        requirement: "Single user setup (cancelled due to budget constraints)",
+        street: "Forest Hills",
+        city: "Queens",
+        state: "New York",
+        pincode: "11375",
       ),
     ]);
 

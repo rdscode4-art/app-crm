@@ -37,11 +37,11 @@ class SidebarNavigation extends StatelessWidget {
     final List<_SidebarItem> menuItems;
 
     if (role == UserRole.superAdmin) {
-      menuItems = allItems.where((item) => [0, 1, 13, 2, 3, 4, 5, 6, 7, 8, 10, 12, 9].contains(item.index)).toList();
+      menuItems = allItems.where((item) => [0, 1, 13, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 9].contains(item.index)).toList();
     } else if (role == UserRole.hr) {
       menuItems = allItems.where((item) => [0, 4, 6, 7, 11, 10, 12, 9].contains(item.index)).toList();
     } else {
-      menuItems = allItems.where((item) => [0, 3, 4, 6, 10, 12, 9].contains(item.index)).toList();
+      menuItems = allItems.where((item) => [0, 3, 4, 6, 10, 11, 12, 9].contains(item.index)).toList();
     }
 
     return Container(

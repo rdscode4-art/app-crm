@@ -5,6 +5,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/widgets/metric_card.dart';
 import '../../services/mock_data_service.dart';
 import '../../core/widgets/custom_button.dart';
+import '../../controllers/crm_controller.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -12,8 +13,46 @@ class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = MockDataService();
+    final controller = Get.find<CrmController>();
+
+    if (controller.dashboardStats.value == null && !controller.isLoadingDashboardStats.value) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        controller.fetchDashboardStats();
+      });
+    }
 
     return Obx(() {
+      if (controller.isLoadingDashboardStats.value && controller.dashboardStats.value == null) {
+        return const Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        );
+      }
+
+      if (controller.dashboardStatsError.value != null && controller.dashboardStats.value == null) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: AppColors.danger),
+              const SizedBox(height: 16),
+              Text(
+                "Error: ${controller.dashboardStatsError.value}",
+                style: const TextStyle(color: AppColors.danger),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => controller.fetchDashboardStats(),
+                child: const Text("Retry"),
+              ),
+            ],
+          ),
+        );
+      }
+
+      if (controller.dashboardStats.value != null) {
+        return _buildApiStatsDashboard(context, controller.dashboardStats.value!, controller);
+      }
+
       switch (state.currentRole) {
         case UserRole.superAdmin:
           return _buildSuperAdminDashboard(context, state);
@@ -23,6 +62,550 @@ class DashboardScreen extends StatelessWidget {
           return _buildEmployeeDashboard(context, state);
       }
     });
+  }
+
+  Widget _buildApiStatsDashboard(BuildContext context, Map<String, dynamic> stats, CrmController controller) {
+    final width = MediaQuery.of(context).size.width;
+    final isDesktop = width >= 1000;
+    
+    final employees = stats['employees'] ?? {};
+    final attendance = stats['attendance'] ?? {};
+    final leaves = stats['leaves'] ?? {};
+    final tasks = stats['tasks'] ?? {};
+
+    final totalEmployees = employees['total'] ?? 0;
+    final activeEmployees = employees['active'] ?? 0;
+    final newEmployees = employees['newThisMonth'] ?? 0;
+
+    final todayPresent = attendance['todayPresent'] ?? 0;
+    final attendanceRate = attendance['attendanceRate']?.toString() ?? '0';
+
+    final pendingLeaves = leaves['pending'] ?? 0;
+    final approvedLeaves = leaves['approvedThisMonth'] ?? 0;
+
+    final pendingTasks = tasks['pending'] ?? 0;
+    final inProgressTasks = tasks['inProgress'] ?? 0;
+    final completedTasks = tasks['completed'] ?? 0;
+
+    final recentTasks = List<Map<String, dynamic>>.from(tasks['recent'] ?? []);
+    final recentEmployees = List<Map<String, dynamic>>.from(employees['recent'] ?? []);
+    final byDepartment = List<Map<String, dynamic>>.from(employees['byDepartment'] ?? []);
+
+    return RefreshIndicator(
+      onRefresh: () => controller.fetchDashboardStats(),
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "CRM Analytics Dashboard",
+                        style: TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "Real-time corporate overview: $activeEmployees / $totalEmployees personnel active today.",
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.refresh, color: AppColors.primary),
+                  onPressed: () => controller.fetchDashboardStats(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            GridView(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: width < 600 ? 1 : (width < 1200 ? 2 : 4),
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: width < 600 ? 2.0 : 1.6,
+              ),
+              children: [
+                MetricCard(
+                  title: "Active Personnel",
+                  value: "$activeEmployees / $totalEmployees",
+                  changeText: "+$newEmployees this month",
+                  isPositive: true,
+                  icon: Icons.people_outline,
+                  iconBgColor: const Color(0xFFEFF6FF),
+                  iconColor: AppColors.info,
+                ),
+                MetricCard(
+                  title: "Today's Attendance",
+                  value: "$todayPresent Present",
+                  changeText: "$attendanceRate% attendance rate",
+                  isPositive: true,
+                  icon: Icons.done_all_outlined,
+                  iconBgColor: const Color(0xFFD1FAE5),
+                  iconColor: AppColors.primary,
+                ),
+                MetricCard(
+                  title: "Leaves Pending",
+                  value: "$pendingLeaves Request${pendingLeaves == 1 ? '' : 's'}",
+                  changeText: "$approvedLeaves approved this month",
+                  isPositive: false,
+                  icon: Icons.beach_access_outlined,
+                  iconBgColor: const Color(0xFFFEF3C7),
+                  iconColor: AppColors.warning,
+                ),
+                MetricCard(
+                  title: "Pending Tasks",
+                  value: "$pendingTasks Open",
+                  changeText: "$inProgressTasks in progress, $completedTasks done",
+                  isPositive: true,
+                  icon: Icons.assignment_outlined,
+                  iconBgColor: const Color(0xFFFEE2E2),
+                  iconColor: AppColors.danger,
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: isDesktop ? 2 : 1,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              "Active Tasks Queue",
+                              style: TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            recentTasks.isEmpty
+                                ? const Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 32),
+                                    child: Center(
+                                      child: Text(
+                                        "No tasks registered in the system.",
+                                        style: TextStyle(color: AppColors.textSecondary),
+                                      ),
+                                    ),
+                                  )
+                                : ListView.separated(
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    itemCount: recentTasks.length,
+                                    separatorBuilder: (context, index) => const Divider(color: AppColors.border),
+                                    itemBuilder: (context, index) {
+                                      final task = recentTasks[index];
+                                      final priority = task['priority']?.toString() ?? 'medium';
+                                      final status = task['status']?.toString() ?? 'pending';
+                                      final assignees = List.from(task['assignedTo'] ?? []);
+                                      final assigneeNames = assignees.map((a) => a['name']).join(', ');
+
+                                      Color priorityColor = Colors.grey;
+                                      if (priority.toLowerCase() == 'high' || priority.toLowerCase() == 'urgent') {
+                                        priorityColor = AppColors.danger;
+                                      } else if (priority.toLowerCase() == 'medium') {
+                                        priorityColor = AppColors.warning;
+                                      }
+
+                                      Color statusColor = Colors.grey;
+                                      if (status.toLowerCase() == 'completed' || status.toLowerCase() == 'done') {
+                                        statusColor = AppColors.success;
+                                      } else if (status.toLowerCase() == 'in-progress' || status.toLowerCase() == 'in progress') {
+                                        statusColor = AppColors.primary;
+                                      } else {
+                                        statusColor = AppColors.textSecondary;
+                                      }
+
+                                      return Padding(
+                                        padding: const EdgeInsets.symmetric(vertical: 4),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    task['title']?.toString() ?? 'Untitled Task',
+                                                    style: const TextStyle(
+                                                      color: AppColors.textPrimary,
+                                                      fontWeight: FontWeight.bold,
+                                                      fontSize: 14,
+                                                    ),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                                  decoration: BoxDecoration(
+                                                    color: priorityColor.withOpacity(0.1),
+                                                    borderRadius: BorderRadius.circular(4),
+                                                  ),
+                                                  child: Text(
+                                                    priority.toUpperCase(),
+                                                    style: TextStyle(
+                                                      color: priorityColor,
+                                                      fontWeight: FontWeight.bold,
+                                                      fontSize: 10,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              task['description']?.toString() ?? '',
+                                              style: const TextStyle(
+                                                color: AppColors.textSecondary,
+                                                fontSize: 12,
+                                              ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    "Assigned to: ${assigneeNames.isNotEmpty ? assigneeNames : 'Unassigned'}",
+                                                    style: const TextStyle(
+                                                      color: AppColors.textSecondary,
+                                                      fontSize: 11,
+                                                      fontStyle: FontStyle.italic,
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                                  decoration: BoxDecoration(
+                                                    color: statusColor.withOpacity(0.1),
+                                                    borderRadius: BorderRadius.circular(4),
+                                                  ),
+                                                  child: Text(
+                                                    status.toUpperCase(),
+                                                    style: TextStyle(
+                                                      color: statusColor,
+                                                      fontWeight: FontWeight.bold,
+                                                      fontSize: 10,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              "Personnel Distribution by Department",
+                              style: TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            byDepartment.isEmpty
+                                ? const Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 16),
+                                    child: Center(
+                                      child: Text(
+                                        "No department data available.",
+                                        style: TextStyle(color: AppColors.textSecondary),
+                                      ),
+                                    ),
+                                  )
+                                : ListView.builder(
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    itemCount: byDepartment.length,
+                                    itemBuilder: (context, index) {
+                                      final dept = byDepartment[index];
+                                      final deptName = dept['_id'] ?? 'Unknown';
+                                      final count = dept['count'] ?? 0;
+                                      final pct = totalEmployees > 0 ? (count / totalEmployees) : 0.0;
+
+                                      return Padding(
+                                        padding: const EdgeInsets.only(bottom: 12),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              children: [
+                                                Text(
+                                                  deptName,
+                                                  style: const TextStyle(
+                                                    color: AppColors.textPrimary,
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 13,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  "$count member${count == 1 ? '' : 's'}",
+                                                  style: const TextStyle(
+                                                    color: AppColors.textSecondary,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 13,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 6),
+                                            ClipRRect(
+                                              borderRadius: BorderRadius.circular(4),
+                                              child: LinearProgressIndicator(
+                                                value: pct,
+                                                minHeight: 8,
+                                                backgroundColor: Colors.grey[200],
+                                                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                if (isDesktop) ...[
+                  const SizedBox(width: 24),
+                  Expanded(
+                    flex: 1,
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Recently Joined Members",
+                            style: TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          recentEmployees.isEmpty
+                              ? const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 32),
+                                  child: Center(
+                                    child: Text(
+                                      "No recent employees found.",
+                                      style: TextStyle(color: AppColors.textSecondary),
+                                    ),
+                                  ),
+                                )
+                              : ListView.separated(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: recentEmployees.length,
+                                  separatorBuilder: (context, index) => const Divider(color: AppColors.border),
+                                  itemBuilder: (context, index) {
+                                    final emp = recentEmployees[index];
+                                    final name = emp['name'] ?? 'Unknown';
+                                    final dept = emp['department'] ?? 'General';
+                                    final desig = emp['designation'] ?? 'Staff';
+
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 4),
+                                      child: Row(
+                                        children: [
+                                          CircleAvatar(
+                                            backgroundColor: AppColors.primary.withOpacity(0.1),
+                                            foregroundColor: AppColors.primary,
+                                            child: Text(
+                                              name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                              style: const TextStyle(fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  name,
+                                                  style: const TextStyle(
+                                                    color: AppColors.textPrimary,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 13,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  "$desig • $dept",
+                                                  style: const TextStyle(
+                                                    color: AppColors.textSecondary,
+                                                    fontSize: 11,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            
+            if (!isDesktop) ...[
+              const SizedBox(height: 24),
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Recently Joined Members",
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    recentEmployees.isEmpty
+                        ? const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 32),
+                            child: Center(
+                              child: Text(
+                                "No recent employees found.",
+                                style: TextStyle(color: AppColors.textSecondary),
+                              ),
+                            ),
+                          )
+                        : ListView.separated(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: recentEmployees.length,
+                            separatorBuilder: (context, index) => const Divider(color: AppColors.border),
+                            itemBuilder: (context, index) {
+                              final emp = recentEmployees[index];
+                              final name = emp['name'] ?? 'Unknown';
+                              final dept = emp['department'] ?? 'General';
+                              final desig = emp['designation'] ?? 'Staff';
+
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 4),
+                                child: Row(
+                                  children: [
+                                    CircleAvatar(
+                                      backgroundColor: AppColors.primary.withOpacity(0.1),
+                                      foregroundColor: AppColors.primary,
+                                      child: Text(
+                                        name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                        style: const TextStyle(fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            name,
+                                            style: const TextStyle(
+                                              color: AppColors.textPrimary,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                          Text(
+                                            "$desig • $dept",
+                                            style: const TextStyle(
+                                              color: AppColors.textSecondary,
+                                              fontSize: 11,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 
   // --- Super Admin Dashboard ---
@@ -92,14 +675,14 @@ class DashboardScreen extends StatelessWidget {
             children: [
               MetricCard(
                 title: "Total Revenue (Won)",
-                value: "\$${wonLeadsValue.toStringAsFixed(0)}",
+                value: "₹${wonLeadsValue.toStringAsFixed(0)}",
                 changeText: "+14.2%",
                 isPositive: true,
                 icon: Icons.monetization_on_outlined,
               ),
               MetricCard(
                 title: "Pipeline Potential",
-                value: "\$${pipelineValue.toStringAsFixed(0)}",
+                value: "₹${pipelineValue.toStringAsFixed(0)}",
                 changeText: "+8.5%",
                 isPositive: true,
                 icon: Icons.trending_up,

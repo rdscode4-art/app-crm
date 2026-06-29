@@ -16,7 +16,7 @@ class LeadScreen extends StatefulWidget {
 
 class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final List<String> _stages = ['New', 'Contacted', 'Proposal', 'Won', 'Lost'];
+  final List<String> _stages = ['New', 'Hot', 'Cold', 'Converted', 'Lost', 'Follow-up'];
 
   @override
   void initState() {
@@ -33,14 +33,103 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
     super.dispose();
   }
 
-  void _showAddLeadDialog(BuildContext context, MockDataService state) {
+  void _showLeadDialog(BuildContext context, MockDataService state, {Lead? lead}) {
     final formKey = GlobalKey<FormState>();
-    final nameCtrl = TextEditingController();
-    final companyCtrl = TextEditingController();
-    final emailCtrl = TextEditingController();
-    final phoneCtrl = TextEditingController();
-    final valueCtrl = TextEditingController();
-    String source = 'Website';
+    final isDesktop = MediaQuery.of(context).size.width >= 750;
+
+    // Controllers
+    final nameCtrl = TextEditingController(text: lead?.name);
+    final phoneCtrl = TextEditingController(text: lead?.phone);
+    final emailCtrl = TextEditingController(text: lead?.email);
+    final altPhoneCtrl = TextEditingController(text: lead?.alternatePhone);
+    final valueCtrl = TextEditingController(text: lead != null ? lead.value.toStringAsFixed(0) : "");
+    final probabilityCtrl = TextEditingController(text: lead != null ? lead.probability.toStringAsFixed(0) : "0");
+    final productInterestCtrl = TextEditingController(text: lead?.company);
+    final requirementCtrl = TextEditingController(text: lead?.requirement);
+    final streetCtrl = TextEditingController(text: lead?.street);
+    final cityCtrl = TextEditingController(text: lead?.city);
+    final pincodeCtrl = TextEditingController(text: lead?.pincode);
+    final stateCtrl = TextEditingController(text: lead?.state);
+
+    // Dropdown Items Lists
+    final List<String> sources = ['WhatsApp', 'Facebook', 'Instagram', 'Call', 'Walk-in', 'Referral', 'Other', 'Website'];
+    final List<String> statuses = ['New', 'Hot', 'Cold', 'Converted', 'Lost', 'Follow-up'];
+    final List<String> stages = ['Inquiry', 'Demo', 'Negotiation', 'Closed', 'Booking', 'Lost'];
+    final List<String> priorities = ['High', 'Medium', 'Low', 'Critical'];
+    final List<String> timelines = ['Immediate', 'Within 1 Month', '1-3 Months', '3-6 Months'];
+
+    // Safe parsed dropdown values
+    String source = sources.firstWhere((s) => s.toLowerCase() == (lead?.source ?? 'Call').toLowerCase(), orElse: () => 'Call');
+    String status = statuses.firstWhere((s) => s.toLowerCase() == (lead?.status ?? 'New').toLowerCase(), orElse: () => 'New');
+    String salesStage = stages.firstWhere((s) => s.toLowerCase() == (lead?.salesStage ?? 'Inquiry').toLowerCase(), orElse: () => 'Inquiry');
+    String priority = priorities.firstWhere((p) => p.toLowerCase() == (lead?.priority ?? 'Medium').toLowerCase(), orElse: () => 'Medium');
+    String timeline = timelines.firstWhere((t) => t.toLowerCase() == (lead?.timeline ?? 'Immediate').toLowerCase(), orElse: () => 'Immediate');
+
+    Widget _buildResponsiveRow(List<Widget> children) {
+      if (isDesktop && children.length > 1) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: children.map((c) => Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: c,
+              ),
+            )).toList(),
+          ),
+        );
+      } else {
+        return Column(
+          children: children.map((c) => Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: c,
+          )).toList(),
+        );
+      }
+    }
+
+    Widget _buildDropdown({
+      required String label,
+      required String value,
+      required List<String> items,
+      required void Function(String?) onChanged,
+    }) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Container(
+            height: 48,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppColors.border, width: 1.5),
+              color: Colors.white,
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: value,
+                isExpanded: true,
+                items: items.map((item) => DropdownMenuItem(
+                  value: item,
+                  child: Text(item, style: const TextStyle(fontSize: 14)),
+                )).toList(),
+                onChanged: onChanged,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
 
     showDialog(
       context: context,
@@ -50,119 +139,194 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
             return AlertDialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               backgroundColor: Colors.white,
-              title: const Text(
-                "Create Sales Lead",
-                style: TextStyle(
+              title: Text(
+                lead == null ? "Create Sales Lead" : "Edit Sales Lead",
+                style: const TextStyle(
                   color: AppColors.textPrimary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              content: Form(
-                key: formKey,
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      CustomTextField(
-                        label: "Prospect Name",
-                        hint: "e.g., Bruce Banner",
-                        prefixIcon: Icons.person_outline,
-                        controller: nameCtrl,
-                        validator: (val) => val == null || val.isEmpty ? "Required" : null,
-                      ),
-                      const SizedBox(height: 12),
-                      CustomTextField(
-                        label: "Company Name",
-                        hint: "e.g., Stark Industries",
-                        prefixIcon: Icons.business_outlined,
-                        controller: companyCtrl,
-                        validator: (val) => val == null || val.isEmpty ? "Required" : null,
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: CustomTextField(
-                              label: "Email",
-                              hint: "name@company.com",
-                              prefixIcon: Icons.email_outlined,
-                              controller: emailCtrl,
-                              validator: (val) => val == null || !val.contains('@') ? "Valid email required" : null,
+              content: SizedBox(
+                width: isDesktop ? 750 : MediaQuery.of(context).size.width * 0.9,
+                child: Form(
+                  key: formKey,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildResponsiveRow([
+                          CustomTextField(
+                            label: "Customer Name *",
+                            hint: "e.g., Raminder Mittal",
+                            prefixIcon: Icons.person_outline,
+                            controller: nameCtrl,
+                            validator: (val) => val == null || val.isEmpty ? "Required" : null,
+                          ),
+                          CustomTextField(
+                            label: "Mobile *",
+                            hint: "e.g., +919915006927",
+                            prefixIcon: Icons.phone_outlined,
+                            controller: phoneCtrl,
+                            validator: (val) => val == null || val.isEmpty ? "Required" : null,
+                          ),
+                        ]),
+                        _buildResponsiveRow([
+                          CustomTextField(
+                            label: "Email",
+                            hint: "raminder@ashoka.com",
+                            prefixIcon: Icons.email_outlined,
+                            controller: emailCtrl,
+                          ),
+                          CustomTextField(
+                            label: "Alternate Phone",
+                            hint: "e.g., +919915006900",
+                            prefixIcon: Icons.phone_android_outlined,
+                            controller: altPhoneCtrl,
+                          ),
+                        ]),
+                        _buildResponsiveRow([
+                          _buildDropdown(
+                            label: "Lead Source *",
+                            value: source,
+                            items: sources,
+                            onChanged: (val) {
+                              if (val != null) {
+                                setDialogState(() => source = val);
+                              }
+                            },
+                          ),
+                          _buildDropdown(
+                            label: "Lead Status",
+                            value: status,
+                            items: statuses,
+                            onChanged: (val) {
+                              if (val != null) {
+                                setDialogState(() => status = val);
+                              }
+                            },
+                          ),
+                        ]),
+                        _buildResponsiveRow([
+                          _buildDropdown(
+                            label: "Sales Stage",
+                            value: salesStage,
+                            items: stages,
+                            onChanged: (val) {
+                              if (val != null) {
+                                setDialogState(() => salesStage = val);
+                              }
+                            },
+                          ),
+                          _buildDropdown(
+                            label: "Priority",
+                            value: priority,
+                            items: priorities,
+                            onChanged: (val) {
+                              if (val != null) {
+                                setDialogState(() => priority = val);
+                              }
+                            },
+                          ),
+                        ]),
+                        _buildResponsiveRow([
+                          CustomTextField(
+                            label: "Deal Value (₹)",
+                            hint: "e.g., 50000",
+                            prefixIcon: Icons.currency_rupee_outlined,
+                            controller: valueCtrl,
+                            keyboardType: TextInputType.number,
+                            validator: (val) {
+                              if (val == null || val.isEmpty) return null;
+                              return double.tryParse(val) == null ? "Number required" : null;
+                            },
+                          ),
+                          CustomTextField(
+                            label: "Probability (%)",
+                            hint: "e.g., 80",
+                            prefixIcon: Icons.percent_outlined,
+                            controller: probabilityCtrl,
+                            keyboardType: TextInputType.number,
+                            validator: (val) {
+                              if (val == null || val.isEmpty) return null;
+                              final n = double.tryParse(val);
+                              if (n == null) return "Number required";
+                              if (n < 0 || n > 100) return "Must be 0-100%";
+                              return null;
+                            },
+                          ),
+                        ]),
+                        _buildResponsiveRow([
+                          _buildDropdown(
+                            label: "Timeline",
+                            value: timeline,
+                            items: timelines,
+                            onChanged: (val) {
+                              if (val != null) {
+                                setDialogState(() => timeline = val);
+                              }
+                            },
+                          ),
+                          CustomTextField(
+                            label: "Product Interest",
+                            hint: "e.g., CRM Application",
+                            prefixIcon: Icons.shopping_bag_outlined,
+                            controller: productInterestCtrl,
+                          ),
+                        ]),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: CustomTextField(
+                            label: "Requirement",
+                            hint: "e.g., CRM with calling feature and auto dialer",
+                            prefixIcon: Icons.description_outlined,
+                            controller: requirementCtrl,
+                          ),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8),
+                          child: Text(
+                            "Address Details",
+                            style: TextStyle(
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: CustomTextField(
-                              label: "Phone",
-                              hint: "+1 555-0199",
-                              prefixIcon: Icons.phone_outlined,
-                              controller: phoneCtrl,
-                              validator: (val) => val == null || val.isEmpty ? "Required" : null,
-                            ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: CustomTextField(
+                            label: "Street Address",
+                            hint: "e.g., Sector 17, SCO 24",
+                            prefixIcon: Icons.home_outlined,
+                            controller: streetCtrl,
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Expanded(
-                            child: CustomTextField(
-                              label: "Deal Value (\$)",
-                              hint: "e.g., 50000",
-                              prefixIcon: Icons.monetization_on_outlined,
-                              controller: valueCtrl,
-                              keyboardType: TextInputType.number,
-                              validator: (val) => val == null || double.tryParse(val) == null ? "Number required" : null,
-                            ),
+                        ),
+                        _buildResponsiveRow([
+                          CustomTextField(
+                            label: "City",
+                            hint: "e.g., Chandigarh",
+                            prefixIcon: Icons.location_city_outlined,
+                            controller: cityCtrl,
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  "Lead Source",
-                                  style: TextStyle(
-                                    color: AppColors.textPrimary,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: AppColors.border, width: 1.5),
-                                    color: Colors.white,
-                                  ),
-                                  child: DropdownButtonHideUnderline(
-                                    child: DropdownButton<String>(
-                                      value: source,
-                                      isExpanded: true,
-                                      items: ['Website', 'Referral', 'LinkedIn', 'Cold Call']
-                                          .map((s) => DropdownMenuItem(
-                                                value: s,
-                                                child: Text(s, style: const TextStyle(fontSize: 14)),
-                                              ))
-                                          .toList(),
-                                      onChanged: (val) {
-                                        if (val != null) {
-                                          setDialogState(() {
-                                            source = val;
-                                          });
-                                        }
-                                      },
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+                          CustomTextField(
+                            label: "Pincode",
+                            hint: "e.g., 160017",
+                            prefixIcon: Icons.pin_drop_outlined,
+                            controller: pincodeCtrl,
                           ),
-                        ],
-                      ),
-                    ],
+                        ]),
+                        _buildResponsiveRow([
+                          CustomTextField(
+                            label: "State",
+                            hint: "e.g., Punjab",
+                            prefixIcon: Icons.map_outlined,
+                            controller: stateCtrl,
+                          ),
+                          const SizedBox(), // Empty spacer for layout alignment
+                        ]),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -172,22 +336,58 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                   child: const Text("Cancel", style: TextStyle(color: AppColors.textSecondary)),
                 ),
                 CustomButton(
-                  text: "Save Lead",
+                  text: lead == null ? "Save Lead" : "Update Lead",
                   onPressed: () {
                     if (formKey.currentState!.validate()) {
-                      final newLead = Lead(
-                        id: "LD-${state.leads.length + 101}",
-                        name: nameCtrl.text,
-                        company: companyCtrl.text,
-                        email: emailCtrl.text,
-                        phone: phoneCtrl.text,
-                        value: double.parse(valueCtrl.text),
-                        status: 'New',
-                        source: source,
-                        dateCreated: DateTime.now(),
-                        owner: state.currentUser?.name ?? "Sales Agent",
-                      );
-                      state.addLead(newLead);
+                      final parsedValue = double.tryParse(valueCtrl.text) ?? 0.0;
+                      final parsedProb = double.tryParse(probabilityCtrl.text) ?? 0.0;
+
+                      if (lead == null) {
+                        final newLead = Lead(
+                          id: "LD-${state.leads.length + 101}",
+                          name: nameCtrl.text,
+                          company: productInterestCtrl.text,
+                          email: emailCtrl.text,
+                          phone: phoneCtrl.text,
+                          value: parsedValue,
+                          status: status,
+                          source: source,
+                          dateCreated: DateTime.now(),
+                          owner: state.currentUser?.name ?? "Sales Agent",
+                          alternatePhone: altPhoneCtrl.text,
+                          salesStage: salesStage,
+                          probability: parsedProb,
+                          timeline: timeline,
+                          priority: priority,
+                          requirement: requirementCtrl.text,
+                          street: streetCtrl.text,
+                          city: cityCtrl.text,
+                          state: stateCtrl.text,
+                          pincode: pincodeCtrl.text,
+                        );
+                        state.addLead(newLead);
+                      } else {
+                        final updatedLead = lead.copyWith(
+                          name: nameCtrl.text,
+                          company: productInterestCtrl.text,
+                          email: emailCtrl.text,
+                          phone: phoneCtrl.text,
+                          value: parsedValue,
+                          status: status,
+                          source: source,
+                          alternatePhone: altPhoneCtrl.text,
+                          salesStage: salesStage,
+                          probability: parsedProb,
+                          timeline: timeline,
+                          priority: priority,
+                          requirement: requirementCtrl.text,
+                          street: streetCtrl.text,
+                          city: cityCtrl.text,
+                          state: stateCtrl.text,
+                          pincode: pincodeCtrl.text,
+                        );
+                        state.updateLead(updatedLead);
+                      }
                       Navigator.of(context).pop();
                     }
                   },
@@ -195,6 +395,40 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
               ],
             );
           },
+        );
+      },
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context, Lead lead, MockDataService state) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          title: const Text("Delete Lead", style: TextStyle(fontWeight: FontWeight.bold)),
+          content: Text("Are you sure you want to delete lead '${lead.name}'?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("Cancel", style: TextStyle(color: AppColors.textSecondary)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.danger,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: () {
+                state.deleteLead(lead.id);
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Deleting lead '${lead.name}'...")),
+                );
+              },
+              child: const Text("Delete"),
+            ),
+          ],
         );
       },
     );
@@ -239,13 +473,32 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                           ),
                         ],
                       ),
-                      Text(
-                        "\$${lead.value.toStringAsFixed(0)}",
-                        style: const TextStyle(
-                          color: AppColors.primary,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit, color: AppColors.primary, size: 22),
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                              _showLeadDialog(context, state, lead: lead);
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline, color: AppColors.danger, size: 22),
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                              _showDeleteConfirmation(context, lead, state);
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            "₹${lead.value.toStringAsFixed(0)}",
+                            style: const TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -276,17 +529,23 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                         case 'New':
                           chipColor = Colors.blue;
                           break;
-                        case 'Contacted':
-                          chipColor = Colors.orange;
+                        case 'Hot':
+                          chipColor = Colors.red;
                           break;
-                        case 'Proposal':
-                          chipColor = Colors.purple;
+                        case 'Cold':
+                          chipColor = Colors.cyan;
                           break;
-                        case 'Won':
+                        case 'Converted':
                           chipColor = AppColors.success;
                           break;
-                        default:
+                        case 'Lost':
                           chipColor = AppColors.danger;
+                          break;
+                        case 'Follow-up':
+                          chipColor = Colors.orange;
+                          break;
+                        default:
+                          chipColor = Colors.grey;
                       }
 
                       return InkWell(
@@ -384,7 +643,7 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                   CustomButton(
                     text: "Create Lead",
                     icon: Icons.add,
-                    onPressed: () => _showAddLeadDialog(context, state),
+                    onPressed: () => _showLeadDialog(context, state),
                   ),
                 ],
               ),
@@ -490,7 +749,7 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              "\$${stageTotalValue.toStringAsFixed(0)} value",
+                              "₹${stageTotalValue.toStringAsFixed(0)} value",
                               style: const TextStyle(
                                 color: AppColors.textSecondary,
                                 fontSize: 11,
@@ -613,28 +872,49 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "\$${lead.value.toStringAsFixed(0)}",
+                "₹${lead.value.toStringAsFixed(0)}",
                 style: const TextStyle(
                   color: AppColors.primary,
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
                 ),
               ),
-              InkWell(
-                onTap: () => _showLeadActions(context, lead, state),
-                borderRadius: BorderRadius.circular(4),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit, size: 16, color: AppColors.primary),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    splashRadius: 16,
+                    onPressed: () => _showLeadDialog(context, state, lead: lead),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, size: 16, color: AppColors.danger),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    splashRadius: 16,
+                    onPressed: () => _showDeleteConfirmation(context, lead, state),
+                  ),
+                  const SizedBox(width: 8),
+                  InkWell(
+                    onTap: () => _showLeadActions(context, lead, state),
                     borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: AppColors.border),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: const Text(
+                        "Actions",
+                        style: TextStyle(color: AppColors.textPrimary, fontSize: 10, fontWeight: FontWeight.bold),
+                      ),
+                    ),
                   ),
-                  child: const Text(
-                    "Actions",
-                    style: TextStyle(color: AppColors.textPrimary, fontSize: 10, fontWeight: FontWeight.bold),
-                  ),
-                ),
+                ],
               ),
             ],
           ),

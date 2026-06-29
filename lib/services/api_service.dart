@@ -43,6 +43,19 @@ class ApiService {
     }
   }
 
+  // Dashboard Stats API
+  Future<Map<String, dynamic>> fetchDashboardStats() async {
+    final response = await http.get(Uri.parse('$baseUrl/dashboard/stats'), headers: _headers);
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      if (data['success'] == true && data['data'] is Map<String, dynamic>) {
+        return data['data'] as Map<String, dynamic>;
+      }
+      throw Exception('Invalid API response structure');
+    }
+    throw Exception('Server returned status code ${response.statusCode}');
+  }
+
   // Leaves API
   Future<List<Leave>> fetchLeaves() async {
     final response = await http.get(Uri.parse('$baseUrl/leaves'), headers: _headers);
@@ -87,6 +100,23 @@ class ApiService {
       Uri.parse('$baseUrl/leads'),
       headers: _headers,
       body: json.encode(lead.toJson()),
+    );
+    return response.statusCode == 200 || response.statusCode == 201;
+  }
+
+  Future<bool> updateLead(Lead lead) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/leads/${lead.id}'),
+      headers: _headers,
+      body: json.encode(lead.toJson()),
+    );
+    return response.statusCode == 200 || response.statusCode == 201;
+  }
+
+  Future<bool> deleteLead(String id) async {
+    final response = await http.delete(
+      Uri.parse('$baseUrl/leads/$id'),
+      headers: _headers,
     );
     return response.statusCode == 200 || response.statusCode == 201;
   }
@@ -381,19 +411,67 @@ class ApiService {
   }
 
   Future<bool> submitEmployee(Employee employee) async {
+    String dbRole = 'employee';
+    final lowerRole = employee.role.toLowerCase();
+    if (lowerRole.contains('admin')) {
+      dbRole = 'admin';
+    } else if (lowerRole.contains('hr')) {
+      dbRole = 'hr';
+    } else if (lowerRole.contains('manager')) {
+      dbRole = 'manager';
+    }
+
     final response = await http.post(
       Uri.parse('$baseUrl/employees'),
       headers: _headers,
       body: json.encode({
+        'employeeId': employee.employeeId.isNotEmpty ? employee.employeeId : 'EMP${DateTime.now().millisecondsSinceEpoch}',
         'name': employee.name,
         'email': employee.email,
-        'role': employee.role,
-        'department': employee.department,
-        'status': employee.status.toLowerCase(),
-        'salary': employee.salary,
+        'password': employee.password ?? 'welcome123',
         'phone': employee.phone,
+        'role': dbRole,
+        'department': employee.department,
+        'designation': employee.designation ?? (employee.role.isNotEmpty ? employee.role : 'Staff'),
+        'salary': employee.salary,
+        'status': employee.status.toLowerCase(),
       }),
     );
     return response.statusCode == 200 || response.statusCode == 201;
+  }
+
+  Future<bool> updateEmployee(String id, Employee employee) async {
+    String dbRole = 'employee';
+    final lowerRole = employee.role.toLowerCase();
+    if (lowerRole.contains('admin')) {
+      dbRole = 'admin';
+    } else if (lowerRole.contains('hr')) {
+      dbRole = 'hr';
+    } else if (lowerRole.contains('manager')) {
+      dbRole = 'manager';
+    }
+
+    final response = await http.put(
+      Uri.parse('$baseUrl/employees/$id'),
+      headers: _headers,
+      body: json.encode({
+        'name': employee.name,
+        'phone': employee.phone,
+        'department': employee.department,
+        'designation': employee.designation ?? (employee.role.isNotEmpty ? employee.role : 'Staff'),
+        'salary': employee.salary,
+        'status': employee.status.toLowerCase(),
+        'role': dbRole,
+      }),
+    );
+    return response.statusCode == 200 || response.statusCode == 201;
+  }
+
+  Future<bool> deleteEmployee(String id) async {
+    final response = await http.delete(
+      Uri.parse('$baseUrl/employees/$id'),
+      headers: _headers,
+    );
+    return response.statusCode == 200 || response.statusCode == 204;
   }
 }

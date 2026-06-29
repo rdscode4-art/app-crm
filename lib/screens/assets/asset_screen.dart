@@ -197,6 +197,10 @@ class _AssetScreenState extends State<AssetScreen> {
 
     return Obx(() {
       final list = state.assets;
+      final controller = Get.isRegistered<CrmController>() ? Get.find<CrmController>() : null;
+      final isLoading = controller?.isLoadingAssets.value ?? false;
+      final error = controller?.assetsError.value;
+
       final filteredList = list.where((asset) {
         if (selectedFilter == 'All') return true;
         return asset.category == selectedFilter;
@@ -313,7 +317,24 @@ class _AssetScreenState extends State<AssetScreen> {
               ),
               child: Column(
                 children: [
-                  if (filteredList.isEmpty)
+                  if (isLoading)
+                    const Padding(
+                      padding: EdgeInsets.all(48),
+                      child: Center(
+                        child: CircularProgressIndicator(color: AppColors.primary),
+                      ),
+                    )
+                  else if (error != null)
+                    Padding(
+                      padding: const EdgeInsets.all(48),
+                      child: Center(
+                        child: Text(
+                          "Error loading assets: $error",
+                          style: const TextStyle(color: AppColors.danger),
+                        ),
+                      ),
+                    )
+                  else if (filteredList.isEmpty)
                     const Padding(
                       padding: EdgeInsets.all(48),
                       child: Center(

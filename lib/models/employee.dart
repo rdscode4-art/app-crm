@@ -12,6 +12,7 @@ class Employee {
   final String dateJoined;
   final String phone;
   final String avatarUrl;
+  final String? password;
 
   Employee({
     required this.id,
@@ -27,6 +28,7 @@ class Employee {
     required this.dateJoined,
     required this.phone,
     required this.avatarUrl,
+    this.password,
   }) : employeeId = employeeId ?? id;
 
   Employee copyWith({
@@ -43,6 +45,7 @@ class Employee {
     String? dateJoined,
     String? phone,
     String? avatarUrl,
+    String? password,
   }) {
     return Employee(
       id: id ?? this.id,
@@ -58,6 +61,7 @@ class Employee {
       dateJoined: dateJoined ?? this.dateJoined,
       phone: phone ?? this.phone,
       avatarUrl: avatarUrl ?? this.avatarUrl,
+      password: password ?? this.password,
     );
   }
 
