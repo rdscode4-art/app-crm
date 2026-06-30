@@ -1,6 +1,6 @@
 {
-    "name": "crmapplication",
-    "short_name": "crmapplication",
+    "name": "RidealCRM",
+    "short_name": "RidealCRM",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

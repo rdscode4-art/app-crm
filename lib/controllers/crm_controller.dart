@@ -286,6 +286,8 @@ class CrmController extends GetxController {
         description: "Draft Enterprise SLA package for Wayne Enterprises smart grid integration and email PDF.",
         assignedTo: "Marcus Aurelius",
         dueDate: DateTime.now().add(const Duration(days: 2)),
+        startDate: DateTime.now().subtract(const Duration(days: 1)),
+        category: "Sales",
         priority: "High",
         status: "In Progress",
       ),
@@ -295,6 +297,8 @@ class CrmController extends GetxController {
         description: "Arrange orientation session, workspace setup, and system login credentials.",
         assignedTo: "Diana Prince",
         dueDate: DateTime.now().subtract(const Duration(days: 1)),
+        startDate: DateTime.now().subtract(const Duration(days: 5)),
+        category: "HR",
         priority: "Medium",
         status: "Done",
       ),
@@ -304,6 +308,8 @@ class CrmController extends GetxController {
         description: "Initial introductory call to understand Daily Planet CRM scalability needs.",
         assignedTo: "Sarah Jenkins",
         dueDate: DateTime.now().add(const Duration(days: 5)),
+        startDate: DateTime.now().add(const Duration(days: 1)),
+        category: "Sales",
         priority: "Low",
         status: "Todo",
       ),
@@ -423,6 +429,20 @@ class CrmController extends GetxController {
       }
       return false;
     } catch (e) {
+      return false;
+    }
+  }
+
+  // Update Leave Status
+  Future<bool> updateLeaveStatus(String id, String newStatus) async {
+    try {
+      final success = await _apiService.updateLeaveStatus(id, newStatus);
+      if (success) {
+        await fetchLeaves();
+        return true;
+      }
+      return false;
+    } catch (_) {
       return false;
     }
   }

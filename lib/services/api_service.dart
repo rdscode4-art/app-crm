@@ -57,8 +57,16 @@ class ApiService {
   }
 
   // Leaves API
-  Future<List<Leave>> fetchLeaves() async {
-    final response = await http.get(Uri.parse('$baseUrl/leaves'), headers: _headers);
+  Future<List<Leave>> fetchLeaves({String? status, String? employee}) async {
+    String url = '$baseUrl/leaves';
+    final queryParams = <String>[];
+    if (status != null) queryParams.add('status=$status');
+    if (employee != null) queryParams.add('employee=$employee');
+    if (queryParams.isNotEmpty) {
+      url += '?${queryParams.join('&')}';
+    }
+
+    final response = await http.get(Uri.parse(url), headers: _headers);
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = json.decode(response.body);
       if (data['success'] == true && data['data'] is List) {
@@ -76,6 +84,17 @@ class ApiService {
       Uri.parse('$baseUrl/leaves'),
       headers: _headers,
       body: json.encode(leave.toJson()),
+    );
+    return response.statusCode == 200 || response.statusCode == 201;
+  }
+
+  Future<bool> updateLeaveStatus(String id, String status) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/leaves/$id/status'),
+      headers: _headers,
+      body: json.encode({
+        'status': status.toLowerCase(),
+      }),
     );
     return response.statusCode == 200 || response.statusCode == 201;
   }

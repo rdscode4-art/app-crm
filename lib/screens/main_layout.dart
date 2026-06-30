@@ -31,7 +31,7 @@ class _MainLayoutState extends State<MainLayout> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   final List<String> _titles = [
-    "RidealCRM Analytics",
+    "CRM",
     "Employee Portal",
     "Sales Lead Pipeline",
     "Time & Attendance",
@@ -40,7 +40,7 @@ class _MainLayoutState extends State<MainLayout> {
     "Workspace Task Board",
     "Performance Tracker",
     "Calendar Schedule",
-    "Account Settings",
+    "Profile",
     "Document Management Hub",
     "Asset Management Tracker",
     "Daily Report Logger",

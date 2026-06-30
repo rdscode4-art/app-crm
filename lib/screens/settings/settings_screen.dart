@@ -68,7 +68,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "System Settings",
+                "Profile",
+
                 style: TextStyle(
                   color: AppColors.textPrimary,
                   fontSize: 24,
@@ -76,13 +77,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
               SizedBox(height: 4),
-              Text(
-                "Customize notification alerts, workspace databases, and security options.",
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 14,
-                ),
-              ),
+              // Text(
+              //   "Customize notification alerts, workspace databases, and security options.",
+              //   style: TextStyle(
+              //     color: AppColors.textSecondary,
+              //     fontSize: 14,
+              //   ),
+              // ),
             ],
           ),
           const SizedBox(height: 24),

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/widgets/custom_button.dart';
-import '../../core/widgets/custom_text_field.dart';
 import '../../models/task.dart';
 import '../../services/mock_data_service.dart';
 import '../../controllers/crm_controller.dart';
@@ -38,19 +37,35 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
     final titleCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     String priority = 'Medium';
-    String assignee = state.employees.isNotEmpty ? state.employees.first.name : "Unassigned";
-    DateTime dueDate = DateTime.now().add(const Duration(days: 3));
+    String category = 'Other';
+    String assignee = "Select Employee";
+    DateTime startDate = DateTime.now();
+    DateTime? dueDate;
 
     showDialog(
       context: context,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            Future<void> selectDate() async {
+            Future<void> selectStartDate() async {
               final picked = await showDatePicker(
                 context: context,
-                initialDate: dueDate,
-                firstDate: DateTime.now().subtract(const Duration(days: 30)),
+                initialDate: startDate,
+                firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                lastDate: DateTime.now().add(const Duration(days: 365)),
+              );
+              if (picked != null) {
+                setDialogState(() {
+                  startDate = picked;
+                });
+              }
+            }
+
+            Future<void> selectDueDate() async {
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: dueDate ?? DateTime.now().add(const Duration(days: 3)),
+                firstDate: DateTime.now().subtract(const Duration(days: 365)),
                 lastDate: DateTime.now().add(const Duration(days: 365)),
               );
               if (picked != null) {
@@ -60,146 +75,404 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
               }
             }
 
-            final dateText = "${dueDate.day}/${dueDate.month}/${dueDate.year}";
+            final startDateText = "${startDate.month.toString().padLeft(2, '0')}/${startDate.day.toString().padLeft(2, '0')}/${startDate.year}";
+            final dueDateText = dueDate != null
+                ? "${dueDate!.month.toString().padLeft(2, '0')}/${dueDate!.day.toString().padLeft(2, '0')}/${dueDate!.year}"
+                : "mm/dd/yyyy";
 
-            return AlertDialog(
+            return Dialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               backgroundColor: Colors.white,
-              title: const Text(
-                "Create Workspace Task",
-                style: TextStyle(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              content: Form(
-                key: formKey,
+              clipBehavior: Clip.antiAlias,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 650),
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      CustomTextField(
-                        label: "Task Title",
-                        hint: "e.g., Deliver Wayne proposal feedback",
-                        prefixIcon: Icons.title,
-                        controller: titleCtrl,
-                        validator: (val) => val == null || val.isEmpty ? "Title is required" : null,
-                      ),
-                      const SizedBox(height: 12),
-                      CustomTextField(
-                        label: "Task Description",
-                        hint: "Provide clear goals and requirements...",
-                        prefixIcon: Icons.description_outlined,
-                        controller: descCtrl,
-                        validator: (val) => val == null || val.isEmpty ? "Description is required" : null,
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  "Priority Level",
-                                  style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 13),
-                                ),
-                                const SizedBox(height: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: AppColors.border, width: 1.5),
-                                    color: Colors.white,
-                                  ),
-                                  child: DropdownButtonHideUnderline(
-                                    child: DropdownButton<String>(
-                                      value: priority,
-                                      isExpanded: true,
-                                      items: ['Low', 'Medium', 'High']
-                                          .map((p) => DropdownMenuItem(
-                                                value: p,
-                                                child: Text(p, style: const TextStyle(fontSize: 14)),
-                                              ))
-                                          .toList(),
-                                      onChanged: (val) {
-                                        if (val != null) {
-                                          setDialogState(() {
-                                            priority = val;
-                                          });
-                                        }
-                                      },
-                                    ),
-                                  ),
-                                ),
-                              ],
+                      // Gradient Header
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)], // Indigo to Purple gradient
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              "Assign New Task",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  "Assignee representative",
-                                  style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 13),
-                                ),
-                                const SizedBox(height: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: AppColors.border, width: 1.5),
-                                    color: Colors.white,
-                                  ),
-                                  child: DropdownButtonHideUnderline(
-                                    child: DropdownButton<String>(
-                                      value: assignee,
-                                      isExpanded: true,
-                                      items: state.employees
-                                          .map((e) => DropdownMenuItem(
-                                                value: e.name,
-                                                child: Text(e.name, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis),
-                                              ))
-                                          .toList(),
-                                      onChanged: (val) {
-                                        if (val != null) {
-                                          setDialogState(() {
-                                            assignee = val;
-                                          });
-                                        }
-                                      },
-                                    ),
-                                  ),
-                                ),
-                              ],
+                            IconButton(
+                              icon: const Icon(Icons.close, color: Colors.white70, size: 24),
+                              onPressed: () => Navigator.of(context).pop(),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        "Deadline Target",
-                        style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 13),
-                      ),
-                      const SizedBox(height: 6),
-                      InkWell(
-                        onTap: selectDate,
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: AppColors.border, width: 1.5),
-                            borderRadius: BorderRadius.circular(8),
-                            color: Colors.grey[50],
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      // Form content
+                      Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Form(
+                          key: formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(dateText, style: const TextStyle(fontSize: 14, color: AppColors.textPrimary)),
-                              const Icon(Icons.calendar_month, color: AppColors.textSecondary, size: 20),
+                              // Task Title
+                              const Text(
+                                "Task Title",
+                                style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 14),
+                              ),
+                              const SizedBox(height: 6),
+                              TextFormField(
+                                controller: titleCtrl,
+                                style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                                decoration: InputDecoration(
+                                  hintText: "Task title",
+                                  hintStyle: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(6),
+                                    borderSide: const BorderSide(color: AppColors.border, width: 1.5),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(6),
+                                    borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                                  ),
+                                  errorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(6),
+                                    borderSide: const BorderSide(color: AppColors.danger, width: 1.5),
+                                  ),
+                                  focusedErrorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(6),
+                                    borderSide: const BorderSide(color: AppColors.danger, width: 2),
+                                  ),
+                                ),
+                                validator: (val) => val == null || val.isEmpty ? "Title is required" : null,
+                              ),
+                              const SizedBox(height: 16),
+
+                              // Assign To
+                              const Text(
+                                "Assign To",
+                                style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 14),
+                              ),
+                              const SizedBox(height: 6),
+                              DropdownButtonFormField<String>(
+                                initialValue: assignee,
+                                isExpanded: true,
+                                style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                                decoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(6),
+                                    borderSide: const BorderSide(color: AppColors.border, width: 1.5),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(6),
+                                    borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                                  ),
+                                  errorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(6),
+                                    borderSide: const BorderSide(color: AppColors.danger, width: 1.5),
+                                  ),
+                                  focusedErrorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(6),
+                                    borderSide: const BorderSide(color: AppColors.danger, width: 2),
+                                  ),
+                                ),
+                                items: [
+                                  const DropdownMenuItem(
+                                    value: "Select Employee",
+                                    child: Text(
+                                      "Select Employee",
+                                      style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                                    ),
+                                  ),
+                                  ...state.employees.map((e) => DropdownMenuItem(
+                                        value: e.name,
+                                        child: Text(e.name, style: const TextStyle(fontSize: 14)),
+                                      )),
+                                ],
+                                validator: (val) => val == null || val == "Select Employee" ? "Assignee is required" : null,
+                                onChanged: (val) {
+                                  if (val != null) {
+                                    setDialogState(() {
+                                      assignee = val;
+                                    });
+                                  }
+                                },
+                              ),
+                              const SizedBox(height: 16),
+
+                              // Start Date & Due Date side by side
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          "Start Date",
+                                          style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 14),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        InkWell(
+                                          onTap: selectStartDate,
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+                                            decoration: BoxDecoration(
+                                              border: Border.all(color: AppColors.border, width: 1.5),
+                                              borderRadius: BorderRadius.circular(6),
+                                              color: Colors.white,
+                                            ),
+                                            child: Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    startDateText,
+                                                    style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 4),
+                                                const Icon(Icons.calendar_month, color: AppColors.textSecondary, size: 16),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          "Due Date",
+                                          style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 14),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        InkWell(
+                                          onTap: selectDueDate,
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+                                            decoration: BoxDecoration(
+                                              border: Border.all(color: AppColors.border, width: 1.5),
+                                              borderRadius: BorderRadius.circular(6),
+                                              color: Colors.white,
+                                            ),
+                                            child: Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    dueDateText,
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: dueDate != null ? AppColors.textPrimary : AppColors.textSecondary,
+                                                    ),
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 4),
+                                                const Icon(Icons.calendar_month, color: AppColors.textSecondary, size: 16),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+
+                              // Priority & Category side by side
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          "Priority",
+                                          style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 14),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        DropdownButtonFormField<String>(
+                                          initialValue: priority,
+                                          isExpanded: true,
+                                          style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                                          decoration: InputDecoration(
+                                            filled: true,
+                                            fillColor: Colors.white,
+                                            contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                                            enabledBorder: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(6),
+                                              borderSide: const BorderSide(color: AppColors.border, width: 1.5),
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(6),
+                                              borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                                            ),
+                                          ),
+                                          items: ['Low', 'Medium', 'High']
+                                              .map((p) => DropdownMenuItem(
+                                                    value: p,
+                                                    child: Text(p, style: const TextStyle(fontSize: 14)),
+                                                  ))
+                                              .toList(),
+                                          onChanged: (val) {
+                                            if (val != null) {
+                                              setDialogState(() {
+                                                priority = val;
+                                              });
+                                            }
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          "Category",
+                                          style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 14),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        DropdownButtonFormField<String>(
+                                          initialValue: category,
+                                          isExpanded: true,
+                                          style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                                          decoration: InputDecoration(
+                                            filled: true,
+                                            fillColor: Colors.white,
+                                            contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                                            enabledBorder: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(6),
+                                              borderSide: const BorderSide(color: AppColors.border, width: 1.5),
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(6),
+                                              borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                                            ),
+                                          ),
+                                          items: ['Development', 'Design', 'Marketing', 'Sales', 'HR', 'Support', 'Other']
+                                              .map((c) => DropdownMenuItem(
+                                                    value: c,
+                                                    child: Text(c, style: const TextStyle(fontSize: 14)),
+                                                  ))
+                                              .toList(),
+                                          onChanged: (val) {
+                                            if (val != null) {
+                                              setDialogState(() {
+                                                category = val;
+                                              });
+                                            }
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+
+                              // Description
+                              const Text(
+                                "Description",
+                                style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 14),
+                              ),
+                              const SizedBox(height: 6),
+                              TextFormField(
+                                controller: descCtrl,
+                                maxLines: 4,
+                                style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                                decoration: InputDecoration(
+                                  hintText: "Enter task description",
+                                  hintStyle: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(6),
+                                    borderSide: const BorderSide(color: AppColors.border, width: 1.5),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(6),
+                                    borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                                  ),
+                                  errorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(6),
+                                    borderSide: const BorderSide(color: AppColors.danger, width: 1.5),
+                                  ),
+                                  focusedErrorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(6),
+                                    borderSide: const BorderSide(color: AppColors.danger, width: 2),
+                                  ),
+                                ),
+                                validator: (val) => val == null || val.isEmpty ? "Description is required" : null,
+                              ),
+                              const SizedBox(height: 24),
+
+                              // Buttons
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  TextButton(
+                                    onPressed: () => Navigator.of(context).pop(),
+                                    child: const Text("Cancel", style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  CustomButton(
+                                    text: "Assign Task",
+                                    onPressed: () {
+                                      if (formKey.currentState!.validate()) {
+                                        if (dueDate == null) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(content: Text("Due Date is required")),
+                                          );
+                                          return;
+                                        }
+                                        final newTask = CRMTask(
+                                          id: "TSK-${state.tasks.length + 201}",
+                                          title: titleCtrl.text,
+                                          description: descCtrl.text,
+                                          assignedTo: assignee,
+                                          startDate: startDate,
+                                          dueDate: dueDate!,
+                                          priority: priority,
+                                          category: category,
+                                          status: 'Todo',
+                                        );
+                                        state.addTask(newTask);
+                                        Navigator.of(context).pop();
+                                      }
+                                    },
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
                         ),
@@ -208,30 +481,6 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
                   ),
                 ),
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text("Cancel", style: TextStyle(color: AppColors.textSecondary)),
-                ),
-                CustomButton(
-                  text: "Assign Task",
-                  onPressed: () {
-                    if (formKey.currentState!.validate()) {
-                      final newTask = CRMTask(
-                        id: "TSK-${state.tasks.length + 201}",
-                        title: titleCtrl.text,
-                        description: descCtrl.text,
-                        assignedTo: assignee,
-                        dueDate: dueDate,
-                        priority: priority,
-                        status: 'Todo',
-                      );
-                      state.addTask(newTask);
-                      Navigator.of(context).pop();
-                    }
-                  },
-                ),
-              ],
             );
           },
         );
@@ -275,11 +524,28 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   _buildMetaCell("Assignee", task.assignedTo),
+                  _buildMetaCell(
+                    "Start Date",
+                    task.startDate != null
+                        ? "${task.startDate!.day}/${task.startDate!.month}/${task.startDate!.year}"
+                        : "-",
+                  ),
                   _buildMetaCell("Due Date", dateStr),
-                  _buildMetaCell("Priority", task.priority,
-                      color: task.priority == 'High'
-                          ? AppColors.danger
-                          : (task.priority == 'Medium' ? AppColors.warning : AppColors.info)),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildMetaCell("Category", task.category ?? "Other"),
+                  _buildMetaCell(
+                    "Priority",
+                    task.priority,
+                    color: task.priority == 'High'
+                        ? AppColors.danger
+                        : (task.priority == 'Medium' ? AppColors.warning : AppColors.info),
+                  ),
+                  const SizedBox(width: 80), // spacer to match alignment
                 ],
               ),
               const SizedBox(height: 24),
@@ -627,24 +893,46 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
           ),
           const SizedBox(height: 12),
 
-          // Footer: Priority tag & Assignee + Due Date
+          // Footer: Priority tag & Category & Assignee + Due Date
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: priorityColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  task.priority,
-                  style: TextStyle(
-                    color: priorityColor,
-                    fontSize: 9,
-                    fontWeight: FontWeight.bold,
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: priorityColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      task.priority,
+                      style: TextStyle(
+                        color: priorityColor,
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
-                ),
+                  if (task.category != null && task.category!.isNotEmpty) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        task.category!,
+                        style: TextStyle(
+                          color: Colors.grey[700],
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
               Row(
                 children: [

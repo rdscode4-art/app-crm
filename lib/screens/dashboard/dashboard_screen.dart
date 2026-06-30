@@ -99,37 +99,20 @@ class DashboardScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        "CRM Analytics Dashboard",
-                        style: TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "Real-time corporate overview: $activeEmployees / $totalEmployees personnel active today.",
-                        style: const TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
+            _buildGreetingHeaderCard(
+              context: context,
+              userName: "RidealCRM Overview",
+              subtitle: "Real-time corporate overview: $activeEmployees / $totalEmployees personnel active today.",
+              trailing: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.12),
+                  shape: BoxShape.circle,
                 ),
-                IconButton(
-                  icon: const Icon(Icons.refresh, color: AppColors.primary),
+                child: IconButton(
+                  icon: const Icon(Icons.refresh, color: Colors.white),
                   onPressed: () => controller.fetchDashboardStats(),
                 ),
-              ],
+              ),
             ),
             const SizedBox(height: 24),
 
@@ -191,13 +174,8 @@ class DashboardScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
+                      _buildDashboardCard(
                         padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.border),
-                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -224,7 +202,7 @@ class DashboardScreen extends StatelessWidget {
                                     shrinkWrap: true,
                                     physics: const NeverScrollableScrollPhysics(),
                                     itemCount: recentTasks.length,
-                                    separatorBuilder: (context, index) => const Divider(color: AppColors.border),
+                                    separatorBuilder: (context, index) => const SizedBox(height: 8),
                                     itemBuilder: (context, index) {
                                       final task = recentTasks[index];
                                       final priority = task['priority']?.toString() ?? 'medium';
@@ -248,8 +226,8 @@ class DashboardScreen extends StatelessWidget {
                                         statusColor = AppColors.textSecondary;
                                       }
 
-                                      return Padding(
-                                        padding: const EdgeInsets.symmetric(vertical: 4),
+                                      return _HoverListTile(
+                                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
@@ -268,23 +246,25 @@ class DashboardScreen extends StatelessWidget {
                                                 ),
                                                 const SizedBox(width: 8),
                                                 Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                                   decoration: BoxDecoration(
-                                                    color: priorityColor.withOpacity(0.1),
-                                                    borderRadius: BorderRadius.circular(4),
+                                                    color: priorityColor.withOpacity(0.08),
+                                                    borderRadius: BorderRadius.circular(20),
+                                                    border: Border.all(color: priorityColor.withOpacity(0.2), width: 1),
                                                   ),
                                                   child: Text(
                                                     priority.toUpperCase(),
                                                     style: TextStyle(
                                                       color: priorityColor,
                                                       fontWeight: FontWeight.bold,
-                                                      fontSize: 10,
+                                                      fontSize: 9,
+                                                      letterSpacing: 0.5,
                                                     ),
                                                   ),
                                                 ),
                                               ],
                                             ),
-                                            const SizedBox(height: 4),
+                                            const SizedBox(height: 6),
                                             Text(
                                               task['description']?.toString() ?? '',
                                               style: const TextStyle(
@@ -311,17 +291,19 @@ class DashboardScreen extends StatelessWidget {
                                                   ),
                                                 ),
                                                 Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                                   decoration: BoxDecoration(
-                                                    color: statusColor.withOpacity(0.1),
-                                                    borderRadius: BorderRadius.circular(4),
+                                                    color: statusColor.withOpacity(0.08),
+                                                    borderRadius: BorderRadius.circular(20),
+                                                    border: Border.all(color: statusColor.withOpacity(0.2), width: 1),
                                                   ),
                                                   child: Text(
                                                     status.toUpperCase(),
                                                     style: TextStyle(
                                                       color: statusColor,
                                                       fontWeight: FontWeight.bold,
-                                                      fontSize: 10,
+                                                      fontSize: 9,
+                                                      letterSpacing: 0.5,
                                                     ),
                                                   ),
                                                 ),
@@ -336,14 +318,8 @@ class DashboardScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 24),
-
-                      Container(
+                      _buildDashboardCard(
                         padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.border),
-                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -428,13 +404,8 @@ class DashboardScreen extends StatelessWidget {
                   const SizedBox(width: 24),
                   Expanded(
                     flex: 1,
-                    child: Container(
+                    child: _buildDashboardCard(
                       padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.border),
-                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -461,15 +432,15 @@ class DashboardScreen extends StatelessWidget {
                                   shrinkWrap: true,
                                   physics: const NeverScrollableScrollPhysics(),
                                   itemCount: recentEmployees.length,
-                                  separatorBuilder: (context, index) => const Divider(color: AppColors.border),
+                                  separatorBuilder: (context, index) => const SizedBox(height: 6),
                                   itemBuilder: (context, index) {
                                     final emp = recentEmployees[index];
                                     final name = emp['name'] ?? 'Unknown';
                                     final dept = emp['department'] ?? 'General';
                                     final desig = emp['designation'] ?? 'Staff';
 
-                                    return Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 4),
+                                    return _HoverListTile(
+                                      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
                                       child: Row(
                                         children: [
                                           CircleAvatar(
@@ -518,13 +489,8 @@ class DashboardScreen extends StatelessWidget {
             
             if (!isDesktop) ...[
               const SizedBox(height: 24),
-              Container(
+              _buildDashboardCard(
                 padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border),
-                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -551,15 +517,15 @@ class DashboardScreen extends StatelessWidget {
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             itemCount: recentEmployees.length,
-                            separatorBuilder: (context, index) => const Divider(color: AppColors.border),
+                            separatorBuilder: (context, index) => const SizedBox(height: 6),
                             itemBuilder: (context, index) {
                               final emp = recentEmployees[index];
                               final name = emp['name'] ?? 'Unknown';
                               final dept = emp['department'] ?? 'General';
                               final desig = emp['designation'] ?? 'Staff';
 
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 4),
+                              return _HoverListTile(
+                                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
                                 child: Row(
                                   children: [
                                     CircleAvatar(
@@ -601,8 +567,8 @@ class DashboardScreen extends StatelessWidget {
                   ],
                 ),
               ),
-            ],
           ],
+        ],
         ),
       ),
     );
@@ -632,33 +598,10 @@ class DashboardScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Welcome Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Welcome Back, ${state.currentUser?.name ?? 'User'}",
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      "Here's what is happening with your workforce and sales pipelines today.",
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          _buildGreetingHeaderCard(
+            context: context,
+            userName: state.currentUser?.name ?? 'Super Admin',
+            subtitle: "Here's what is happening with your workforce and sales pipelines today.",
           ),
           const SizedBox(height: 24),
 
@@ -759,33 +702,10 @@ class DashboardScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Welcome Back, ${state.currentUser?.name ?? 'HR Manager'}",
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      "HR Control Center: Monitor personnel, approve leave requests, and track company assets.",
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          _buildGreetingHeaderCard(
+            context: context,
+            userName: state.currentUser?.name ?? 'HR Manager',
+            subtitle: "HR Control Center: Monitor personnel, approve leave requests, and track company assets.",
           ),
           const SizedBox(height: 24),
 
@@ -849,13 +769,8 @@ class DashboardScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
+                    _buildDashboardCard(
                       padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.border),
-                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -882,53 +797,57 @@ class DashboardScreen extends StatelessWidget {
                                   shrinkWrap: true,
                                   physics: const NeverScrollableScrollPhysics(),
                                   itemCount: state.leaveRequests.where((l) => l.status.toLowerCase() == 'pending').length,
-                                  separatorBuilder: (context, index) => const Divider(color: AppColors.border),
+                                  separatorBuilder: (context, index) => const SizedBox(height: 6),
                                   itemBuilder: (context, index) {
                                     final req = state.leaveRequests.where((l) => l.status.toLowerCase() == 'pending').toList()[index];
-                                    return Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                    return _HoverListTile(
+                                      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  req.employeeName,
+                                                  style: const TextStyle(
+                                                    color: AppColors.textPrimary,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 2),
+                                                Text(
+                                                  "${req.type} | ${req.reason}",
+                                                  style: const TextStyle(
+                                                    color: AppColors.textSecondary,
+                                                    fontSize: 12,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Row(
                                             children: [
-                                              Text(
-                                                req.employeeName,
-                                                style: const TextStyle(
-                                                  color: AppColors.textPrimary,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 14,
-                                                ),
+                                              IconButton(
+                                                icon: const Icon(Icons.check_circle_outline, color: AppColors.primary),
+                                                onPressed: () {
+                                                  state.updateLeaveStatus(req.id, 'Approved');
+                                                },
                                               ),
-                                              Text(
-                                                "${req.type} | ${req.reason}",
-                                                style: const TextStyle(
-                                                  color: AppColors.textSecondary,
-                                                  fontSize: 12,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
+                                              IconButton(
+                                                icon: const Icon(Icons.cancel_outlined, color: AppColors.danger),
+                                                onPressed: () {
+                                                  state.updateLeaveStatus(req.id, 'Rejected');
+                                                },
                                               ),
                                             ],
                                           ),
-                                        ),
-                                        Row(
-                                          children: [
-                                            IconButton(
-                                              icon: const Icon(Icons.check_circle_outline, color: AppColors.primary),
-                                              onPressed: () {
-                                                state.updateLeaveStatus(req.id, 'Approved');
-                                              },
-                                            ),
-                                            IconButton(
-                                              icon: const Icon(Icons.cancel_outlined, color: AppColors.danger),
-                                              onPressed: () {
-                                                state.updateLeaveStatus(req.id, 'Rejected');
-                                              },
-                                            ),
-                                          ],
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     );
                                   },
                                 ),
@@ -936,13 +855,8 @@ class DashboardScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    Container(
+                    _buildDashboardCard(
                       padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.border),
-                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -959,28 +873,31 @@ class DashboardScreen extends StatelessWidget {
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             itemCount: state.assets.take(3).length,
-                            separatorBuilder: (context, index) => const Divider(color: AppColors.border),
+                            separatorBuilder: (context, index) => const SizedBox(height: 6),
                             itemBuilder: (context, index) {
                               final asset = state.assets[index];
-                              return Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    asset.name,
-                                    style: const TextStyle(
-                                      color: AppColors.textPrimary,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 13,
+                              return _HoverListTile(
+                                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      asset.name,
+                                      style: const TextStyle(
+                                        color: AppColors.textPrimary,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 13,
+                                      ),
                                     ),
-                                  ),
-                                  Text(
-                                    asset.assignedTo,
-                                    style: const TextStyle(
-                                      color: AppColors.textSecondary,
-                                      fontSize: 13,
+                                    Text(
+                                      asset.assignedTo,
+                                      style: const TextStyle(
+                                        color: AppColors.textSecondary,
+                                        fontSize: 13,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               );
                             },
                           ),
@@ -1019,33 +936,10 @@ class DashboardScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Welcome Back, ${state.currentUser?.name ?? 'Employee'}",
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      "Employee Portal: View active tasks, submit leaves, and track daily attendance shifts.",
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          _buildGreetingHeaderCard(
+            context: context,
+            userName: state.currentUser?.name ?? 'Employee',
+            subtitle: "Employee Portal: View active tasks, submit leaves, and track daily attendance shifts.",
           ),
           const SizedBox(height: 24),
 
@@ -1110,13 +1004,8 @@ class DashboardScreen extends StatelessWidget {
                   children: [
                     _DashboardAttendanceCard(state: state),
                     const SizedBox(height: 24),
-                    Container(
+                    _buildDashboardCard(
                       padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.border),
-                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -1143,44 +1032,48 @@ class DashboardScreen extends StatelessWidget {
                                   shrinkWrap: true,
                                   physics: const NeverScrollableScrollPhysics(),
                                   itemCount: myTasks.length,
-                                  separatorBuilder: (context, index) => const Divider(color: AppColors.border),
+                                  separatorBuilder: (context, index) => const SizedBox(height: 6),
                                   itemBuilder: (context, index) {
                                     final task = myTasks[index];
-                                    return Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                task.title,
-                                                style: const TextStyle(
-                                                  color: AppColors.textPrimary,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 14,
+                                    return _HoverListTile(
+                                      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  task.title,
+                                                  style: const TextStyle(
+                                                    color: AppColors.textPrimary,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 14,
+                                                  ),
                                                 ),
-                                              ),
-                                              Text(
-                                                task.description,
-                                                style: const TextStyle(
-                                                  color: AppColors.textSecondary,
-                                                  fontSize: 12,
+                                                const SizedBox(height: 2),
+                                                Text(
+                                                  task.description,
+                                                  style: const TextStyle(
+                                                    color: AppColors.textSecondary,
+                                                    fontSize: 12,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
                                                 ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ],
+                                              ],
+                                            ),
                                           ),
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(Icons.check_circle_outline, color: AppColors.primary),
-                                          onPressed: () {
-                                            state.updateTaskStatus(task.id, 'Done');
-                                            state.addNotification("Task Completed", "You marked task '${task.title}' as done!");
-                                          },
-                                        ),
-                                      ],
+                                          IconButton(
+                                            icon: const Icon(Icons.check_circle_outline, color: AppColors.primary),
+                                            onPressed: () {
+                                              state.updateTaskStatus(task.id, 'Done');
+                                              state.addNotification("Task Completed", "You marked task '${task.title}' as done!");
+                                            },
+                                          ),
+                                        ],
+                                      ),
                                     );
                                   },
                                 ),
@@ -1206,84 +1099,88 @@ class DashboardScreen extends StatelessWidget {
 
   // --- Helper Widgets ---
   Widget _buildSystemNotificationsLog(BuildContext context, MockDataService state) {
-    return Container(
+    return SizedBox(
       height: 600,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            "System Notifications Log",
-            style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
+      child: _buildDashboardCard(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "System Notifications Log",
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: ListView.builder(
-              itemCount: state.notifications.length,
-              itemBuilder: (context, index) {
-                final item = state.notifications[index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        margin: const EdgeInsets.only(top: 2),
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: item.isRead ? Colors.grey[300] : AppColors.primary,
-                          shape: BoxShape.circle,
+            const SizedBox(height: 16),
+            Expanded(
+              child: ListView.builder(
+                itemCount: state.notifications.length,
+                itemBuilder: (context, index) {
+                  final item = state.notifications[index];
+                  return _HoverListTile(
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          margin: const EdgeInsets.only(top: 6),
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: item.isRead ? Colors.grey[300] : AppColors.primary,
+                            shape: BoxShape.circle,
+                            boxShadow: item.isRead ? [] : [
+                              BoxShadow(
+                                color: AppColors.primary.withOpacity(0.3),
+                                blurRadius: 4,
+                                spreadRadius: 1,
+                              )
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              item.title,
-                              style: const TextStyle(
-                                color: AppColors.textPrimary,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.title,
+                                style: const TextStyle(
+                                  color: AppColors.textPrimary,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              item.message,
-                              style: const TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 12,
+                              const SizedBox(height: 2),
+                              Text(
+                                item.message,
+                                style: const TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 12,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              "${item.timestamp.hour.toString().padLeft(2, '0')}:${item.timestamp.minute.toString().padLeft(2, '0')} today",
-                              style: TextStyle(
-                                color: Colors.grey[400],
-                                fontSize: 10,
+                              const SizedBox(height: 4),
+                              Text(
+                                "${item.timestamp.hour.toString().padLeft(2, '0')}:${item.timestamp.minute.toString().padLeft(2, '0')} today",
+                                style: TextStyle(
+                                  color: Colors.grey[400],
+                                  fontSize: 10,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                );
-              },
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1317,6 +1214,128 @@ class DashboardScreen extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildGreetingHeaderCard({
+    required BuildContext context,
+    required String userName,
+    required String subtitle,
+    Widget? trailing,
+  }) {
+    final now = DateTime.now();
+    final hour = now.hour;
+    String greeting;
+    IconData greetingIcon;
+    Color iconColor;
+
+    if (hour >= 5 && hour < 12) {
+      greeting = "Good morning";
+      greetingIcon = Icons.wb_sunny_outlined;
+      iconColor = Colors.amber;
+    } else if (hour >= 12 && hour < 17) {
+      greeting = "Good afternoon";
+      greetingIcon = Icons.light_mode;
+      iconColor = Colors.orangeAccent;
+    } else {
+      greeting = "Good evening";
+      greetingIcon = Icons.nights_stay_outlined;
+      iconColor = Colors.indigoAccent;
+    }
+
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(
+          colors: [
+            AppColors.sidebarBackground, // Dark slate
+            Color(0xFF272F3F),          // Slightly lighter slate/navy
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          )
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(greetingIcon, color: iconColor, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      "$greeting,",
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: isMobile ? 13 : 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  userName,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: isMobile ? 20 : 26,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.6),
+                    fontSize: isMobile ? 12 : 14,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (trailing != null) ...[
+            const SizedBox(width: 16),
+            trailing,
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDashboardCard({
+    required Widget child,
+    EdgeInsetsGeometry padding = const EdgeInsets.all(20),
+  }) {
+    return Container(
+      padding: padding,
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.015),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
 }
 
 // Custom Vector Line Chart
@@ -1334,43 +1353,80 @@ class _RevenueCurveChart extends StatelessWidget {
 class _LineChartPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paintLine = Paint()
-      ..color = AppColors.primary
-      ..strokeWidth = 3
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
+    const double paddingLeft = 45.0;
+    const double paddingBottom = 20.0;
+    const double paddingTop = 15.0;
+    const double paddingRight = 15.0;
 
-    final paintFill = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          AppColors.primary.withOpacity(0.2),
-          AppColors.primary.withOpacity(0.0),
-        ],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
-      ..style = PaintingStyle.fill;
+    final chartWidth = size.width - paddingLeft - paddingRight;
+    final chartHeight = size.height - paddingTop - paddingBottom;
+
+    if (chartWidth <= 0 || chartHeight <= 0) return;
 
     final paintGrid = Paint()
-      ..color = AppColors.border
-      ..strokeWidth = 1;
+      ..color = AppColors.border.withOpacity(0.6)
+      ..strokeWidth = 1.0;
 
-    // Draw Grid Lines (Horizontal)
+    // Draw Y-axis grid lines and labels
     final gridCount = 4;
+    final yLabels = ['₹0', '₹25k', '₹50k', '₹75k', '₹100k'];
     for (int i = 0; i <= gridCount; i++) {
-      final y = size.height * i / gridCount;
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paintGrid);
+      final y = paddingTop + chartHeight * (1 - i / gridCount);
+      canvas.drawLine(Offset(paddingLeft, y), Offset(paddingLeft + chartWidth, y), paintGrid);
+
+      // Y-axis Label
+      final textSpan = TextSpan(
+        text: yLabels[i],
+        style: const TextStyle(
+          color: AppColors.textSecondary,
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+        ),
+      );
+      final textPainter = TextPainter(
+        text: textSpan,
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout();
+      textPainter.paint(
+        canvas,
+        Offset(paddingLeft - textPainter.width - 8, y - textPainter.height / 2),
+      );
     }
 
-    // Points of the Revenue Wave
-    final points = [
-      Offset(size.width * 0.0, size.height * 0.75),
-      Offset(size.width * 0.2, size.height * 0.60),
-      Offset(size.width * 0.4, size.height * 0.85),
-      Offset(size.width * 0.6, size.height * 0.35),
-      Offset(size.width * 0.8, size.height * 0.45),
-      Offset(size.width * 1.0, size.height * 0.15),
-    ];
+    // X-axis Labels
+    final xLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    final xStep = chartWidth / (xLabels.length - 1);
+    for (int i = 0; i < xLabels.length; i++) {
+      final x = paddingLeft + i * xStep;
+      
+      final textSpan = TextSpan(
+        text: xLabels[i],
+        style: const TextStyle(
+          color: AppColors.textSecondary,
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+        ),
+      );
+      final textPainter = TextPainter(
+        text: textSpan,
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout();
+      textPainter.paint(
+        canvas,
+        Offset(x - textPainter.width / 2, paddingTop + chartHeight + 4),
+      );
+    }
+
+    // Points of the Revenue Wave mapped to padding coordinates
+    final rawYPercentages = [0.75, 0.60, 0.85, 0.35, 0.45, 0.15];
+    final points = <Offset>[];
+    for (int i = 0; i < rawYPercentages.length; i++) {
+      final x = paddingLeft + i * xStep;
+      final y = paddingTop + chartHeight * rawYPercentages[i];
+      points.add(Offset(x, y));
+    }
 
     final path = Path();
     path.moveTo(points[0].dx, points[0].dy);
@@ -1387,22 +1443,93 @@ class _LineChartPainter extends CustomPainter {
       );
     }
 
-    // Gradient fill path
+    // Fill Path with Gradient
     final fillPath = Path.from(path);
-    fillPath.lineTo(size.width, size.height);
-    fillPath.lineTo(0, size.height);
+    fillPath.lineTo(paddingLeft + chartWidth, paddingTop + chartHeight);
+    fillPath.lineTo(paddingLeft, paddingTop + chartHeight);
     fillPath.close();
 
+    final paintFill = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          AppColors.primary.withOpacity(0.24),
+          AppColors.primary.withOpacity(0.0),
+        ],
+      ).createShader(Rect.fromLTWH(paddingLeft, paddingTop, chartWidth, chartHeight))
+      ..style = PaintingStyle.fill;
+
     canvas.drawPath(fillPath, paintFill);
+
+    // Glowing Line shadow
+    final paintShadow = Paint()
+      ..color = AppColors.primary.withOpacity(0.18)
+      ..strokeWidth = 6.0
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    canvas.drawPath(path, paintShadow);
+
+    // Bright curves line
+    final paintLine = Paint()
+      ..color = AppColors.primary
+      ..strokeWidth = 3.0
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
     canvas.drawPath(path, paintLine);
+
+    // Draw vertical indicator line for the latest month (June)
+    final latestPt = points.last;
+    final paintIndicator = Paint()
+      ..color = AppColors.primary.withOpacity(0.4)
+      ..strokeWidth = 1.0;
+    
+    // Draw indicator line
+    canvas.drawLine(
+      Offset(latestPt.dx, paddingTop),
+      Offset(latestPt.dx, paddingTop + chartHeight),
+      paintIndicator,
+    );
 
     // Draw point nodes
     final paintDots = Paint()..color = AppColors.primary;
     final paintWhite = Paint()..color = Colors.white;
-    for (final pt in points) {
-      canvas.drawCircle(pt, 5, paintDots);
-      canvas.drawCircle(pt, 2.5, paintWhite);
+    for (int i = 0; i < points.length; i++) {
+      final pt = points[i];
+      final isLast = i == points.length - 1;
+      
+      canvas.drawCircle(pt, isLast ? 6.0 : 4.5, paintDots);
+      canvas.drawCircle(pt, isLast ? 3.0 : 2.0, paintWhite);
     }
+
+    // Draw glowing tooltip for the latest point
+    final tooltipRect = Rect.fromCenter(
+      center: Offset(latestPt.dx - 45, latestPt.dy - 24),
+      width: 78,
+      height: 22,
+    );
+    final rrect = RRect.fromRectAndRadius(tooltipRect, const Radius.circular(6));
+    final paintTooltipBg = Paint()..color = AppColors.sidebarBackground;
+    canvas.drawRRect(rrect, paintTooltipBg);
+
+    final textSpan = const TextSpan(
+      text: '₹85,000 (Jun)',
+      style: TextStyle(
+        color: Colors.white,
+        fontSize: 9,
+        fontWeight: FontWeight.bold,
+      ),
+    );
+    final textPainter = TextPainter(
+      text: textSpan,
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    textPainter.paint(
+      canvas,
+      Offset(tooltipRect.left + (tooltipRect.width - textPainter.width) / 2,
+             tooltipRect.top + (tooltipRect.height - textPainter.height) / 2),
+    );
   }
 
   @override
@@ -1425,12 +1552,11 @@ class _LeadBarChart extends StatelessWidget {
         final count = state.leads.where((l) => l.status == stage).length;
         final maxCount = state.leads.length;
         final pct = maxCount > 0 ? (count / maxCount) : 0.0;
-        final barHeight = 140 * pct;
 
         Color barColor;
         switch (stage) {
           case 'New':
-            barColor = Colors.blue;
+            barColor = AppColors.info;
             break;
           case 'Contacted':
             barColor = Colors.orange;
@@ -1445,44 +1571,115 @@ class _LeadBarChart extends StatelessWidget {
             barColor = AppColors.danger;
         }
 
-        return Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Text(
-              "$count",
-              style: const TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Container(
-              width: 32,
-              height: barHeight < 10 ? 10 : barHeight,
-              decoration: BoxDecoration(
-                color: barColor.withOpacity(0.85),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(4),
-                  topRight: Radius.circular(4),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              stage,
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 11,
-              ),
-            ),
-          ],
+        return _LeadBarItem(
+          stage: stage,
+          count: count,
+          percentage: pct,
+          barColor: barColor,
         );
       }).toList(),
     );
   }
 }
 
+class _LeadBarItem extends StatefulWidget {
+  final String stage;
+  final int count;
+  final double percentage;
+  final Color barColor;
+
+  const _LeadBarItem({
+    required this.stage,
+    required this.count,
+    required this.percentage,
+    required this.barColor,
+  });
+
+  @override
+  State<_LeadBarItem> createState() => _LeadBarItemState();
+}
+
+class _LeadBarItemState extends State<_LeadBarItem> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    const double maxBarHeight = 140.0;
+    final barHeight = maxBarHeight * widget.percentage;
+    
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedScale(
+        scale: _isHovered ? 1.05 : 1.0,
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOutCubic,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Text(
+              "${widget.count}",
+              style: TextStyle(
+                color: _isHovered ? widget.barColor : AppColors.textPrimary,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Stack(
+              alignment: Alignment.bottomCenter,
+              children: [
+                // Background Track
+                Container(
+                  width: 32,
+                  height: maxBarHeight,
+                  decoration: BoxDecoration(
+                    color: AppColors.border.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+                // Filled bar
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 600),
+                  curve: Curves.easeOutBack,
+                  width: 32,
+                  height: barHeight < 8 ? 8 : barHeight,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        widget.barColor,
+                        widget.barColor.withOpacity(0.6),
+                      ],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
+                    borderRadius: BorderRadius.circular(6),
+                    boxShadow: _isHovered ? [
+                      BoxShadow(
+                        color: widget.barColor.withOpacity(0.3),
+                        blurRadius: 8,
+                        spreadRadius: 1,
+                      )
+                    ] : [],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              widget.stage,
+              style: TextStyle(
+                color: _isHovered ? AppColors.textPrimary : AppColors.textSecondary,
+                fontWeight: _isHovered ? FontWeight.bold : FontWeight.normal,
+                fontSize: 11,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 class _DashboardAttendanceCard extends StatefulWidget {
   final MockDataService state;
   const _DashboardAttendanceCard({super.key, required this.state});
@@ -1491,13 +1688,18 @@ class _DashboardAttendanceCard extends StatefulWidget {
   State<_DashboardAttendanceCard> createState() => _DashboardAttendanceCardState();
 }
 
-class _DashboardAttendanceCardState extends State<_DashboardAttendanceCard> {
+class _DashboardAttendanceCardState extends State<_DashboardAttendanceCard> with SingleTickerProviderStateMixin {
   Timer? _timer;
   Duration _elapsed = Duration.zero;
+  late AnimationController _pulseController;
 
   @override
   void initState() {
     super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
     _startTimer();
   }
 
@@ -1510,6 +1712,7 @@ class _DashboardAttendanceCardState extends State<_DashboardAttendanceCard> {
   @override
   void dispose() {
     _timer?.cancel();
+    _pulseController.dispose();
     super.dispose();
   }
 
@@ -1568,55 +1771,100 @@ class _DashboardAttendanceCardState extends State<_DashboardAttendanceCard> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          isPunched ? "Active Work Shift" : "Shift Attendance",
-          style: const TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 8),
-        if (isPunched) ...[
-          Row(
-            children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                  color: AppColors.primary,
-                  shape: BoxShape.circle,
-                ),
+        Row(
+          children: [
+            if (isPunched) ...[
+              AnimatedBuilder(
+                animation: _pulseController,
+                builder: (context, child) {
+                  final double pulseVal = _pulseController.value;
+                  return Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: AppColors.success,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.success.withOpacity(0.4 * (1 - pulseVal)),
+                          blurRadius: 10 * pulseVal,
+                          spreadRadius: 6 * pulseVal,
+                        )
+                      ],
+                    ),
+                  );
+                },
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  "Working Hours: ${_formatDuration(_elapsed)}",
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'monospace',
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
+              const SizedBox(width: 10),
             ],
+            Text(
+              isPunched ? "Active Work Shift" : "Shift Attendance Status",
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (isPunched) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppColors.success.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.success.withOpacity(0.15)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.timer_outlined, color: AppColors.success, size: 18),
+                const SizedBox(width: 10),
+                Text(
+                  _formatDuration(_elapsed),
+                  style: const TextStyle(
+                    color: AppColors.success,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'monospace',
+                    letterSpacing: 1.0,
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Text(
-            "Checked in at ${widget.state.todayAttendance?.checkInTime ?? ''}",
+            "Shift started at ${widget.state.todayAttendance?.checkInTime ?? ''}",
             style: const TextStyle(
               color: AppColors.textSecondary,
               fontSize: 12,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ] else ...[
-          const Text(
-            "You are not clocked in for work today yet.",
-            style: TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 13,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppColors.danger.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.danger.withOpacity(0.15)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.info_outline, color: AppColors.danger, size: 16),
+                const SizedBox(width: 8),
+                const Text(
+                  "Not clocked-in for today yet",
+                  style: TextStyle(
+                    color: AppColors.danger,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -1624,8 +1872,8 @@ class _DashboardAttendanceCardState extends State<_DashboardAttendanceCard> {
     );
 
     final actionButton = CustomButton(
-      text: isPunched ? "Check Out" : "Check In",
-      icon: isPunched ? Icons.logout : Icons.login,
+      text: isPunched ? "Clock Out" : "Clock In",
+      icon: isPunched ? Icons.logout : Icons.fingerprint,
       backgroundColor: isPunched ? AppColors.danger : AppColors.primary,
       width: isMobile ? double.infinity : null,
       onPressed: () {
@@ -1641,14 +1889,14 @@ class _DashboardAttendanceCardState extends State<_DashboardAttendanceCard> {
     );
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.01),
+            color: Colors.black.withOpacity(0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           )
@@ -1660,7 +1908,7 @@ class _DashboardAttendanceCardState extends State<_DashboardAttendanceCard> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 infoColumn,
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
                 actionButton,
               ],
             )
@@ -1672,6 +1920,45 @@ class _DashboardAttendanceCardState extends State<_DashboardAttendanceCard> {
                 actionButton,
               ],
             ),
+    );
+  }
+}
+
+class _HoverListTile extends StatefulWidget {
+  final Widget child;
+  final VoidCallback? onTap;
+  final EdgeInsetsGeometry padding;
+
+  const _HoverListTile({
+    required this.child,
+    this.onTap,
+    this.padding = const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+  });
+
+  @override
+  State<_HoverListTile> createState() => _HoverListTileState();
+}
+
+class _HoverListTileState extends State<_HoverListTile> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: widget.padding,
+          decoration: BoxDecoration(
+            color: _isHovered ? AppColors.background : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: widget.child,
+        ),
+      ),
     );
   }
 }

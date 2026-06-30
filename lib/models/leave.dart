@@ -42,11 +42,38 @@ class Leave {
   }
 
   factory Leave.fromJson(Map<String, dynamic> json) {
+    String empName = 'Unassigned';
+    String empId = '';
+    
+    if (json['employee'] is Map) {
+      empName = json['employee']['name']?.toString() ?? 'Unassigned';
+      empId = json['employee']['_id']?.toString() ?? json['employee']['employeeId']?.toString() ?? '';
+    } else {
+      empName = json['employeeName']?.toString() ?? json['employee_name']?.toString() ?? 'Unassigned';
+      empId = json['employeeId']?.toString() ?? json['employee_id']?.toString() ?? json['employee']?.toString() ?? '';
+    }
+
+    String rawType = (json['leaveType'] ?? json['type'] ?? 'casual').toString().toLowerCase();
+    String type = 'Casual';
+    if (rawType == 'sick') {
+      type = 'Sick';
+    } else if (rawType == 'annual') {
+      type = 'Annual';
+    }
+
+    String rawStatus = (json['status'] ?? 'pending').toString().toLowerCase();
+    String status = 'Pending';
+    if (rawStatus == 'approved') {
+      status = 'Approved';
+    } else if (rawStatus == 'rejected') {
+      status = 'Rejected';
+    }
+
     return Leave(
       id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
-      employeeId: json['employeeId']?.toString() ?? json['employee_id']?.toString() ?? '',
-      employeeName: json['employeeName']?.toString() ?? json['employee_name']?.toString() ?? '',
-      type: json['type']?.toString() ?? json['leave_type']?.toString() ?? 'Casual',
+      employeeId: empId,
+      employeeName: empName,
+      type: type,
       startDate: json['startDate'] != null
           ? DateTime.tryParse(json['startDate'].toString()) ?? DateTime.now()
           : json['start_date'] != null
@@ -58,20 +85,22 @@ class Leave {
               ? DateTime.tryParse(json['end_date'].toString()) ?? DateTime.now()
               : DateTime.now(),
       reason: json['reason']?.toString() ?? '',
-      status: json['status']?.toString() ?? 'Pending',
+      status: status,
     );
   }
 
   Map<String, dynamic> toJson() {
+    final difference = endDate.difference(startDate).inDays;
+    final calculatedDays = difference >= 0 ? difference + 1 : 1;
+
     return {
-      'id': id,
-      'employeeId': employeeId,
-      'employeeName': employeeName,
-      'type': type,
+      'employee': employeeId,
+      'leaveType': type.toLowerCase(),
       'startDate': startDate.toIso8601String(),
       'endDate': endDate.toIso8601String(),
+      'days': calculatedDays,
       'reason': reason,
-      'status': status,
+      'status': status.toLowerCase(),
     };
   }
 }

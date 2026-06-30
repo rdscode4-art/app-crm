@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import '../../controllers/crm_controller.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/widgets/custom_button.dart';
@@ -990,117 +991,261 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
                                 child: Text("No employees found.", style: TextStyle(color: AppColors.textSecondary)),
                               ),
                             )
-                          : ListView.separated(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: filteredList.length,
-                              separatorBuilder: (context, index) => const Divider(color: AppColors.border, height: 1),
-                              itemBuilder: (context, index) {
-                                final emp = filteredList[index];
+                          : AnimationLimiter(
+                              child: ListView.separated(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: filteredList.length,
+                                separatorBuilder: (context, index) => const Divider(color: AppColors.border, height: 1),
+                                itemBuilder: (context, index) {
+                                  final emp = filteredList[index];
 
-                                return InkWell(
-                                  onTap: () => _showEmployeeDetails(context, emp),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                                    child: Row(
-                                      children: [
-                                         Container(
-                                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                           decoration: BoxDecoration(
-                                             color: AppColors.primary.withOpacity(0.08),
-                                             borderRadius: BorderRadius.circular(6),
-                                             border: Border.all(color: AppColors.primary.withOpacity(0.15)),
-                                           ),
-                                           child: Text(
-                                             emp.employeeId.isNotEmpty ? emp.employeeId : emp.id,
-                                             style: const TextStyle(
-                                               color: AppColors.primary,
-                                               fontSize: 11,
-                                               fontWeight: FontWeight.bold,
-                                               letterSpacing: 0.3,
-                                             ),
-                                           ),
-                                         ),
-                                        const SizedBox(width: 16),
-                                        Expanded(
-                                          flex: 3,
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                emp.name,
-                                                style: const TextStyle(
-                                                  color: AppColors.textPrimary,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 14,
+                                  return AnimationConfiguration.staggeredList(
+                                    position: index,
+                                    duration: const Duration(milliseconds: 375),
+                                    child: SlideAnimation(
+                                      verticalOffset: 50.0,
+                                      child: FadeInAnimation(
+                                        child: InkWell(
+                                          onTap: () => _showEmployeeDetails(context, emp),
+                                          child: width <= 600
+                                              ? Padding(
+                                                  padding: const EdgeInsets.all(16),
+                                                  child: Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Row(
+                                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                                        children: [
+                                                          Expanded(
+                                                            child: Column(
+                                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                                              children: [
+                                                                Text(
+                                                                  emp.name,
+                                                                  style: const TextStyle(
+                                                                    color: AppColors.textPrimary,
+                                                                    fontWeight: FontWeight.bold,
+                                                                    fontSize: 14,
+                                                                  ),
+                                                                  maxLines: 1,
+                                                                  overflow: TextOverflow.ellipsis,
+                                                                ),
+                                                                const SizedBox(height: 2),
+                                                                Text(
+                                                                  emp.designation ?? (emp.role.isNotEmpty ? emp.role[0].toUpperCase() + emp.role.substring(1) : ''),
+                                                                  style: const TextStyle(
+                                                                    color: AppColors.textSecondary,
+                                                                    fontSize: 12,
+                                                                  ),
+                                                                  maxLines: 1,
+                                                                  overflow: TextOverflow.ellipsis,
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                          const SizedBox(width: 8),
+                                                          Container(
+                                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                                            decoration: BoxDecoration(
+                                                              color: emp.status == 'Active'
+                                                                  ? AppColors.primary.withOpacity(0.1)
+                                                                  : Colors.grey.withOpacity(0.1),
+                                                              borderRadius: BorderRadius.circular(12),
+                                                            ),
+                                                            child: Text(
+                                                              emp.status,
+                                                              style: TextStyle(
+                                                                color: emp.status == 'Active'
+                                                                    ? AppColors.primary
+                                                                    : Colors.grey[600],
+                                                                fontSize: 10,
+                                                                fontWeight: FontWeight.bold,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      const SizedBox(height: 12),
+                                                      const Divider(height: 1, color: AppColors.border),
+                                                      const SizedBox(height: 12),
+                                                      Row(
+                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                        children: [
+                                                          Expanded(
+                                                            child: Column(
+                                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                                              children: [
+                                                                Text(
+                                                                  emp.email,
+                                                                  style: const TextStyle(
+                                                                    color: AppColors.textSecondary,
+                                                                    fontSize: 11,
+                                                                  ),
+                                                                  maxLines: 1,
+                                                                  overflow: TextOverflow.ellipsis,
+                                                                ),
+                                                                const SizedBox(height: 4),
+                                                                Row(
+                                                                  children: [
+                                                                    Container(
+                                                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                                      decoration: BoxDecoration(
+                                                                        color: AppColors.primary.withOpacity(0.08),
+                                                                        borderRadius: BorderRadius.circular(4),
+                                                                        border: Border.all(color: AppColors.primary.withOpacity(0.15)),
+                                                                      ),
+                                                                      child: Text(
+                                                                        emp.employeeId.isNotEmpty ? emp.employeeId : emp.id,
+                                                                        style: const TextStyle(
+                                                                          color: AppColors.primary,
+                                                                          fontSize: 9,
+                                                                          fontWeight: FontWeight.bold,
+                                                                          letterSpacing: 0.3,
+                                                                        ),
+                                                                      ),
+                                                                    ),
+                                                                    const SizedBox(width: 8),
+                                                                    Text(
+                                                                      emp.department,
+                                                                      style: const TextStyle(
+                                                                        color: AppColors.textSecondary,
+                                                                        fontSize: 11,
+                                                                        fontWeight: FontWeight.w500,
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                          const SizedBox(width: 12),
+                                                          Row(
+                                                            mainAxisSize: MainAxisSize.min,
+                                                            children: [
+                                                              IconButton(
+                                                                icon: const Icon(Icons.edit_outlined, color: AppColors.primary, size: 18),
+                                                                onPressed: () => _showEditEmployeeDialog(context, emp, state),
+                                                                constraints: const BoxConstraints(),
+                                                                padding: const EdgeInsets.all(6),
+                                                              ),
+                                                              const SizedBox(width: 4),
+                                                              IconButton(
+                                                                icon: const Icon(Icons.delete_outline, color: AppColors.danger, size: 18),
+                                                                onPressed: () => _confirmDeleteEmployee(context, emp, state),
+                                                                constraints: const BoxConstraints(),
+                                                                padding: const EdgeInsets.all(6),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ],
+                                                  ),
+                                                )
+                                              : Padding(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                                                  child: Row(
+                                                    children: [
+                                                      Container(
+                                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                                        decoration: BoxDecoration(
+                                                          color: AppColors.primary.withOpacity(0.08),
+                                                          borderRadius: BorderRadius.circular(6),
+                                                          border: Border.all(color: AppColors.primary.withOpacity(0.15)),
+                                                        ),
+                                                        child: Text(
+                                                          emp.employeeId.isNotEmpty ? emp.employeeId : emp.id,
+                                                          style: const TextStyle(
+                                                            color: AppColors.primary,
+                                                            fontSize: 11,
+                                                            fontWeight: FontWeight.bold,
+                                                            letterSpacing: 0.3,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      const SizedBox(width: 16),
+                                                      Expanded(
+                                                        flex: 3,
+                                                        child: Column(
+                                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                                          children: [
+                                                            Text(
+                                                              emp.name,
+                                                              style: const TextStyle(
+                                                                color: AppColors.textPrimary,
+                                                                fontWeight: FontWeight.bold,
+                                                                fontSize: 14,
+                                                              ),
+                                                            ),
+                                                            const SizedBox(height: 2),
+                                                            Text(
+                                                              emp.email,
+                                                              style: const TextStyle(
+                                                                color: AppColors.textSecondary,
+                                                                fontSize: 12,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                      Expanded(
+                                                        flex: 2,
+                                                        child: Text(
+                                                          emp.designation ?? (emp.role.isNotEmpty ? emp.role[0].toUpperCase() + emp.role.substring(1) : ''),
+                                                          style: const TextStyle(
+                                                            color: AppColors.textPrimary,
+                                                            fontSize: 13,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      Expanded(
+                                                        flex: 2,
+                                                        child: Text(
+                                                          emp.department,
+                                                          style: const TextStyle(
+                                                            color: AppColors.textSecondary,
+                                                            fontSize: 13,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      Container(
+                                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                                        decoration: BoxDecoration(
+                                                          color: emp.status == 'Active'
+                                                              ? AppColors.primary.withOpacity(0.1)
+                                                              : Colors.grey.withOpacity(0.1),
+                                                          borderRadius: BorderRadius.circular(12),
+                                                        ),
+                                                        child: Text(
+                                                          emp.status,
+                                                          style: TextStyle(
+                                                            color: emp.status == 'Active'
+                                                                ? AppColors.primary
+                                                                : Colors.grey[600],
+                                                            fontSize: 11,
+                                                            fontWeight: FontWeight.bold,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      const SizedBox(width: 8),
+                                                      IconButton(
+                                                        icon: const Icon(Icons.edit_outlined, color: AppColors.primary, size: 20),
+                                                        onPressed: () => _showEditEmployeeDialog(context, emp, state),
+                                                      ),
+                                                      IconButton(
+                                                        icon: const Icon(Icons.delete_outline, color: AppColors.danger, size: 20),
+                                                        onPressed: () => _confirmDeleteEmployee(context, emp, state),
+                                                      ),
+                                                    ],
+                                                  ),
                                                 ),
-                                              ),
-                                              const SizedBox(height: 2),
-                                              Text(
-                                                emp.email,
-                                                style: const TextStyle(
-                                                  color: AppColors.textSecondary,
-                                                  fontSize: 12,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
                                         ),
-                                        if (width > 600) ...[
-                                          Expanded(
-                                            flex: 2,
-                                            child: Text(
-                                              emp.designation ?? (emp.role.isNotEmpty ? emp.role[0].toUpperCase() + emp.role.substring(1) : ''),
-                                              style: const TextStyle(
-                                                color: AppColors.textPrimary,
-                                                fontSize: 13,
-                                              ),
-                                            ),
-                                          ),
-                                          Expanded(
-                                            flex: 2,
-                                            child: Text(
-                                              emp.department,
-                                              style: const TextStyle(
-                                                color: AppColors.textSecondary,
-                                                fontSize: 13,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: emp.status == 'Active'
-                                                ? AppColors.primary.withOpacity(0.1)
-                                                : Colors.grey.withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          child: Text(
-                                            emp.status,
-                                            style: TextStyle(
-                                              color: emp.status == 'Active'
-                                                  ? AppColors.primary
-                                                  : Colors.grey[600],
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        IconButton(
-                                          icon: const Icon(Icons.edit_outlined, color: AppColors.primary, size: 20),
-                                          onPressed: () => _showEditEmployeeDialog(context, emp, state),
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(Icons.delete_outline, color: AppColors.danger, size: 20),
-                                          onPressed: () => _confirmDeleteEmployee(context, emp, state),
-                                        ),
-                                      ],
+                                      ),
                                     ),
-                                  ),
-                                );
-                              },
+                                  );
+                                },
+                              ),
                             ),
             ),
           ],

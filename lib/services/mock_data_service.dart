@@ -545,12 +545,20 @@ class MockDataService extends ChangeNotifier {
   }
 
   void updateLeaveStatus(String id, String status) {
-    final idx = _leaveRequests.indexWhere((l) => l.id == id);
-    if (idx != -1) {
-      final oldReq = _leaveRequests[idx];
-      _leaveRequests[idx] = oldReq.copyWith(status: status);
-      addNotification("Leave Request Update", "Your $status status for leave has been updated: $status.");
-      notifyListeners();
+    if (Get.isRegistered<CrmController>()) {
+      Get.find<CrmController>().updateLeaveStatus(id, status).then((success) {
+        if (success) {
+          addNotification("Leave Request Update", "Leave request has been $status.");
+        }
+      });
+    } else {
+      final idx = _leaveRequests.indexWhere((l) => l.id == id);
+      if (idx != -1) {
+        final oldReq = _leaveRequests[idx];
+        _leaveRequests[idx] = oldReq.copyWith(status: status);
+        addNotification("Leave Request Update", "Your $status status for leave has been updated: $status.");
+        notifyListeners();
+      }
     }
   }
 
@@ -800,6 +808,8 @@ class MockDataService extends ChangeNotifier {
         description: "Draft Enterprise SLA package for Wayne Enterprises smart grid integration and email PDF.",
         assignedTo: "Marcus Aurelius",
         dueDate: DateTime.now().add(const Duration(days: 2)),
+        startDate: DateTime.now().subtract(const Duration(days: 1)),
+        category: "Sales",
         priority: "High",
         status: "In Progress",
       ),
@@ -809,6 +819,8 @@ class MockDataService extends ChangeNotifier {
         description: "Arrange orientation session, workspace setup, and system login credentials.",
         assignedTo: "Diana Prince",
         dueDate: DateTime.now().subtract(const Duration(days: 1)),
+        startDate: DateTime.now().subtract(const Duration(days: 5)),
+        category: "HR",
         priority: "Medium",
         status: "Done",
       ),
@@ -818,6 +830,8 @@ class MockDataService extends ChangeNotifier {
         description: "Initial introductory call to understand Daily Planet CRM scalability needs.",
         assignedTo: "Sarah Jenkins",
         dueDate: DateTime.now().add(const Duration(days: 5)),
+        startDate: DateTime.now().add(const Duration(days: 1)),
+        category: "Sales",
         priority: "Low",
         status: "Todo",
       ),
@@ -827,6 +841,8 @@ class MockDataService extends ChangeNotifier {
         description: "HR alignment check on casual/annual leave balances before the end of the half-year.",
         assignedTo: "Diana Prince",
         dueDate: DateTime.now().add(const Duration(days: 3)),
+        startDate: DateTime.now(),
+        category: "HR",
         priority: "High",
         status: "Review",
       ),

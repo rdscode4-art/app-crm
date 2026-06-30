@@ -74,7 +74,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.sidebarBackground,
+      backgroundColor: Colors.white,
       body: Center(
         child: AnimatedBuilder(
           animation: _controller,
@@ -86,46 +86,10 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   scale: _scaleAnimation,
                   child: Opacity(
                     opacity: _opacityAnimation.value,
-                    child: Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.15),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppColors.primary.withOpacity(0.3),
-                          width: 2,
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.bolt,
-                        size: 64,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Opacity(
-                  opacity: _opacityAnimation.value,
-                  child: const Text(
-                    "RidealCRM",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.0,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Opacity(
-                  opacity: _opacityAnimation.value * 0.7,
-                  child: const Text(
-                    "Enterprise CRM & Employee Ecosystem",
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                      letterSpacing: 0.5,
+                    child: Image.asset(
+                      'assets/splash.png',
+                      width: 280,
+                      fit: BoxFit.contain,
                     ),
                   ),
                 ),

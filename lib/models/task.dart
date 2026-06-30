@@ -4,6 +4,8 @@ class CRMTask {
   final String description;
   final String assignedTo; // Employee Name
   final DateTime dueDate;
+  final DateTime? startDate;
+  final String? category;
   final String priority; // 'Low', 'Medium', 'High'
   final String status; // 'Todo', 'In Progress', 'Review', 'Done'
 
@@ -13,6 +15,8 @@ class CRMTask {
     required this.description,
     required this.assignedTo,
     required this.dueDate,
+    this.startDate,
+    this.category,
     required this.priority,
     required this.status,
   });
@@ -23,6 +27,8 @@ class CRMTask {
     String? description,
     String? assignedTo,
     DateTime? dueDate,
+    DateTime? startDate,
+    String? category,
     String? priority,
     String? status,
   }) {
@@ -32,6 +38,8 @@ class CRMTask {
       description: description ?? this.description,
       assignedTo: assignedTo ?? this.assignedTo,
       dueDate: dueDate ?? this.dueDate,
+      startDate: startDate ?? this.startDate,
+      category: category ?? this.category,
       priority: priority ?? this.priority,
       status: status ?? this.status,
     );
@@ -76,6 +84,10 @@ class CRMTask {
       dueDate: json['dueDate'] != null
           ? DateTime.tryParse(json['dueDate'].toString()) ?? DateTime.now()
           : DateTime.now(),
+      startDate: json['startDate'] != null
+          ? DateTime.tryParse(json['startDate'].toString())
+          : null,
+      category: json['category']?.toString(),
       priority: priority,
       status: status,
     );
@@ -88,6 +100,8 @@ class CRMTask {
       'description': description,
       'assignedTo': assignedTo,
       'dueDate': dueDate.toIso8601String(),
+      'startDate': startDate?.toIso8601String(),
+      'category': category,
       'priority': priority,
       'status': status,
     };

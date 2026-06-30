@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/widgets/custom_button.dart';
 import '../../core/widgets/custom_text_field.dart';
@@ -169,7 +170,7 @@ class _LeaveScreenState extends State<LeaveScreen> {
   @override
   Widget build(BuildContext context) {
     final state = MockDataService();
-    final isAdmin = state.currentUser?.id == "EMP-001"; // Diana Prince has admin approval privileges
+    final isAdmin = state.currentRole == UserRole.superAdmin || state.currentRole == UserRole.hr;
     final screenWidth = MediaQuery.of(context).size.width;
     final cardWidth = screenWidth < 600 ? double.infinity : 220.0;
     final badgeText = screenWidth < 600 ? "Admin" : "HR Administrator View";
@@ -366,130 +367,141 @@ class _LeaveScreenState extends State<LeaveScreen> {
                         ),
                       )
                     else
-                      ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: currentRequests.length,
-                        separatorBuilder: (context, idx) => const Divider(color: AppColors.border, height: 1),
-                        itemBuilder: (context, idx) {
-                          final req = currentRequests[idx];
-                          final durationText = "${req.startDate.day}/${req.startDate.month} - ${req.endDate.day}/${req.endDate.month}";
+                      AnimationLimiter(
+                        child: ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: currentRequests.length,
+                          separatorBuilder: (context, idx) => const Divider(color: AppColors.border, height: 1),
+                          itemBuilder: (context, idx) {
+                            final req = currentRequests[idx];
+                            final durationText = "${req.startDate.day}/${req.startDate.month} - ${req.endDate.day}/${req.endDate.month}";
 
-                          Color statusColor;
-                          switch (req.status) {
-                            case 'Approved':
-                              statusColor = AppColors.success;
-                              break;
-                            case 'Pending':
-                              statusColor = AppColors.warning;
-                              break;
-                            default:
-                              statusColor = AppColors.danger;
-                          }
+                            Color statusColor;
+                            switch (req.status) {
+                              case 'Approved':
+                                statusColor = AppColors.success;
+                                break;
+                              case 'Pending':
+                                statusColor = AppColors.warning;
+                                break;
+                              default:
+                                statusColor = AppColors.danger;
+                            }
 
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            child: Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 18,
-                                  backgroundColor: statusColor.withOpacity(0.1),
-                                  child: Icon(
-                                    req.type == 'Sick'
-                                        ? Icons.medication_outlined
-                                        : (req.type == 'Casual' ? Icons.beach_access_outlined : Icons.flight_takeoff_outlined),
-                                    color: statusColor,
-                                    size: 18,
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "${req.employeeName} (${req.type} Leave)",
-                                        style: const TextStyle(
-                                          color: AppColors.textPrimary,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13,
+                            return AnimationConfiguration.staggeredList(
+                              position: idx,
+                              duration: const Duration(milliseconds: 375),
+                              child: SlideAnimation(
+                                verticalOffset: 50.0,
+                                child: FadeInAnimation(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    child: Row(
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 18,
+                                          backgroundColor: statusColor.withOpacity(0.1),
+                                          child: Icon(
+                                            req.type == 'Sick'
+                                                ? Icons.medication_outlined
+                                                : (req.type == 'Casual' ? Icons.beach_access_outlined : Icons.flight_takeoff_outlined),
+                                            color: statusColor,
+                                            size: 18,
+                                          ),
                                         ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        "Duration: $durationText • Reason: ${req.reason}",
-                                        style: const TextStyle(
-                                          color: AppColors.textSecondary,
-                                          fontSize: 11,
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                "${req.employeeName} (${req.type} Leave)",
+                                                style: const TextStyle(
+                                                  color: AppColors.textPrimary,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 13,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                "Duration: $durationText • Reason: ${req.reason}",
+                                                style: const TextStyle(
+                                                  color: AppColors.textSecondary,
+                                                  fontSize: 11,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
+                                          ),
                                         ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: statusColor.withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        req.status,
-                                        style: TextStyle(
-                                          color: statusColor,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
+                                        const SizedBox(width: 8),
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: statusColor.withOpacity(0.1),
+                                                borderRadius: BorderRadius.circular(12),
+                                              ),
+                                              child: Text(
+                                                req.status,
+                                                style: TextStyle(
+                                                  color: statusColor,
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                            // If HR admin and Pending, show quick approval toggles
+                                            if (isAdmin && req.status == 'Pending') ...[
+                                              const SizedBox(height: 6),
+                                              Row(
+                                                children: [
+                                                  InkWell(
+                                                    onTap: () => state.updateLeaveStatus(req.id, 'Approved'),
+                                                    borderRadius: BorderRadius.circular(12),
+                                                    child: Container(
+                                                      padding: const EdgeInsets.all(4),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.green[50],
+                                                        shape: BoxShape.circle,
+                                                        border: Border.all(color: Colors.green[100]!),
+                                                      ),
+                                                      child: const Icon(Icons.check, color: Colors.green, size: 12),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  InkWell(
+                                                    onTap: () => state.updateLeaveStatus(req.id, 'Rejected'),
+                                                    borderRadius: BorderRadius.circular(12),
+                                                    child: Container(
+                                                      padding: const EdgeInsets.all(4),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.red[50],
+                                                        shape: BoxShape.circle,
+                                                        border: Border.all(color: Colors.red[100]!),
+                                                      ),
+                                                      child: const Icon(Icons.close, color: Colors.red, size: 12),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ],
                                         ),
-                                      ),
+                                      ],
                                     ),
-                                    // If HR admin and Pending, show quick approval toggles
-                                    if (isAdmin && req.status == 'Pending') ...[
-                                      const SizedBox(height: 6),
-                                      Row(
-                                        children: [
-                                          InkWell(
-                                            onTap: () => state.updateLeaveStatus(req.id, 'Approved'),
-                                            borderRadius: BorderRadius.circular(12),
-                                            child: Container(
-                                              padding: const EdgeInsets.all(4),
-                                              decoration: BoxDecoration(
-                                                color: Colors.green[50],
-                                                shape: BoxShape.circle,
-                                                border: Border.all(color: Colors.green[100]!),
-                                              ),
-                                              child: const Icon(Icons.check, color: Colors.green, size: 12),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          InkWell(
-                                            onTap: () => state.updateLeaveStatus(req.id, 'Rejected'),
-                                            borderRadius: BorderRadius.circular(12),
-                                            child: Container(
-                                              padding: const EdgeInsets.all(4),
-                                              decoration: BoxDecoration(
-                                                color: Colors.red[50],
-                                                shape: BoxShape.circle,
-                                                border: Border.all(color: Colors.red[100]!),
-                                              ),
-                                              child: const Icon(Icons.close, color: Colors.red, size: 12),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ],
+                                  ),
                                 ),
-                              ],
-                            ),
-                          );
-                        },
+                              ),
+                            );
+                          },
+                        ),
                       ),
                   ],
                 ),
