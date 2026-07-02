@@ -19,6 +19,7 @@ import 'documents/document_screen.dart';
 import 'assets/asset_screen.dart';
 import 'daily_reports/daily_report_screen.dart';
 import 'role_management/role_management_screen.dart';
+import 'call_logs/call_logs_screen.dart';
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
@@ -45,6 +46,7 @@ class _MainLayoutState extends State<MainLayout> {
     "Asset Management Tracker",
     "Daily Report Logger",
     "Role Management Console",
+    "Call Logs Monitor",
   ];
 
   Widget _getCurrentScreen(int index) {
@@ -77,6 +79,8 @@ class _MainLayoutState extends State<MainLayout> {
         return const DailyReportScreen();
       case 13:
         return const RoleManagementScreen();
+      case 14:
+        return const CallLogsScreen();
       default:
         return const DashboardScreen();
     }

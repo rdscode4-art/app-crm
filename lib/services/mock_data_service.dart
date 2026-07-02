@@ -11,6 +11,7 @@ import '../models/notification.dart';
 import '../models/asset.dart';
 import '../models/daily_report.dart';
 import '../models/user_role_info.dart';
+import '../models/call_log.dart';
 import '../controllers/crm_controller.dart';
 import 'api_service.dart';
 
@@ -45,6 +46,7 @@ class MockDataService extends ChangeNotifier {
   final List<CRMAsset> _assets = [];
   final List<DailyReport> _dailyReports = [];
   final List<UserRoleInfo> _userRoles = [];
+  final List<CallLog> _callLogs = [];
 
   // Getters
   bool get isOnboarded => _isOnboarded;
@@ -89,6 +91,10 @@ class MockDataService extends ChangeNotifier {
   List<UserRoleInfo> get userRoles => Get.isRegistered<CrmController>()
       ? Get.find<CrmController>().userRoles
       : List.unmodifiable(_userRoles);
+
+  List<CallLog> get callLogs => Get.isRegistered<CrmController>()
+      ? Get.find<CrmController>().callLogs
+      : List.unmodifiable(_callLogs);
 
   UserRole get currentRole {
     if (_currentUser == null) return UserRole.employee;
@@ -594,6 +600,33 @@ class MockDataService extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Call Log Actions
+  void addCallLog(CallLog log) {
+    if (Get.isRegistered<CrmController>()) {
+      Get.find<CrmController>().submitCallLog(log);
+      addNotification("Call Logged", "Call with ${log.leadName} logged (${log.durationMinutes} min).");
+    } else {
+      _callLogs.insert(0, log);
+      addNotification("Call Logged", "Call with ${log.leadName} logged (${log.durationMinutes} min).");
+      notifyListeners();
+    }
+  }
+
+  // Employee Working Status Actions
+  void updateWorkingStatus(String status) {
+    if (_currentUser == null) return;
+    if (Get.isRegistered<CrmController>()) {
+      Get.find<CrmController>().updateEmployeeWorkingStatus(_currentUser!.id, status);
+    } else {
+      _currentUser = _currentUser!.copyWith(workingStatus: status);
+      final idx = _employees.indexWhere((e) => e.id == _currentUser!.id);
+      if (idx != -1) {
+        _employees[idx] = _currentUser!;
+      }
+      notifyListeners();
+    }
+  }
+
   // Notifications helper
   void addNotification(String title, String message) {
     _notifications.insert(
@@ -689,6 +722,32 @@ class MockDataService extends ChangeNotifier {
 
     // Initial default user session
     _currentUser = _employees[0];
+
+    // Initialize some mock Call Logs
+    _callLogs.addAll([
+      CallLog(
+        id: "CALL-001",
+        leadId: "LD-101",
+        leadName: "Robert Downey",
+        employeeId: "EMP-003",
+        employeeName: "Sarah Jenkins",
+        durationMinutes: 12,
+        outcome: "Connected",
+        notes: "Discussed integration timelines.",
+        timestamp: DateTime.now().subtract(const Duration(hours: 2)),
+      ),
+      CallLog(
+        id: "CALL-002",
+        leadId: "LD-102",
+        leadName: "Bruce Wayne",
+        employeeId: "EMP-002",
+        employeeName: "Marcus Aurelius",
+        durationMinutes: 45,
+        outcome: "Connected",
+        notes: "Detailed architecture review.",
+        timestamp: DateTime.now().subtract(const Duration(hours: 4)),
+      ),
+    ]);
 
     // 2. Sales Leads
     _leads.addAll([

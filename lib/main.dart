@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'core/constants/app_colors.dart';
 import 'controllers/crm_controller.dart';
 import 'screens/splash_screen.dart';
@@ -22,24 +23,43 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        fontFamily: 'Inter',
+        textTheme: GoogleFonts.montserratTextTheme(),
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primary,
           primary: AppColors.primary,
-          background: AppColors.background,
+          secondary: AppColors.accentCyan,
+          surface: AppColors.cardBackground,
         ),
         scaffoldBackgroundColor: AppColors.background,
-        appBarTheme: const AppBarTheme(
+        appBarTheme: AppBarTheme(
           elevation: 0,
           backgroundColor: AppColors.cardBackground,
-          iconTheme: IconThemeData(color: AppColors.textPrimary),
+          iconTheme: const IconThemeData(color: AppColors.textPrimary),
+          titleTextStyle: GoogleFonts.montserrat(
+            color: AppColors.textPrimary,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         cardTheme: CardThemeData(
           color: AppColors.cardBackground,
-          elevation: 1,
+          elevation: 4,
+          shadowColor: Colors.black.withOpacity(0.05),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: const BorderSide(color: AppColors.border, width: 1),
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide.none,
+          ),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+            elevation: 2,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(30),
+            ),
+            textStyle: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
           ),
         ),
       ),

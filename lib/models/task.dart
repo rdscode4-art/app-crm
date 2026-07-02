@@ -3,6 +3,7 @@ class CRMTask {
   final String title;
   final String description;
   final String assignedTo; // Employee Name
+  final String? department; // e.g., 'Sales', 'Engineering'
   final DateTime dueDate;
   final DateTime? startDate;
   final String? category;
@@ -14,6 +15,7 @@ class CRMTask {
     required this.title,
     required this.description,
     required this.assignedTo,
+    this.department,
     required this.dueDate,
     this.startDate,
     this.category,
@@ -26,6 +28,7 @@ class CRMTask {
     String? title,
     String? description,
     String? assignedTo,
+    String? department,
     DateTime? dueDate,
     DateTime? startDate,
     String? category,
@@ -37,6 +40,7 @@ class CRMTask {
       title: title ?? this.title,
       description: description ?? this.description,
       assignedTo: assignedTo ?? this.assignedTo,
+      department: department ?? this.department,
       dueDate: dueDate ?? this.dueDate,
       startDate: startDate ?? this.startDate,
       category: category ?? this.category,
@@ -81,6 +85,7 @@ class CRMTask {
       title: json['title']?.toString() ?? '',
       description: json['description']?.toString() ?? '',
       assignedTo: assignee,
+      department: json['department']?.toString(),
       dueDate: json['dueDate'] != null
           ? DateTime.tryParse(json['dueDate'].toString()) ?? DateTime.now()
           : DateTime.now(),
@@ -99,6 +104,7 @@ class CRMTask {
       'title': title,
       'description': description,
       'assignedTo': assignedTo,
+      'department': department,
       'dueDate': dueDate.toIso8601String(),
       'startDate': startDate?.toIso8601String(),
       'category': category,

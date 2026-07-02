@@ -38,7 +38,9 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
     final descCtrl = TextEditingController();
     String priority = 'Medium';
     String category = 'Other';
+    String assignType = 'Employee';
     String assignee = "Select Employee";
+    String assignDepartment = "Sales";
     DateTime startDate = DateTime.now();
     DateTime? dueDate;
 
@@ -165,59 +167,107 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
                               ),
                               const SizedBox(height: 16),
 
-                              // Assign To
-                              const Text(
-                                "Assign To",
-                                style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 14),
-                              ),
-                              const SizedBox(height: 6),
-                              DropdownButtonFormField<String>(
-                                initialValue: assignee,
-                                isExpanded: true,
-                                style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-                                decoration: InputDecoration(
-                                  filled: true,
-                                  fillColor: Colors.white,
-                                  contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(6),
-                                    borderSide: const BorderSide(color: AppColors.border, width: 1.5),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(6),
-                                    borderSide: const BorderSide(color: AppColors.primary, width: 2),
-                                  ),
-                                  errorBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(6),
-                                    borderSide: const BorderSide(color: AppColors.danger, width: 1.5),
-                                  ),
-                                  focusedErrorBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(6),
-                                    borderSide: const BorderSide(color: AppColors.danger, width: 2),
-                                  ),
-                                ),
-                                items: [
-                                  const DropdownMenuItem(
-                                    value: "Select Employee",
-                                    child: Text(
-                                      "Select Employee",
-                                      style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                              // Assign To Type (Employee or Department)
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: RadioListTile<String>(
+                                      title: const Text("To Employee", style: TextStyle(fontSize: 13)),
+                                      value: 'Employee',
+                                      groupValue: assignType,
+                                      contentPadding: EdgeInsets.zero,
+                                      onChanged: (val) {
+                                        setDialogState(() => assignType = val!);
+                                      },
                                     ),
                                   ),
-                                  ...state.employees.map((e) => DropdownMenuItem(
-                                        value: e.name,
-                                        child: Text(e.name, style: const TextStyle(fontSize: 14)),
-                                      )),
+                                  Expanded(
+                                    child: RadioListTile<String>(
+                                      title: const Text("To Department", style: TextStyle(fontSize: 13)),
+                                      value: 'Department',
+                                      groupValue: assignType,
+                                      contentPadding: EdgeInsets.zero,
+                                      onChanged: (val) {
+                                        setDialogState(() => assignType = val!);
+                                      },
+                                    ),
+                                  ),
                                 ],
-                                validator: (val) => val == null || val == "Select Employee" ? "Assignee is required" : null,
-                                onChanged: (val) {
-                                  if (val != null) {
-                                    setDialogState(() {
-                                      assignee = val;
-                                    });
-                                  }
-                                },
                               ),
+                              const SizedBox(height: 8),
+
+                              if (assignType == 'Employee') ...[
+                                const Text(
+                                  "Assign To Employee",
+                                  style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 14),
+                                ),
+                                const SizedBox(height: 6),
+                                DropdownButtonFormField<String>(
+                                  initialValue: assignee,
+                                  isExpanded: true,
+                                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                                  decoration: InputDecoration(
+                                    filled: true,
+                                    fillColor: Colors.white,
+                                    contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(6),
+                                      borderSide: const BorderSide(color: AppColors.border, width: 1.5),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(6),
+                                      borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                                    ),
+                                  ),
+                                  items: [
+                                    const DropdownMenuItem(
+                                      value: "Select Employee",
+                                      child: Text("Select Employee", style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+                                    ),
+                                    ...state.employees.map((e) => DropdownMenuItem(
+                                          value: e.name,
+                                          child: Text(e.name, style: const TextStyle(fontSize: 14)),
+                                        )),
+                                  ],
+                                  validator: (val) => val == null || val == "Select Employee" ? "Assignee is required" : null,
+                                  onChanged: (val) {
+                                    if (val != null) setDialogState(() => assignee = val);
+                                  },
+                                ),
+                              ] else ...[
+                                const Text(
+                                  "Assign To Department",
+                                  style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 14),
+                                ),
+                                const SizedBox(height: 6),
+                                DropdownButtonFormField<String>(
+                                  initialValue: assignDepartment,
+                                  isExpanded: true,
+                                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                                  decoration: InputDecoration(
+                                    filled: true,
+                                    fillColor: Colors.white,
+                                    contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(6),
+                                      borderSide: const BorderSide(color: AppColors.border, width: 1.5),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(6),
+                                      borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                                    ),
+                                  ),
+                                  items: ['Sales', 'HR', 'Engineering', 'Marketing', 'Support']
+                                      .map((d) => DropdownMenuItem(
+                                            value: d,
+                                            child: Text(d, style: const TextStyle(fontSize: 14)),
+                                          ))
+                                      .toList(),
+                                  onChanged: (val) {
+                                    if (val != null) setDialogState(() => assignDepartment = val);
+                                  },
+                                ),
+                              ],
                               const SizedBox(height: 16),
 
                               // Start Date & Due Date side by side
@@ -459,7 +509,8 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
                                           id: "TSK-${state.tasks.length + 201}",
                                           title: titleCtrl.text,
                                           description: descCtrl.text,
-                                          assignedTo: assignee,
+                                          assignedTo: assignType == 'Employee' ? assignee : "$assignDepartment Team",
+                                          department: assignType == 'Department' ? assignDepartment : null,
                                           startDate: startDate,
                                           dueDate: dueDate!,
                                           priority: priority,

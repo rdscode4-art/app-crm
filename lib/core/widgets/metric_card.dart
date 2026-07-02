@@ -37,12 +37,12 @@ class _MetricCardState extends State<MetricCard> {
     final width = MediaQuery.of(context).size.width;
     final isCompact = width < 600;
 
-    final double cardPadding = isCompact ? 12.0 : 16.0;
-    final double titleFontSize = isCompact ? 12.0 : 13.0;
-    final double valueFontSize = isCompact ? 18.0 : 22.0;
-    final double trendFontSize = isCompact ? 9.0 : 11.0;
-    final double iconSize = isCompact ? 16.0 : 18.0;
-    final double iconPadding = isCompact ? 6.0 : 8.0;
+    final double cardPadding = isCompact ? 16.0 : 20.0;
+    final double titleFontSize = isCompact ? 14.0 : 16.0;
+    final double valueFontSize = isCompact ? 22.0 : 28.0;
+    final double trendFontSize = isCompact ? 12.0 : 14.0;
+    final double iconSize = isCompact ? 24.0 : 28.0;
+    final double iconPadding = isCompact ? 8.0 : 10.0;
 
     // Determine scale and shadow based on states
     final scale = _isPressed

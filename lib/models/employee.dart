@@ -13,6 +13,7 @@ class Employee {
   final String phone;
   final String avatarUrl;
   final String? password;
+  final String workingStatus; // e.g., 'Available', 'On Call', 'In Meeting', 'Offline'
 
   Employee({
     required this.id,
@@ -29,6 +30,7 @@ class Employee {
     required this.phone,
     required this.avatarUrl,
     this.password,
+    this.workingStatus = 'Available',
   }) : employeeId = employeeId ?? id;
 
   Employee copyWith({
@@ -46,6 +48,7 @@ class Employee {
     String? phone,
     String? avatarUrl,
     String? password,
+    String? workingStatus,
   }) {
     return Employee(
       id: id ?? this.id,
@@ -62,6 +65,7 @@ class Employee {
       phone: phone ?? this.phone,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       password: password ?? this.password,
+      workingStatus: workingStatus ?? this.workingStatus,
     );
   }
 

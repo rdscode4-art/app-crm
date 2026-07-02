@@ -10,6 +10,7 @@ import '../models/performance.dart';
 import '../models/payroll.dart';
 import '../models/attendance.dart';
 import '../models/employee.dart';
+import '../models/call_log.dart';
 import '../services/api_service.dart';
 import '../services/mock_data_service.dart';
 
@@ -25,6 +26,10 @@ class CrmController extends GetxController {
   final RxList<Lead> leads = <Lead>[].obs;
   final RxBool isLoadingLeads = false.obs;
   final RxnString leadsError = RxnString();
+  final Rxn<Map<String, dynamic>> leadStats = Rxn<Map<String, dynamic>>();
+  
+  final RxList<Lead> upcomingFollowups = <Lead>[].obs;
+  final RxBool isLoadingFollowups = false.obs;
 
   // Documents state
   final RxList<CRMDocument> documents = <CRMDocument>[].obs;
@@ -71,6 +76,11 @@ class CrmController extends GetxController {
   final RxBool isLoadingEmployees = false.obs;
   final RxnString employeesError = RxnString();
 
+  // Call Logs state
+  final RxList<CallLog> callLogs = <CallLog>[].obs;
+  final RxBool isLoadingCallLogs = false.obs;
+  final RxnString callLogsError = RxnString();
+
   // Dashboard Stats state
   final Rxn<Map<String, dynamic>> dashboardStats = Rxn<Map<String, dynamic>>();
   final RxBool isLoadingDashboardStats = false.obs;
@@ -89,8 +99,10 @@ class CrmController extends GetxController {
 
   void onTokenLoaded() {
     fetchDashboardStats();
+    fetchLeadStats();
     fetchLeaves();
     fetchLeads();
+    fetchUpcomingFollowups();
     fetchDocuments();
     fetchTasks();
     fetchAssets();
@@ -104,6 +116,7 @@ class CrmController extends GetxController {
     fetchAttendance(startDate: '2026-06-01', endDate: todayStr);
     
     fetchEmployees();
+    fetchCallLogs();
   }
 
   void _loadLocalMockData() {
@@ -458,6 +471,63 @@ class CrmController extends GetxController {
       leadsError.value = e.toString();
     } finally {
       isLoadingLeads.value = false;
+    }
+  }
+
+  Future<void> fetchLeadStats() async {
+    try {
+      final stats = await _apiService.fetchLeadStats();
+      leadStats.value = stats;
+    } catch (e) {
+      leadStats.value = null;
+    }
+  }
+
+  Future<Lead?> fetchLeadById(String id) async {
+    try {
+      return await _apiService.fetchLeadById(id);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<void> fetchUpcomingFollowups({int days = 5}) async {
+    isLoadingFollowups.value = true;
+    try {
+      final data = await _apiService.fetchUpcomingFollowups(days: days);
+      upcomingFollowups.assignAll(data);
+    } catch (e) {
+      // ignore
+    } finally {
+      isLoadingFollowups.value = false;
+    }
+  }
+
+  // Assign Lead
+  Future<bool> assignLead(String leadId, String employeeId) async {
+    try {
+      final success = await _apiService.assignLead(leadId, employeeId);
+      if (success) {
+        await fetchLeads(); // Refresh leads
+        return true;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Bulk Assign Leads
+  Future<bool> bulkAssignLeads(List<String> leadIds, String employeeId) async {
+    try {
+      final success = await _apiService.bulkAssignLeads(leadIds, employeeId);
+      if (success) {
+        await fetchLeads(); // Refresh leads
+        return true;
+      }
+      return false;
+    } catch (e) {
+      return false;
     }
   }
 
@@ -888,6 +958,46 @@ class CrmController extends GetxController {
     } catch (e) {
       employees.assignAll(originalList);
       return false;
+    }
+  }
+
+  // Call Logs Methods
+  Future<void> fetchCallLogs() async {
+    isLoadingCallLogs.value = true;
+    callLogsError.value = null;
+    try {
+      // In a real app, you would fetch from API:
+      // final data = await _apiService.fetchCallLogs();
+      // callLogs.assignAll(data);
+      callLogs.assignAll(MockDataService().callLogs);
+    } catch (e) {
+      callLogsError.value = e.toString();
+    } finally {
+      isLoadingCallLogs.value = false;
+    }
+  }
+
+  Future<bool> submitCallLog(CallLog log) async {
+    callLogs.insert(0, log);
+    try {
+      // final success = await _apiService.submitCallLog(log);
+      MockDataService().callLogs.insert(0, log); // Fallback to mock
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Employee Working Status Method
+  Future<void> updateEmployeeWorkingStatus(String id, String status) async {
+    final idx = employees.indexWhere((e) => e.id == id);
+    if (idx != -1) {
+      final oldEmp = employees[idx];
+      final updated = oldEmp.copyWith(workingStatus: status);
+      employees[idx] = updated;
+      employees.refresh();
+      // Try to update on backend
+      // await _apiService.updateEmployee(updated);
     }
   }
 }

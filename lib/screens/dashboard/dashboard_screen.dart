@@ -50,7 +50,7 @@ class DashboardScreen extends StatelessWidget {
       }
 
       if (controller.dashboardStats.value != null) {
-        return _buildApiStatsDashboard(context, controller.dashboardStats.value!, controller);
+        return _buildApiStatsDashboard(context, controller.dashboardStats.value!, controller, state);
       }
 
       switch (state.currentRole) {
@@ -64,7 +64,7 @@ class DashboardScreen extends StatelessWidget {
     });
   }
 
-  Widget _buildApiStatsDashboard(BuildContext context, Map<String, dynamic> stats, CrmController controller) {
+  Widget _buildApiStatsDashboard(BuildContext context, Map<String, dynamic> stats, CrmController controller, MockDataService state) {
     final width = MediaQuery.of(context).size.width;
     final isDesktop = width >= 1000;
     
@@ -72,6 +72,7 @@ class DashboardScreen extends StatelessWidget {
     final attendance = stats['attendance'] ?? {};
     final leaves = stats['leaves'] ?? {};
     final tasks = stats['tasks'] ?? {};
+    final leadStats = controller.leadStats.value ?? {};
 
     final totalEmployees = employees['total'] ?? 0;
     final activeEmployees = employees['active'] ?? 0;
@@ -162,6 +163,26 @@ class DashboardScreen extends StatelessWidget {
                   iconBgColor: const Color(0xFFFEE2E2),
                   iconColor: AppColors.danger,
                 ),
+                if (leadStats.isNotEmpty) ...[
+                  MetricCard(
+                    title: "Total Leads",
+                    value: "${leadStats['total'] ?? 0}",
+                    changeText: "${leadStats['converted'] ?? 0} converted, ${leadStats['lost'] ?? 0} lost",
+                    isPositive: true,
+                    icon: Icons.leaderboard_outlined,
+                    iconBgColor: const Color(0xFFE0E7FF),
+                    iconColor: Colors.indigo,
+                  ),
+                  MetricCard(
+                    title: "Deal Value",
+                    value: "₹${(leadStats['totalValue'] ?? 0).toStringAsFixed(0)}",
+                    changeText: "Active potential revenue",
+                    isPositive: true,
+                    icon: Icons.currency_rupee,
+                    iconBgColor: const Color(0xFFDCFCE7),
+                    iconColor: Colors.green,
+                  ),
+                ],
               ],
             ),
             const SizedBox(height: 24),
@@ -174,8 +195,120 @@ class DashboardScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      if (state.currentRole == UserRole.superAdmin && controller.leads.isNotEmpty) ...[
+                        _buildDashboardCard(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                "Leads by Assigned Agent",
+                                style: TextStyle(
+                                  color: AppColors.textPrimary,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Builder(
+                                builder: (context) {
+                                  final leadsByAgent = <String, int>{};
+                                  for (var lead in controller.leads) {
+                                    leadsByAgent[lead.owner] = (leadsByAgent[lead.owner] ?? 0) + 1;
+                                  }
+                                  final sortedAgents = leadsByAgent.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+                                  
+                                  return ListView.separated(
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    itemCount: sortedAgents.length,
+                                    separatorBuilder: (context, index) => const Divider(height: 1),
+                                    itemBuilder: (context, index) {
+                                      final entry = sortedAgents[index];
+                                      return ListTile(
+                                        contentPadding: EdgeInsets.zero,
+                                        leading: CircleAvatar(
+                                          backgroundColor: AppColors.primary.withOpacity(0.1),
+                                          foregroundColor: AppColors.primary,
+                                          child: Text(entry.key.isNotEmpty ? entry.key[0].toUpperCase() : '?'),
+                                        ),
+                                        title: Text(entry.key, style: const TextStyle(fontWeight: FontWeight.w600)),
+                                        trailing: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.primary.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: Text(
+                                            "${entry.value} Leads",
+                                            style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
                       _buildDashboardCard(
-                        padding: const EdgeInsets.all(20),
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              "Upcoming Lead Follow-ups (Next 5 Days)",
+                              style: TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            if (controller.isLoadingFollowups.value)
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 20),
+                                child: Center(child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2)),
+                              )
+                            else if (controller.upcomingFollowups.isEmpty)
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 20),
+                                child: Center(
+                                  child: Text(
+                                    "No upcoming follow-ups in the next 5 days.",
+                                    style: TextStyle(color: AppColors.textSecondary),
+                                  ),
+                                ),
+                              )
+                            else
+                              ListView.separated(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: controller.upcomingFollowups.length > 3 ? 3 : controller.upcomingFollowups.length,
+                                separatorBuilder: (context, index) => const Divider(height: 1),
+                                itemBuilder: (context, index) {
+                                  final lead = controller.upcomingFollowups[index];
+                                  return ListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    leading: CircleAvatar(
+                                      backgroundColor: AppColors.warning.withValues(alpha: 0.1),
+                                      child: const Icon(Icons.notifications_active, color: AppColors.warning),
+                                    ),
+                                    title: Text(lead.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                                    subtitle: Text(lead.company, style: const TextStyle(fontSize: 12)),
+                                    trailing: Text(lead.status, style: const TextStyle(color: AppColors.warning, fontWeight: FontWeight.bold)),
+                                  );
+                                },
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      _buildDashboardCard(
+                        padding: const EdgeInsets.all(24),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -183,7 +316,7 @@ class DashboardScreen extends StatelessWidget {
                               "Active Tasks Queue",
                               style: TextStyle(
                                 color: AppColors.textPrimary,
-                                fontSize: 16,
+                                fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -240,7 +373,7 @@ class DashboardScreen extends StatelessWidget {
                                                     style: const TextStyle(
                                                       color: AppColors.textPrimary,
                                                       fontWeight: FontWeight.bold,
-                                                      fontSize: 14,
+                                                      fontSize: 16,
                                                     ),
                                                   ),
                                                 ),
@@ -257,7 +390,7 @@ class DashboardScreen extends StatelessWidget {
                                                     style: TextStyle(
                                                       color: priorityColor,
                                                       fontWeight: FontWeight.bold,
-                                                      fontSize: 9,
+                                                      fontSize: 11,
                                                       letterSpacing: 0.5,
                                                     ),
                                                   ),
@@ -269,7 +402,7 @@ class DashboardScreen extends StatelessWidget {
                                               task['description']?.toString() ?? '',
                                               style: const TextStyle(
                                                 color: AppColors.textSecondary,
-                                                fontSize: 12,
+                                                fontSize: 14,
                                               ),
                                               maxLines: 2,
                                               overflow: TextOverflow.ellipsis,
@@ -283,7 +416,7 @@ class DashboardScreen extends StatelessWidget {
                                                     "Assigned to: ${assigneeNames.isNotEmpty ? assigneeNames : 'Unassigned'}",
                                                     style: const TextStyle(
                                                       color: AppColors.textSecondary,
-                                                      fontSize: 11,
+                                                      fontSize: 13,
                                                       fontStyle: FontStyle.italic,
                                                     ),
                                                     maxLines: 1,
@@ -302,7 +435,7 @@ class DashboardScreen extends StatelessWidget {
                                                     style: TextStyle(
                                                       color: statusColor,
                                                       fontWeight: FontWeight.bold,
-                                                      fontSize: 9,
+                                                      fontSize: 11,
                                                       letterSpacing: 0.5,
                                                     ),
                                                   ),
@@ -319,7 +452,7 @@ class DashboardScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 24),
                       _buildDashboardCard(
-                        padding: const EdgeInsets.all(20),
+                        padding: const EdgeInsets.all(24),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -327,7 +460,7 @@ class DashboardScreen extends StatelessWidget {
                               "Personnel Distribution by Department",
                               style: TextStyle(
                                 color: AppColors.textPrimary,
-                                fontSize: 16,
+                                fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -365,7 +498,7 @@ class DashboardScreen extends StatelessWidget {
                                                   style: const TextStyle(
                                                     color: AppColors.textPrimary,
                                                     fontWeight: FontWeight.w600,
-                                                    fontSize: 13,
+                                                    fontSize: 15,
                                                   ),
                                                 ),
                                                 Text(
@@ -373,7 +506,7 @@ class DashboardScreen extends StatelessWidget {
                                                   style: const TextStyle(
                                                     color: AppColors.textSecondary,
                                                     fontWeight: FontWeight.bold,
-                                                    fontSize: 13,
+                                                    fontSize: 15,
                                                   ),
                                                 ),
                                               ],
@@ -405,7 +538,7 @@ class DashboardScreen extends StatelessWidget {
                   Expanded(
                     flex: 1,
                     child: _buildDashboardCard(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(24),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -413,7 +546,7 @@ class DashboardScreen extends StatelessWidget {
                             "Recently Joined Members",
                             style: TextStyle(
                               color: AppColors.textPrimary,
-                              fontSize: 16,
+                              fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -461,14 +594,14 @@ class DashboardScreen extends StatelessWidget {
                                                   style: const TextStyle(
                                                     color: AppColors.textPrimary,
                                                     fontWeight: FontWeight.bold,
-                                                    fontSize: 13,
+                                                    fontSize: 15,
                                                   ),
                                                 ),
                                                 Text(
                                                   "$desig • $dept",
                                                   style: const TextStyle(
                                                     color: AppColors.textSecondary,
-                                                    fontSize: 11,
+                                                    fontSize: 13,
                                                   ),
                                                 ),
                                               ],
@@ -490,7 +623,7 @@ class DashboardScreen extends StatelessWidget {
             if (!isDesktop) ...[
               const SizedBox(height: 24),
               _buildDashboardCard(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -498,7 +631,7 @@ class DashboardScreen extends StatelessWidget {
                       "Recently Joined Members",
                       style: TextStyle(
                         color: AppColors.textPrimary,
-                        fontSize: 16,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -546,14 +679,14 @@ class DashboardScreen extends StatelessWidget {
                                             style: const TextStyle(
                                               color: AppColors.textPrimary,
                                               fontWeight: FontWeight.bold,
-                                              fontSize: 13,
+                                              fontSize: 15,
                                             ),
                                           ),
                                           Text(
                                             "$desig • $dept",
                                             style: const TextStyle(
                                               color: AppColors.textSecondary,
-                                              fontSize: 11,
+                                              fontSize: 13,
                                             ),
                                           ),
                                         ],
@@ -588,6 +721,7 @@ class DashboardScreen extends StatelessWidget {
         .fold<double>(0, (sum, l) => sum + l.value);
 
     final pendingTasks = state.tasks.where((t) => t.status != 'Done').length;
+    final totalCalls = state.callLogs.length;
 
     final width = MediaQuery.of(context).size.width;
     final crossAxisCount = width < 600 ? 1 : (width < 1200 ? 2 : 4);
@@ -616,6 +750,15 @@ class DashboardScreen extends StatelessWidget {
               childAspectRatio: width < 600 ? 2.0 : 1.6,
             ),
             children: [
+              MetricCard(
+                title: "Sales Calls",
+                value: "$totalCalls Logged",
+                changeText: "Overall",
+                isPositive: true,
+                icon: Icons.phone_in_talk,
+                iconBgColor: const Color(0xFFE0E7FF),
+                iconColor: AppColors.primary,
+              ),
               MetricCard(
                 title: "Total Revenue (Won)",
                 value: "₹${wonLeadsValue.toStringAsFixed(0)}",
@@ -676,11 +819,23 @@ class DashboardScreen extends StatelessWidget {
                 const SizedBox(width: 24),
                 Expanded(
                   flex: 1,
-                  child: _buildSystemNotificationsLog(context, state),
+                  child: Column(
+                    children: [
+                      _buildRecentCallsLog(context, state),
+                      const SizedBox(height: 24),
+                      _buildSystemNotificationsLog(context, state),
+                    ],
+                  ),
                 ),
               ],
             ],
           ),
+          if (width < 1000) ...[
+            const SizedBox(height: 24),
+            _buildRecentCallsLog(context, state),
+            const SizedBox(height: 24),
+            _buildSystemNotificationsLog(context, state),
+          ],
         ],
       ),
     );
@@ -770,7 +925,7 @@ class DashboardScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildDashboardCard(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(24),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -778,7 +933,7 @@ class DashboardScreen extends StatelessWidget {
                             "Pending Leave Approval Queue",
                             style: TextStyle(
                               color: AppColors.textPrimary,
-                              fontSize: 16,
+                              fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -814,7 +969,7 @@ class DashboardScreen extends StatelessWidget {
                                                   style: const TextStyle(
                                                     color: AppColors.textPrimary,
                                                     fontWeight: FontWeight.bold,
-                                                    fontSize: 14,
+                                                    fontSize: 16,
                                                   ),
                                                 ),
                                                 const SizedBox(height: 2),
@@ -822,7 +977,7 @@ class DashboardScreen extends StatelessWidget {
                                                   "${req.type} | ${req.reason}",
                                                   style: const TextStyle(
                                                     color: AppColors.textSecondary,
-                                                    fontSize: 12,
+                                                    fontSize: 14,
                                                   ),
                                                   maxLines: 1,
                                                   overflow: TextOverflow.ellipsis,
@@ -856,7 +1011,7 @@ class DashboardScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
                     _buildDashboardCard(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(24),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -864,7 +1019,7 @@ class DashboardScreen extends StatelessWidget {
                             "Hardware Asset Overview",
                             style: TextStyle(
                               color: AppColors.textPrimary,
-                              fontSize: 16,
+                              fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -886,14 +1041,14 @@ class DashboardScreen extends StatelessWidget {
                                       style: const TextStyle(
                                         color: AppColors.textPrimary,
                                         fontWeight: FontWeight.w600,
-                                        fontSize: 13,
+                                        fontSize: 15,
                                       ),
                                     ),
                                     Text(
                                       asset.assignedTo,
                                       style: const TextStyle(
                                         color: AppColors.textSecondary,
-                                        fontSize: 13,
+                                        fontSize: 15,
                                       ),
                                     ),
                                   ],
@@ -940,6 +1095,7 @@ class DashboardScreen extends StatelessWidget {
             context: context,
             userName: state.currentUser?.name ?? 'Employee',
             subtitle: "Employee Portal: View active tasks, submit leaves, and track daily attendance shifts.",
+            trailing: _buildWorkingStatusDropdown(state),
           ),
           const SizedBox(height: 24),
 
@@ -1005,7 +1161,7 @@ class DashboardScreen extends StatelessWidget {
                     _DashboardAttendanceCard(state: state),
                     const SizedBox(height: 24),
                     _buildDashboardCard(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(24),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -1013,7 +1169,7 @@ class DashboardScreen extends StatelessWidget {
                             "My Assigned Tasks",
                             style: TextStyle(
                               color: AppColors.textPrimary,
-                              fontSize: 16,
+                              fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -1049,7 +1205,7 @@ class DashboardScreen extends StatelessWidget {
                                                   style: const TextStyle(
                                                     color: AppColors.textPrimary,
                                                     fontWeight: FontWeight.bold,
-                                                    fontSize: 14,
+                                                    fontSize: 16,
                                                   ),
                                                 ),
                                                 const SizedBox(height: 2),
@@ -1057,7 +1213,7 @@ class DashboardScreen extends StatelessWidget {
                                                   task.description,
                                                   style: const TextStyle(
                                                     color: AppColors.textSecondary,
-                                                    fontSize: 12,
+                                                    fontSize: 14,
                                                   ),
                                                   maxLines: 1,
                                                   overflow: TextOverflow.ellipsis,
@@ -1097,12 +1253,116 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildWorkingStatusDropdown(MockDataService state) {
+    return StatefulBuilder(
+      builder: (context, setState) {
+        String currentStatus = state.currentUser?.workingStatus ?? 'Available';
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: currentStatus,
+              dropdownColor: AppColors.sidebarBackground,
+              icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+              items: ['Available', 'On Call', 'In Meeting', 'Offline']
+                  .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                  .toList(),
+              onChanged: (val) {
+                if (val != null) {
+                  state.updateWorkingStatus(val);
+                }
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   // --- Helper Widgets ---
+  Widget _buildRecentCallsLog(BuildContext context, MockDataService state) {
+    final recentCalls = state.callLogs.take(5).toList();
+
+    return _buildDashboardCard(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Recent Call Activity",
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          recentCalls.isEmpty
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 32),
+                  child: Center(
+                    child: Text("No calls logged.", style: TextStyle(color: AppColors.textSecondary)),
+                  ),
+                )
+              : ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: recentCalls.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    final log = recentCalls[index];
+                    Color outcomeColor = AppColors.success;
+                    if (log.outcome == 'No Answer' || log.outcome == 'Voicemail') outcomeColor = AppColors.warning;
+                    if (log.outcome == 'Busy') outcomeColor = AppColors.danger;
+
+                    return _HoverListTile(
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 16,
+                            backgroundColor: outcomeColor.withValues(alpha: 0.1),
+                            child: Icon(Icons.phone_in_talk, color: outcomeColor, size: 16),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "${log.employeeName} → ${log.leadName}",
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  "${log.durationMinutes} min • ${log.outcome}",
+                                  style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSystemNotificationsLog(BuildContext context, MockDataService state) {
     return SizedBox(
       height: 600,
       child: _buildDashboardCard(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1110,7 +1370,7 @@ class DashboardScreen extends StatelessWidget {
               "System Notifications Log",
               style: TextStyle(
                 color: AppColors.textPrimary,
-                fontSize: 16,
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -1151,7 +1411,7 @@ class DashboardScreen extends StatelessWidget {
                                 style: const TextStyle(
                                   color: AppColors.textPrimary,
                                   fontWeight: FontWeight.w600,
-                                  fontSize: 13,
+                                  fontSize: 15,
                                 ),
                               ),
                               const SizedBox(height: 2),
@@ -1159,7 +1419,7 @@ class DashboardScreen extends StatelessWidget {
                                 item.message,
                                 style: const TextStyle(
                                   color: AppColors.textSecondary,
-                                  fontSize: 12,
+                                  fontSize: 14,
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -1187,7 +1447,7 @@ class DashboardScreen extends StatelessWidget {
 
   Widget _buildChartCard(String title, Widget chartWidget) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(12),
@@ -1200,7 +1460,7 @@ class DashboardScreen extends StatelessWidget {
             title,
             style: const TextStyle(
               color: AppColors.textPrimary,
-              fontSize: 16,
+              fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -1516,7 +1776,7 @@ class _LineChartPainter extends CustomPainter {
       text: '₹85,000 (Jun)',
       style: TextStyle(
         color: Colors.white,
-        fontSize: 9,
+        fontSize: 11,
         fontWeight: FontWeight.bold,
       ),
     );
@@ -1621,7 +1881,7 @@ class _LeadBarItemState extends State<_LeadBarItem> {
               "${widget.count}",
               style: TextStyle(
                 color: _isHovered ? widget.barColor : AppColors.textPrimary,
-                fontSize: 12,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -1671,7 +1931,7 @@ class _LeadBarItemState extends State<_LeadBarItem> {
               style: TextStyle(
                 color: _isHovered ? AppColors.textPrimary : AppColors.textSecondary,
                 fontWeight: _isHovered ? FontWeight.bold : FontWeight.normal,
-                fontSize: 11,
+                fontSize: 13,
               ),
             ),
           ],
@@ -1801,7 +2061,7 @@ class _DashboardAttendanceCardState extends State<_DashboardAttendanceCard> with
               isPunched ? "Active Work Shift" : "Shift Attendance Status",
               style: const TextStyle(
                 color: AppColors.textPrimary,
-                fontSize: 16,
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -1839,7 +2099,7 @@ class _DashboardAttendanceCardState extends State<_DashboardAttendanceCard> with
             "Shift started at ${widget.state.todayAttendance?.checkInTime ?? ''}",
             style: const TextStyle(
               color: AppColors.textSecondary,
-              fontSize: 12,
+              fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -1860,7 +2120,7 @@ class _DashboardAttendanceCardState extends State<_DashboardAttendanceCard> with
                   "Not clocked-in for today yet",
                   style: TextStyle(
                     color: AppColors.danger,
-                    fontSize: 13,
+                    fontSize: 15,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

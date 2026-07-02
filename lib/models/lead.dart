@@ -100,6 +100,7 @@ class Lead {
     if (lower == 'converted' || lower == 'won' || lower == 'booking') return 'Converted';
     if (lower == 'lost') return 'Lost';
     if (lower == 'follow-up' || lower == 'followup' || lower == 'follow_up') return 'Follow-up';
+    if (lower == 'assigned') return 'Assigned';
     return 'New';
   }
 
@@ -127,7 +128,12 @@ class Lead {
               : json['createdAt'] != null
                   ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
                   : DateTime.now(),
-      owner: json['owner']?.toString() ?? json['createdBy']?['name']?.toString() ?? 'Sales Agent',
+      owner: json['assignedTo']?['name']?.toString() ??
+             json['assignedTo']?['_id']?.toString() ??
+             json['assignedTo']?.toString() ??
+             json['owner']?.toString() ?? 
+             json['createdBy']?['name']?.toString() ?? 
+             'Sales Agent',
       alternatePhone: json['alternatePhone']?.toString() ?? json['alternatePhone']?.toString() ?? '',
       salesStage: json['salesStage']?.toString() ?? json['salesStage']?.toString() ?? 'Inquiry',
       probability: double.tryParse(json['probability']?.toString() ?? '') ?? 
@@ -174,6 +180,20 @@ class Lead {
         'pincode': pincode,
         'country': 'India',
       },
+    };
+  }
+
+  Map<String, dynamic> toCreateApiJson() {
+    return {
+      'customerName': name,
+      'mobile': phone,
+      'email': email,
+      'leadSource': source,
+      'leadStatus': status,
+      'dealValue': value,
+      'priority': priority,
+      // Pass owner if your API allows assigning during creation
+      'owner': owner,
     };
   }
 }

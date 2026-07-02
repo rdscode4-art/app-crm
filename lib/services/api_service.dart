@@ -114,11 +114,72 @@ class ApiService {
     throw Exception('Server returned status code ${response.statusCode}');
   }
 
+  Future<Map<String, dynamic>> fetchLeadStats() async {
+    final response = await http.get(Uri.parse('$baseUrl/leads/stats'), headers: _headers);
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      if (data['success'] == true && data['data'] != null) {
+        return data['data'] as Map<String, dynamic>;
+      }
+      throw Exception('Invalid API response structure');
+    }
+    throw Exception('Server returned status code ${response.statusCode}');
+  }
+
+  Future<Lead> fetchLeadById(String id) async {
+    final response = await http.get(Uri.parse('$baseUrl/leads/$id'), headers: _headers);
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      if (data['success'] == true && data['data'] is Map<String, dynamic>) {
+        return Lead.fromJson(data['data'] as Map<String, dynamic>);
+      }
+      throw Exception('Invalid API response structure');
+    }
+    throw Exception('Server returned status code ${response.statusCode}');
+  }
+
+  Future<List<Lead>> fetchUpcomingFollowups({int days = 5}) async {
+    final response = await http.get(Uri.parse('$baseUrl/leads/followups/upcoming?days=$days'), headers: _headers);
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      if (data['success'] == true && data['data'] is List) {
+        return (data['data'] as List)
+            .map((item) => Lead.fromJson(item as Map<String, dynamic>))
+            .toList();
+      }
+      throw Exception('Invalid API response structure');
+    }
+    throw Exception('Server returned status code ${response.statusCode}');
+  }
+
   Future<bool> submitLead(Lead lead) async {
     final response = await http.post(
       Uri.parse('$baseUrl/leads'),
       headers: _headers,
-      body: json.encode(lead.toJson()),
+      body: json.encode(lead.toCreateApiJson()),
+    );
+    return response.statusCode == 200 || response.statusCode == 201;
+  }
+
+  Future<bool> assignLead(String leadId, String employeeId) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/leads/$leadId/assign'),
+      headers: _headers,
+      body: json.encode({
+        'employeeId': employeeId,
+      }),
+    );
+    return response.statusCode == 200 || response.statusCode == 201;
+  }
+
+  Future<bool> bulkAssignLeads(List<String> leadIds, String employeeId) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/leads/bulk-assign'),
+      headers: _headers,
+      body: json.encode({
+        'leadIds': leadIds,
+        'employeeId': employeeId,
+      }),
     );
     return response.statusCode == 200 || response.statusCode == 201;
   }
