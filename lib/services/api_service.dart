@@ -152,11 +152,13 @@ class ApiService {
     throw Exception('Server returned status code ${response.statusCode}');
   }
 
-  Future<bool> submitLead(Lead lead) async {
+  Future<bool> submitLead(Lead lead, {String? assignedToId}) async {
+    final payload = lead.toCreateApiJson();
+    payload['assignedTo'] = assignedToId; // explicitly pass null if unassigned
     final response = await http.post(
       Uri.parse('$baseUrl/leads'),
       headers: _headers,
-      body: json.encode(lead.toCreateApiJson()),
+      body: json.encode(payload),
     );
     return response.statusCode == 200 || response.statusCode == 201;
   }
@@ -184,13 +186,30 @@ class ApiService {
     return response.statusCode == 200 || response.statusCode == 201;
   }
 
-  Future<bool> updateLead(Lead lead) async {
+  Future<bool> updateLead(Lead lead, {String? assignedToId}) async {
+    final payload = lead.toJson();
+    if (assignedToId != null) {
+      payload['assignedTo'] = assignedToId;
+    }
     final response = await http.put(
       Uri.parse('$baseUrl/leads/${lead.id}'),
       headers: _headers,
-      body: json.encode(lead.toJson()),
+      body: json.encode(payload),
     );
     return response.statusCode == 200 || response.statusCode == 201;
+  }
+
+  Future<bool> addLeadNote(String leadId, String noteContent) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/leads/$leadId/note'),
+      headers: _headers,
+      body: json.encode({'content': noteContent}),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      return data['success'] == true;
+    }
+    return false;
   }
 
   Future<bool> deleteLead(String id) async {
@@ -199,6 +218,16 @@ class ApiService {
       headers: _headers,
     );
     return response.statusCode == 200 || response.statusCode == 201;
+  }
+
+  Future<bool> bulkDeleteLeads(List<String> ids) async {
+    try {
+      final futures = ids.map((id) => deleteLead(id));
+      final results = await Future.wait(futures);
+      return !results.contains(false); // true if all deletions succeeded
+    } catch (e) {
+      return false;
+    }
   }
 
   // Documents API
@@ -531,18 +560,24 @@ class ApiService {
       dbRole = 'manager';
     }
 
+    final payload = {
+      'name': employee.name,
+      'phone': employee.phone,
+      'department': employee.department,
+      'designation': employee.designation ?? (employee.role.isNotEmpty ? employee.role : 'Staff'),
+      'salary': employee.salary,
+      'status': employee.status.toLowerCase(),
+      'role': dbRole,
+    };
+    
+    if (employee.password != null && employee.password!.isNotEmpty) {
+      payload['password'] = employee.password!;
+    }
+
     final response = await http.put(
       Uri.parse('$baseUrl/employees/$id'),
       headers: _headers,
-      body: json.encode({
-        'name': employee.name,
-        'phone': employee.phone,
-        'department': employee.department,
-        'designation': employee.designation ?? (employee.role.isNotEmpty ? employee.role : 'Staff'),
-        'salary': employee.salary,
-        'status': employee.status.toLowerCase(),
-        'role': dbRole,
-      }),
+      body: json.encode(payload),
     );
     return response.statusCode == 200 || response.statusCode == 201;
   }

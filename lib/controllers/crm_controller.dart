@@ -1,4 +1,6 @@
 import 'package:get/get.dart';
+import 'package:flutter/foundation.dart';
+import 'package:call_log/call_log.dart' as native_log;
 import '../models/leave.dart';
 import '../models/lead.dart';
 import '../models/document.dart';
@@ -13,6 +15,7 @@ import '../models/employee.dart';
 import '../models/call_log.dart';
 import '../services/api_service.dart';
 import '../services/mock_data_service.dart';
+import '../services/call_log_service.dart';
 
 class CrmController extends GetxController {
   final ApiService _apiService = ApiService();
@@ -467,6 +470,7 @@ class CrmController extends GetxController {
     try {
       final data = await _apiService.fetchLeads();
       leads.assignAll(data);
+      fetchLeadStats(); // Automatically calculate stats using the new data
     } catch (e) {
       leadsError.value = e.toString();
     } finally {
@@ -476,8 +480,27 @@ class CrmController extends GetxController {
 
   Future<void> fetchLeadStats() async {
     try {
-      final stats = await _apiService.fetchLeadStats();
-      leadStats.value = stats;
+      int total = leads.length;
+      int converted = 0;
+      int lost = 0;
+      double totalValue = 0;
+
+      for (var lead in leads) {
+        final status = lead.status.toLowerCase();
+        if (status == 'converted') {
+          converted++;
+        } else if (status == 'lost') {
+          lost++;
+        }
+        totalValue += lead.value;
+      }
+
+      leadStats.value = {
+        'total': total,
+        'converted': converted,
+        'lost': lost,
+        'totalValue': totalValue,
+      };
     } catch (e) {
       leadStats.value = null;
     }
@@ -535,7 +558,12 @@ class CrmController extends GetxController {
   Future<bool> submitLead(Lead lead) async {
     leads.insert(0, lead);
     try {
-      final success = await _apiService.submitLead(lead);
+      String? employeeId;
+      if (lead.owner != "Unassigned") {
+        final employee = employees.firstWhere((e) => e.name == lead.owner, orElse: () => employees.first);
+        employeeId = employee.id;
+      }
+      final success = await _apiService.submitLead(lead, assignedToId: employeeId);
       if (success) {
         await fetchLeads();
         return true;
@@ -554,7 +582,12 @@ class CrmController extends GetxController {
       leads.refresh();
     }
     try {
-      final success = await _apiService.updateLead(lead);
+      String? employeeId;
+      if (lead.owner != "Unassigned") {
+        final employee = employees.firstWhere((e) => e.name == lead.owner, orElse: () => employees.first);
+        employeeId = employee.id;
+      }
+      final success = await _apiService.updateLead(lead, assignedToId: employeeId);
       if (success) {
         await fetchLeads();
         return true;
@@ -591,6 +624,30 @@ class CrmController extends GetxController {
     }
   }
 
+  // Bulk Delete Leads
+  Future<bool> bulkDeleteLeads(List<String> ids) async {
+    // Remove from local list first for optimistic UI update
+    final backupLeads = List<Lead>.from(leads);
+    leads.removeWhere((l) => ids.contains(l.id));
+    
+    try {
+      final success = await _apiService.bulkDeleteLeads(ids);
+      if (success) {
+        await fetchLeads(); // Sync with server state
+        return true;
+      } else {
+        // Rollback
+        leads.assignAll(backupLeads);
+        return false;
+      }
+    } catch (e) {
+      // Rollback
+      leads.assignAll(backupLeads);
+      return false;
+    }
+  }
+
+
   // Update Lead Status
   Future<void> updateLeadStatus(String leadId, String newStatus) async {
     final idx = leads.indexWhere((l) => l.id == leadId);
@@ -603,6 +660,21 @@ class CrmController extends GetxController {
         await _apiService.updateLead(updated);
         await fetchLeads();
       } catch (_) {}
+    }
+  }
+
+  // Add Lead Note
+  Future<bool> addLeadNote(String leadId, String noteContent) async {
+    try {
+      final success = await _apiService.addLeadNote(leadId, noteContent);
+      if (success) {
+        // Optionally fetch leads again or update locally if Lead model has notes in future
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print("Error adding lead note: $e");
+      return false;
     }
   }
 
@@ -922,6 +994,8 @@ class CrmController extends GetxController {
     try {
       final data = await _apiService.fetchDashboardStats();
       dashboardStats.value = data;
+      // Fetch leads to ensure leadStats are accurately computed locally for the dashboard
+      await fetchLeads(); 
     } catch (e) {
       dashboardStatsError.value = e.toString();
     } finally {
@@ -962,10 +1036,16 @@ class CrmController extends GetxController {
   }
 
   // Call Logs Methods
+  Future<void> syncDeviceCallLogs() async {
+    // Disabled for now as per request
+    return;
+  }
+
   Future<void> fetchCallLogs() async {
     isLoadingCallLogs.value = true;
     callLogsError.value = null;
     try {
+      await syncDeviceCallLogs(); // Sync before fetching
       // In a real app, you would fetch from API:
       // final data = await _apiService.fetchCallLogs();
       // callLogs.assignAll(data);

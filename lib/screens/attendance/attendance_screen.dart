@@ -12,7 +12,7 @@ class AttendanceScreen extends StatefulWidget {
 }
 
 class _AttendanceScreenState extends State<AttendanceScreen> {
-  DateTime _startDate = DateTime.now();
+  DateTime _startDate = DateTime(DateTime.now().year, DateTime.now().month, 1);
   DateTime _endDate = DateTime.now();
 
   String _formatDate(DateTime dt) {
@@ -43,10 +43,17 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       final isLoading = controller?.isLoadingAttendance.value ?? false;
       final error = controller?.attendanceError.value;
 
+      final rawLogs = controller?.attendanceLogs.isNotEmpty == true 
+          ? controller!.attendanceLogs 
+          : state.attendanceLogs;
+
       final isAdmin = state.currentRole == UserRole.superAdmin || state.currentRole == UserRole.hr;
       final currentLogs = isAdmin
-          ? state.attendanceLogs
-          : state.attendanceLogs.where((a) => a.employeeId == state.currentUser?.id).toList();
+          ? rawLogs
+          : rawLogs.where((a) => 
+              a.employeeId == state.currentUser?.id || 
+              a.employeeId == state.currentUser?.employeeId
+            ).toList();
 
       return SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -54,288 +61,293 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Time & Attendance",
-                  style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  "Review employee shift logs and historical attendance reports.",
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
+            const Text(
+              "Attendance",
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 24),
 
-            // Dashboard Layout
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Left Section: Shift Logs (Responsive)
-                Expanded(
-                  flex: width < 1000 ? 1 : 2,
-                  child: Column(
+            // Filter Bar Card
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Wrap(
+                    spacing: 16,
+                    runSpacing: 16,
+                    crossAxisAlignment: WrapCrossAlignment.end,
                     children: [
-                      // Shift History Card Table
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: AppColors.cardBackground,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.border),
-                        ),
+                      // Employee Dropdown
+                      SizedBox(
+                        width: 200,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  "Attendance Shift History",
-                                  style: TextStyle(
-                                    color: AppColors.textPrimary,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                            const Text("EMPLOYEE", style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 8),
+                            DropdownButtonFormField<String>(
+                              value: 'All Employees',
+                              decoration: InputDecoration(
+                                isDense: true,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(color: AppColors.border),
                                 ),
-                                if (isAdmin)
-                                  TextButton.icon(
-                                    onPressed: () async {
-                                      final picked = await showDateRangePicker(
-                                        context: context,
-                                        firstDate: DateTime(2025, 1, 1),
-                                        lastDate: DateTime(2027, 12, 31),
-                                        initialDateRange: DateTimeRange(start: _startDate, end: _endDate),
-                                      );
-                                      if (picked != null) {
-                                        setState(() {
-                                          _startDate = picked.start;
-                                          _endDate = picked.end;
-                                        });
-                                        if (controller != null) {
-                                          controller.fetchAttendance(
-                                            startDate: _formatDate(_startDate),
-                                            endDate: _formatDate(_endDate),
-                                          );
-                                        }
-                                      }
-                                    },
-                                    icon: const Icon(Icons.date_range, size: 16, color: AppColors.primary),
-                                    label: Text(
-                                      "${_startDate.day}/${_startDate.month} - ${_endDate.day}/${_endDate.month}",
-                                      style: const TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            if (isLoading)
-                              const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 24),
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(color: AppColors.border),
                                 ),
-                              )
-                            else if (error != null)
-                              Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 24),
-                                  child: Text(
-                                    "Error loading logs: $error",
-                                    style: const TextStyle(color: AppColors.danger),
-                                  ),
-                                ),
-                              )
-                            else if (currentLogs.isEmpty)
-                              const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 24),
-                                  child: Text(
-                                    "No shift logs recorded.",
-                                    style: TextStyle(color: AppColors.textSecondary),
-                                  ),
-                                ),
-                              )
-                            else
-                              ListView.separated(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: currentLogs.length,
-                                separatorBuilder: (context, idx) => const Divider(color: AppColors.border, height: 1),
-                                itemBuilder: (context, idx) {
-                                  final log = currentLogs[idx];
-                                  final logDate = "${log.date.day}/${log.date.month}/${log.date.year}";
-
-                                  return Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 12),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Text(
-                                                  logDate,
-                                                  style: const TextStyle(
-                                                    color: AppColors.textPrimary,
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 13,
-                                                  ),
-                                                ),
-                                                if (isAdmin) ...[
-                                                  const SizedBox(width: 8),
-                                                  Container(
-                                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.grey[200],
-                                                      borderRadius: BorderRadius.circular(4),
-                                                    ),
-                                                    child: Text(
-                                                      log.employeeName,
-                                                      style: TextStyle(color: Colors.grey[800], fontSize: 10, fontWeight: FontWeight.w500),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ],
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              "Check in: ${log.checkInTime} • Check out: ${log.checkOutTime ?? 'Active'}",
-                                              style: const TextStyle(
-                                                color: AppColors.textSecondary,
-                                                fontSize: 11,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        Column(
-                                          crossAxisAlignment: CrossAxisAlignment.end,
-                                          children: [
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                              decoration: BoxDecoration(
-                                                color: log.status == 'On Time' || log.status == 'Present'
-                                                    ? AppColors.primary.withOpacity(0.1)
-                                                    : AppColors.warning.withOpacity(0.1),
-                                                borderRadius: BorderRadius.circular(12),
-                                              ),
-                                              child: Text(
-                                                log.status,
-                                                style: TextStyle(
-                                                  color: log.status == 'On Time' || log.status == 'Present'
-                                                      ? AppColors.primary
-                                                      : AppColors.warning,
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            if (log.durationHours != null)
-                                              Text(
-                                                "${log.durationHours} hrs worked",
-                                                style: const TextStyle(
-                                                  color: AppColors.textSecondary,
-                                                  fontSize: 11,
-                                                ),
-                                              ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                },
                               ),
+                              items: const [
+                                DropdownMenuItem(value: 'All Employees', child: Text('All Employees')),
+                              ],
+                              onChanged: (val) {},
+                            ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
-
-                // Right Section: Shift Regulations & Policies (Hidden on Mobile)
-                if (width >= 1000) ...[
-                  const SizedBox(width: 24),
-                  Expanded(
-                    flex: 1,
-                    child: Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: AppColors.cardBackground,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            "Shift Rules & Policies",
-                            style: TextStyle(
-                              color: AppColors.textPrimary,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          _buildPolicyRow("Standard Work hours", "09:00 AM - 06:00 PM"),
-                          _buildPolicyRow("Grace Period", "30 minutes (Late after 09:30 AM)"),
-                          _buildPolicyRow("Break Time Allowance", "1 hour lunch period"),
-                          _buildPolicyRow("Overtime eligibility", "Requires director pre-approval"),
-                          const SizedBox(height: 24),
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(0.06),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: AppColors.primary.withOpacity(0.2)),
-                            ),
-                            child: const Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(Icons.info_outline, color: AppColors.primary, size: 16),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      "Automated Attendance",
-                                      style: TextStyle(
-                                        color: AppColors.primary,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 8),
-                                Text(
-                                  "Your monthly payroll computation automatically syncs with verified shift durations and check-in timelines.",
-                                  style: TextStyle(
-                                    color: AppColors.textPrimary,
-                                    fontSize: 12,
-                                    height: 1.4,
+                      // From Date
+                      SizedBox(
+                        width: 150,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text("FROM", style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 8),
+                            InkWell(
+                              onTap: () async {
+                                final picked = await showDatePicker(
+                                  context: context,
+                                  initialDate: _startDate,
+                                  firstDate: DateTime(2020),
+                                  lastDate: DateTime(2030),
+                                );
+                                if (picked != null) {
+                                  setState(() => _startDate = picked);
+                                }
+                              },
+                              child: InputDecorator(
+                                decoration: InputDecoration(
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(color: AppColors.border),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(color: AppColors.border),
                                   ),
                                 ),
-                              ],
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text("${_startDate.day.toString().padLeft(2, '0')} - ${_getMonthName(_startDate.month)} - ${_startDate.year}", style: const TextStyle(fontSize: 13)),
+                                    const Icon(Icons.calendar_today, size: 16, color: AppColors.textSecondary),
+                                  ],
+                                ),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
+                      // To Date
+                      SizedBox(
+                        width: 150,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text("TO", style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 8),
+                            InkWell(
+                              onTap: () async {
+                                final picked = await showDatePicker(
+                                  context: context,
+                                  initialDate: _endDate,
+                                  firstDate: DateTime(2020),
+                                  lastDate: DateTime(2030),
+                                );
+                                if (picked != null) {
+                                  setState(() => _endDate = picked);
+                                }
+                              },
+                              child: InputDecorator(
+                                decoration: InputDecoration(
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(color: AppColors.border),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(color: AppColors.border),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text("${_endDate.day.toString().padLeft(2, '0')} - ${_getMonthName(_endDate.month)} - ${_endDate.year}", style: const TextStyle(fontSize: 13)),
+                                    const Icon(Icons.calendar_today, size: 16, color: AppColors.textSecondary),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Status Dropdown
+                      SizedBox(
+                        width: 150,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text("STATUS", style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 8),
+                            DropdownButtonFormField<String>(
+                              value: 'All Status',
+                              decoration: InputDecoration(
+                                isDense: true,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(color: AppColors.border),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(color: AppColors.border),
+                                ),
+                              ),
+                              items: const [
+                                DropdownMenuItem(value: 'All Status', child: Text('All Status')),
+                                DropdownMenuItem(value: 'Present', child: Text('Present')),
+                                DropdownMenuItem(value: 'Absent', child: Text('Absent')),
+                              ],
+                              onChanged: (val) {},
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Filter Button
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF6366F1), // Matches screenshot "Filter" purple/blue
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          elevation: 0,
+                        ),
+                        onPressed: () {
+                          if (controller != null) {
+                            controller.fetchAttendance(
+                              startDate: _formatDate(_startDate),
+                              endDate: _formatDate(_endDate),
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.search, size: 18),
+                        label: const Text("Filter", style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // Export Button
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF10B981), // Matches screenshot "Export" green
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      elevation: 0,
                     ),
+                    onPressed: () {},
+                    icon: const Icon(Icons.insert_drive_file, size: 18),
+                    label: const Text("Export", style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 ],
-              ],
+              ),
+            ),
+            
+            const SizedBox(height: 24),
+            Text("${currentLogs.length} record(s) found", style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+            const SizedBox(height: 12),
+
+            // Table Card
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: isLoading
+                  ? const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator()))
+                  : error != null
+                      ? Padding(padding: const EdgeInsets.all(40), child: Center(child: Text(error, style: const TextStyle(color: Colors.red))))
+                      : currentLogs.isEmpty
+                          ? const Padding(padding: EdgeInsets.all(40), child: Center(child: Text("No records found", style: TextStyle(color: AppColors.textSecondary))))
+                          : SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: DataTable(
+                                headingTextStyle: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 12),
+                                dataTextStyle: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+                                dividerThickness: 1,
+                                headingRowColor: WidgetStateProperty.all(Colors.grey[50]),
+                                dataRowMinHeight: 60,
+                                dataRowMaxHeight: 60,
+                                columns: const [
+                                  DataColumn(label: Text("EMPLOYEE")),
+                                  DataColumn(label: Text("EMP ID")),
+                                  DataColumn(label: Text("DATE")),
+                                  DataColumn(label: Text("LOGIN TIME")),
+                                  DataColumn(label: Text("LOGOUT TIME")),
+                                  DataColumn(label: Text("HOURS")),
+                                  DataColumn(label: Text("STATUS")),
+                                  DataColumn(label: Text("LOCATION")),
+                                ],
+                                rows: currentLogs.map((log) {
+                                  return DataRow(
+                                    cells: [
+                                      DataCell(Text(log.employeeName, style: const TextStyle(fontWeight: FontWeight.bold))),
+                                      DataCell(Text(log.employeeId, style: const TextStyle(color: AppColors.textSecondary))),
+                                      DataCell(Text("${log.date.day.toString().padLeft(2, '0')} ${_getMonthName(log.date.month)} ${log.date.year}")),
+                                      DataCell(Text(log.checkInTime)),
+                                      DataCell(Text(log.checkOutTime ?? '--')),
+                                      DataCell(Text(log.durationHours != null ? "${log.durationHours!.toStringAsFixed(2)}h" : "0h", style: const TextStyle(fontWeight: FontWeight.bold))),
+                                      DataCell(
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: log.status == 'Present' || log.status == 'On Time' ? const Color(0xFFD1FAE5) : const Color(0xFFFEE2E2),
+                                            borderRadius: BorderRadius.circular(16),
+                                          ),
+                                          child: Text(
+                                            log.status,
+                                            style: TextStyle(
+                                              color: log.status == 'Present' || log.status == 'On Time' ? const Color(0xFF059669) : const Color(0xFFDC2626),
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const DataCell(Text("Office", style: TextStyle(color: AppColors.textSecondary))),
+                                    ],
+                                  );
+                                }).toList(),
+                              ),
+                            ),
             ),
           ],
         ),
@@ -343,30 +355,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     });
   }
 
-  Widget _buildPolicyRow(String name, String policy) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            name,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            policy,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w600,
-              fontSize: 13,
-            ),
-          ),
-        ],
-      ),
-    );
+  String _getMonthName(int month) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return months[month - 1];
   }
 }
+

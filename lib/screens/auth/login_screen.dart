@@ -5,7 +5,6 @@ import '../../core/widgets/custom_text_field.dart';
 import '../../services/mock_data_service.dart';
 import '../main_layout.dart';
 import 'signup_screen.dart';
-import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,8 +15,8 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController(text: "admin@crm.com");
-  final _passwordController = TextEditingController(text: "admin123");
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   String? _errorMessage;
   bool _isLoading = false;
 
@@ -113,26 +112,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(
-                            Icons.bolt,
-                            color: AppColors.primary,
-                            size: 28,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        const Text(
-                          "RidealCRM",
-                          style: TextStyle(
-                            color: AppColors.textPrimary,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        Image.asset(
+                          'assets/rdslogo.jpeg',
+                          height: 50,
+                          fit: BoxFit.contain,
                         ),
                       ],
                     ),
@@ -183,7 +166,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     CustomTextField(
                       label: "Corporate Email Address",
-                      hint: "e.g., admin@crm.com",
+                      hint: "Enter your email address",
                       prefixIcon: Icons.email_outlined,
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
@@ -215,34 +198,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       },
                     ),
                     const SizedBox(height: 12),
+                    const SizedBox(height: 12),
 
-                    // Forgot Password link
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const ForgotPasswordScreen(),
-                            ),
-                          );
-                        },
-                        style: TextButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          minimumSize: const Size(50, 30),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        child: const Text(
-                          "Forgot Password?",
-                          style: TextStyle(
-                            color: AppColors.primary,
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
 
                     CustomButton(
                       width: double.infinity,

@@ -313,38 +313,40 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
                           validator: (val) => val == null || double.tryParse(val) == null ? "Valid salary required" : null,
                         ),
                         const SizedBox(height: 16),
-                        const Divider(color: AppColors.border),
-                        buildSectionHeader("Security", Icons.lock_outline),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: CustomTextField(
-                                label: "Password *",
-                                hint: "Min 6 characters",
-                                prefixIcon: Icons.lock_outline,
-                                controller: passCtrl,
-                                isPassword: true,
-                                validator: (val) => val == null || val.length < 6 ? "Min 6 chars required" : null,
+                        if (state.currentRole == UserRole.superAdmin) ...[
+                          const Divider(color: AppColors.border),
+                          buildSectionHeader("Security", Icons.lock_outline),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: CustomTextField(
+                                  label: "Password *",
+                                  hint: "Min 6 characters",
+                                  prefixIcon: Icons.lock_outline,
+                                  controller: passCtrl,
+                                  isPassword: true,
+                                  validator: (val) => val == null || val.length < 6 ? "Min 6 chars required" : null,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: CustomTextField(
-                                label: "Confirm Password *",
-                                hint: "Verify password",
-                                prefixIcon: Icons.lock_outline,
-                                controller: confirmPassCtrl,
-                                isPassword: true,
-                                validator: (val) {
-                                  if (val == null || val.isEmpty) return "Required";
-                                  if (val != passCtrl.text) return "Passwords do not match";
-                                  return null;
-                                },
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: CustomTextField(
+                                  label: "Confirm Password *",
+                                  hint: "Verify password",
+                                  prefixIcon: Icons.lock_outline,
+                                  controller: confirmPassCtrl,
+                                  isPassword: true,
+                                  validator: (val) {
+                                    if (val == null || val.isEmpty) return "Required";
+                                    if (val != passCtrl.text) return "Passwords do not match";
+                                    return null;
+                                  },
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -372,7 +374,7 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
                         dateJoined: joiningDateCtrl.text,
                         phone: phoneCtrl.text,
                         avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
-                        password: passCtrl.text,
+                        password: passCtrl.text.isNotEmpty ? passCtrl.text : 'welcome123',
                       );
                       state.addEmployee(newEmp);
                       Navigator.of(context).pop();
@@ -393,6 +395,8 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
     final phoneCtrl = TextEditingController(text: emp.phone);
     final desigCtrl = TextEditingController(text: emp.designation ?? '');
     final salaryCtrl = TextEditingController(text: emp.salary.toStringAsFixed(0));
+    final passCtrl = TextEditingController();
+    final confirmPassCtrl = TextEditingController();
 
     final rolesList = [
       'Super admin',
@@ -616,6 +620,43 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
                           keyboardType: TextInputType.number,
                           validator: (val) => val == null || double.tryParse(val) == null ? "Valid salary required" : null,
                         ),
+                        if (state.currentRole == UserRole.superAdmin) ...[
+                          const SizedBox(height: 16),
+                          const Divider(color: AppColors.border),
+                          buildSectionHeader("Security", Icons.lock_outline),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: CustomTextField(
+                                  label: "New Password",
+                                  hint: "Leave blank to keep current",
+                                  prefixIcon: Icons.lock_outline,
+                                  controller: passCtrl,
+                                  isPassword: true,
+                                  validator: (val) {
+                                    if (val != null && val.isNotEmpty && val.length < 6) return "Min 6 chars";
+                                    return null;
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: CustomTextField(
+                                  label: "Confirm Password",
+                                  hint: "Verify new password",
+                                  prefixIcon: Icons.lock_outline,
+                                  controller: confirmPassCtrl,
+                                  isPassword: true,
+                                  validator: (val) {
+                                    if (passCtrl.text.isNotEmpty && (val == null || val != passCtrl.text)) return "Passwords do not match";
+                                    return null;
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -638,6 +679,7 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
                         department: selectedDept,
                         salary: double.parse(salaryCtrl.text),
                         status: selectedStatus,
+                        password: passCtrl.text.isNotEmpty ? passCtrl.text : emp.password,
                       );
                       final success = await state.updateEmployee(updatedEmp);
                       if (context.mounted) {

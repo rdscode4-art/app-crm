@@ -20,7 +20,17 @@ class LeadScreen extends StatefulWidget {
 
 class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late TabController _tabController;
-  final List<String> _stages = ['New', 'Assigned', 'Hot', 'Cold', 'Converted', 'Lost', 'Follow-up'];
+  final List<String> _stages = ['New', 'Meeting', 'Assigned', 'Hot', 'Cold', 'Converted', 'Lost', 'Follow-up'];
+  
+  List<String> get _displayStages {
+    final state = Get.isRegistered<MockDataService>() ? Get.find<MockDataService>() : MockDataService();
+    final currentUser = state.currentUser;
+    final bool isSales = currentUser?.department.toLowerCase() == 'sales' || 
+                         (currentUser?.designation?.toLowerCase().contains('sales') ?? false) ||
+                         (currentUser?.role.toLowerCase().contains('sales') ?? false);
+    
+    return isSales ? _stages.where((s) => s != 'Assigned').toList() : _stages;
+  }
 
   bool _callInitiated = false;
   Lead? _lastCalledLead;
@@ -29,11 +39,20 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
   bool _isBulkAssignMode = false;
   Set<String> _selectedLeadIds = {};
 
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  String _filterAssignmentStatus = 'All'; // 'All', 'Assigned', 'Unassigned'
+
   @override
   void initState() {
     super.initState();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.toLowerCase();
+      });
+    });
     WidgetsBinding.instance.addObserver(this);
-    _tabController = TabController(length: _stages.length, vsync: this);
+    _tabController = TabController(length: _displayStages.length, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Get.find<CrmController>().fetchLeads();
     });
@@ -44,13 +63,42 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
   }
 
   List<Lead> _getStageLeads(List<Lead> allLeads, String stage) {
+    final state = Get.isRegistered<MockDataService>() ? Get.find<MockDataService>() : MockDataService();
+    final currentUser = state.currentUser;
+    final bool isSales = currentUser?.department.toLowerCase() == 'sales' || 
+                         (currentUser?.designation?.toLowerCase().contains('sales') ?? false) ||
+                         (currentUser?.role.toLowerCase().contains('sales') ?? false);
+
+    List<Lead> filteredLeads = allLeads;
+
+    if (_searchQuery.isNotEmpty) {
+      filteredLeads = filteredLeads.where((l) {
+        final matchName = l.name.toLowerCase().contains(_searchQuery);
+        final matchPhone = l.phone.toLowerCase().contains(_searchQuery);
+        final matchOwnerName = _getDisplayOwner(l.owner, state).toLowerCase().contains(_searchQuery);
+        return matchName || matchPhone || matchOwnerName;
+      }).toList();
+    }
+
+    if (_filterAssignmentStatus != 'All') {
+      filteredLeads = filteredLeads.where((l) {
+        if (_filterAssignmentStatus == 'Assigned') return _isAssigned(l);
+        return !_isAssigned(l);
+      }).toList();
+    }
+
     if (stage == 'New') {
-      return allLeads.where((l) => l.status == 'New' && !_isAssigned(l)).toList();
+      if (isSales) {
+        // Sales employees see both 'New' and 'Assigned' leads in the 'New' tab
+        return filteredLeads.where((l) => (l.status == 'New' || l.status == 'Assigned')).toList();
+      }
+      return filteredLeads.where((l) => l.status == 'New' && !_isAssigned(l)).toList();
     }
     if (stage == 'Assigned') {
-      return allLeads.where((l) => (l.status == 'New' || l.status == 'Assigned') && _isAssigned(l)).toList();
+      if (isSales) return []; // Should not be rendered anyway, but just in case
+      return filteredLeads.where((l) => (l.status == 'New' || l.status == 'Assigned') && _isAssigned(l)).toList();
     }
-    return allLeads.where((l) => l.status == stage).toList();
+    return filteredLeads.where((l) => l.status == stage).toList();
   }
 
   String _getDisplayOwner(String owner, MockDataService state) {
@@ -62,6 +110,7 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
 
   @override
   void dispose() {
+    _searchController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     _tabController.dispose();
     super.dispose();
@@ -112,78 +161,24 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
     }
 
     if (mounted) {
-      final notesCtrl = TextEditingController();
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext dialogContext) {
-          void saveLog(String notes) {
-            final state = MockDataService();
-            final log = CallLog(
-              id: "CALL-${DateTime.now().millisecondsSinceEpoch}",
-              leadId: lead.id,
-              leadName: lead.name,
-              employeeId: state.currentUser?.id ?? "EMP-000",
-              employeeName: state.currentUser?.name ?? "Sales Agent",
-              durationMinutes: durationMinutes,
-              outcome: outcome,
-              notes: notes.isEmpty ? "Auto-logged from phone dialer." : notes,
-              timestamp: DateTime.now(),
-            );
-            state.addCallLog(log);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text("Logged call with ${lead.name} ($durationMinutes mins)")),
-            );
-          }
+      final state = MockDataService();
+      final log = CallLog(
+        id: "CALL-${DateTime.now().millisecondsSinceEpoch}",
+        leadId: lead.id,
+        leadName: lead.name,
+        employeeId: state.currentUser?.id ?? "EMP-000",
+        employeeName: state.currentUser?.name ?? "Sales Agent",
+        durationMinutes: durationMinutes,
+        outcome: outcome,
+        notes: "Auto-logged from phone dialer.",
+        timestamp: DateTime.now(),
+      );
+      state.addCallLog(log);
+      
+      Get.find<CrmController>().addLeadNote(lead.id, "Auto-logged from phone dialer.");
 
-          return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            backgroundColor: Colors.white,
-            title: const Text("Follow-up Details", style: TextStyle(fontWeight: FontWeight.bold)),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (logFound)
-                  Text("Call with ${lead.name} ended ($durationMinutes mins).", style: const TextStyle(fontWeight: FontWeight.w500))
-                else
-                  Text("Call with ${lead.name} finished.", style: const TextStyle(fontWeight: FontWeight.w500)),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: notesCtrl,
-                  decoration: InputDecoration(
-                    labelText: "Add description or remarks",
-                    hintText: "What was discussed?",
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    filled: true,
-                    fillColor: Colors.grey[50],
-                  ),
-                  maxLines: 3,
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  saveLog("Auto-logged from phone dialer.");
-                  Navigator.pop(dialogContext);
-                },
-                child: const Text("Skip", style: TextStyle(color: AppColors.textSecondary)),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  saveLog(notesCtrl.text);
-                  Navigator.pop(dialogContext);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text("Save Notes"),
-              ),
-            ],
-          );
-        },
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Logged call with ${lead.name} ($durationMinutes mins)")),
       );
     }
   }
@@ -224,7 +219,7 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
 
     // Dropdown Items Lists
     final List<String> sources = ['WhatsApp', 'Facebook', 'Instagram', 'Call', 'Walk-in', 'Referral', 'Other', 'Website'];
-    final List<String> statuses = ['New', 'Hot', 'Cold', 'Converted', 'Lost', 'Follow-up'];
+    final List<String> statuses = ['New', 'Meeting', 'Hot', 'Cold', 'Converted', 'Lost', 'Follow-up'];
     final List<String> stages = ['Inquiry', 'Demo', 'Negotiation', 'Closed', 'Booking', 'Lost'];
     final List<String> priorities = ['High', 'Medium', 'Low', 'Critical'];
     final List<String> timelines = ['Immediate', 'Within 1 Month', '1-3 Months', '3-6 Months'];
@@ -246,7 +241,7 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
     }
     if (employeeNamesSet.isEmpty) employeeNamesSet.add("Sales Agent");
 
-    String owner = lead?.owner ?? state.currentUser?.name ?? "Sales Agent";
+    String owner = lead?.owner ?? "Unassigned";
     employeeNamesSet.add(owner);
     
     final List<String> employeeNames = employeeNamesSet.toList();
@@ -453,23 +448,7 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                               }
                             },
                           ),
-                          if (state.currentRole != UserRole.employee)
-                            _buildDropdown(
-                              label: "Assign To",
-                              value: owner,
-                              items: employeeNames,
-                              itemLabels: {
-                                for (var name in employeeNames)
-                                  name: state.employees.any((e) => e.name == name)
-                                      ? "$name (${state.employees.firstWhere((e) => e.name == name).department})"
-                                      : name
-                              },
-                              onChanged: (val) {
-                                if (val != null) {
-                                  setDialogState(() => owner = val);
-                                }
-                              },
-                            ),
+                          const SizedBox(), // Spacer for layout alignment
                         ]),
                         Padding(
                           padding: const EdgeInsets.only(bottom: 16),
@@ -710,110 +689,10 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
     );
   }
 
-  void _showLogCallDialog(BuildContext context, Lead lead, MockDataService state) {
-    final formKey = GlobalKey<FormState>();
-    final durationCtrl = TextEditingController(text: "5");
-    final notesCtrl = TextEditingController();
-    String outcome = 'Connected';
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              backgroundColor: Colors.white,
-              title: const Text("Log a Call", style: TextStyle(fontWeight: FontWeight.bold)),
-              content: Form(
-                key: formKey,
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text("Lead: ${lead.name}", style: const TextStyle(fontWeight: FontWeight.w500)),
-                      const SizedBox(height: 16),
-                      CustomTextField(
-                        label: "Duration (minutes)",
-                        hint: "e.g., 5",
-                        prefixIcon: Icons.timer,
-                        controller: durationCtrl,
-                        keyboardType: TextInputType.number,
-                        validator: (val) {
-                          if (val == null || val.isEmpty) return "Required";
-                          if (int.tryParse(val) == null) return "Must be a number";
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        "Outcome",
-                        style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 13),
-                      ),
-                      const SizedBox(height: 6),
-                      DropdownButtonFormField<String>(
-                        initialValue: outcome,
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: Colors.white,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                        ),
-                        items: ['Connected', 'Voicemail', 'Busy', 'No Answer']
-                            .map((o) => DropdownMenuItem(value: o, child: Text(o)))
-                            .toList(),
-                        onChanged: (val) {
-                          if (val != null) {
-                            setDialogState(() => outcome = val);
-                          }
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      CustomTextField(
-                        label: "Notes",
-                        hint: "Discussion summary...",
-                        prefixIcon: Icons.notes,
-                        controller: notesCtrl,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text("Cancel", style: TextStyle(color: AppColors.textSecondary)),
-                ),
-                CustomButton(
-                  text: "Save Call",
-                  onPressed: () {
-                    if (formKey.currentState!.validate()) {
-                      final log = CallLog(
-                        id: "CALL-${DateTime.now().millisecondsSinceEpoch}",
-                        leadId: lead.id,
-                        leadName: lead.name,
-                        employeeId: state.currentUser?.id ?? "EMP-000",
-                        employeeName: state.currentUser?.name ?? "Sales Agent",
-                        durationMinutes: int.parse(durationCtrl.text),
-                        outcome: outcome,
-                        notes: notesCtrl.text,
-                        timestamp: DateTime.now(),
-                      );
-                      state.addCallLog(log);
-                      Navigator.of(context).pop();
-                    }
-                  },
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
 
   void _showLeadActions(BuildContext context, Lead lead, MockDataService state) {
+    final noteCtrl = TextEditingController();
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -825,175 +704,203 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
         String? selectedRole;
         return StatefulBuilder(
           builder: (context, setSheetState) {
-            return Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              lead.name,
-                              style: const TextStyle(
-                                color: AppColors.textPrimary,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+            return SingleChildScrollView(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: 24, right: 24, top: 24,
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                lead.name,
+                                style: const TextStyle(
+                                  color: AppColors.textPrimary,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
-                            Text(
-                              lead.company,
-                              style: const TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 16,
+                              Text(
+                                lead.company,
+                                style: const TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 16,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              "₹${lead.value.toStringAsFixed(0)}",
-                              style: const TextStyle(
-                                color: AppColors.primary,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
+                              const SizedBox(height: 8),
+                              Text(
+                                "₹${lead.value.toStringAsFixed(0)}",
+                                style: const TextStyle(
+                                  color: AppColors.primary,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Wrap(
-                          alignment: WrapAlignment.end,
-                          spacing: 0,
-                          runSpacing: 0,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.call, color: Colors.green, size: 22),
-                              tooltip: "Call Now",
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                                _initiateCall(lead);
-                              },
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.phone, color: AppColors.primary, size: 22),
-                              tooltip: "Log Call Manually",
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                                _showLogCallDialog(context, lead, state);
-                              },
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.history, color: AppColors.info, size: 22),
-                              tooltip: "View Call History",
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                                _showCallHistoryDialog(context, lead, state);
-                              },
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.edit, color: AppColors.primary, size: 22),
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                                _showLeadDialog(context, state, lead: lead);
-                              },
-                            ),
-                            if (state.currentRole == UserRole.superAdmin)
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Wrap(
+                            alignment: WrapAlignment.end,
+                            spacing: 0,
+                            runSpacing: 0,
+                            children: [
                               IconButton(
-                                icon: const Icon(Icons.delete_outline, color: AppColors.danger, size: 22),
+                                icon: const Icon(Icons.call, color: Colors.green, size: 22),
+                                tooltip: "Call Now",
                                 onPressed: () {
                                   Navigator.of(context).pop();
-                                  _showDeleteConfirmation(context, lead, state);
+                                  _initiateCall(lead);
                                 },
                               ),
-                          ],
+                              // Removed manual log call button
+                              IconButton(
+                                icon: const Icon(Icons.history, color: AppColors.info, size: 22),
+                                tooltip: "View Call History",
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                  _showCallHistoryDialog(context, lead, state);
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.edit, color: AppColors.primary, size: 22),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                  _showLeadDialog(context, state, lead: lead);
+                                },
+                              ),
+                              if (state.currentRole == UserRole.superAdmin)
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline, color: AppColors.danger, size: 22),
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                    _showDeleteConfirmation(context, lead, state);
+                                  },
+                                ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  const Divider(color: AppColors.border),
-                  const SizedBox(height: 12),
-                  _buildLeadDetailRow(Icons.email_outlined, "Email", lead.email),
-                  _buildLeadDetailRow(Icons.phone_outlined, "Phone", lead.phone),
-                  _buildLeadDetailRow(Icons.source_outlined, "Source", lead.source),
-                  _buildLeadDetailRow(Icons.person_pin_outlined, "Assigned Agent", lead.owner),
-                  const SizedBox(height: 16),
-                  const Text(
-                    "Move Stage",
-                    style: TextStyle(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _stages.map((st) {
-                      final isCurrent = lead.status == st;
-                      Color chipColor;
-                      switch (st) {
-                        case 'New':
-                          chipColor = Colors.blue;
-                          break;
-                        case 'Hot':
-                          chipColor = Colors.red;
-                          break;
-                        case 'Cold':
-                          chipColor = Colors.cyan;
-                          break;
-                        case 'Converted':
-                          chipColor = AppColors.success;
-                          break;
-                        case 'Lost':
-                          chipColor = AppColors.danger;
-                          break;
-                        case 'Follow-up':
-                          chipColor = Colors.orange;
-                          break;
-                        default:
-                          chipColor = Colors.grey;
-                      }
-
-                      return InkWell(
-                        onTap: () {
-                          state.updateLeadStatus(lead.id, st);
-                          Navigator.of(context).pop();
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    const SizedBox(height: 20),
+                    const Divider(color: AppColors.border),
+                    const SizedBox(height: 12),
+                    const Text("Contact Details", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: 14)),
+                    const SizedBox(height: 8),
+                    _buildLeadDetailRow(Icons.email_outlined, "Email", lead.email.isEmpty ? "N/A" : lead.email),
+                    _buildLeadDetailRow(Icons.phone_outlined, "Phone", lead.phone),
+                    if (lead.alternatePhone.isNotEmpty) _buildLeadDetailRow(Icons.phone_android_outlined, "Alt Phone", lead.alternatePhone),
+                    if (lead.city.isNotEmpty || lead.state.isNotEmpty) _buildLeadDetailRow(Icons.location_city_outlined, "Location", "${lead.city.isNotEmpty ? lead.city : ''}${lead.city.isNotEmpty && lead.state.isNotEmpty ? ', ' : ''}${lead.state}"),
+                    
+                    const SizedBox(height: 12),
+                    const Divider(color: AppColors.border),
+                    const SizedBox(height: 12),
+                    const Text("Lead Qualification", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: 14)),
+                    const SizedBox(height: 8),
+                    _buildLeadDetailRow(Icons.source_outlined, "Source", lead.source),
+                    if (lead.requirement.isNotEmpty) _buildLeadDetailRow(Icons.shopping_bag_outlined, "Requirement", lead.requirement),
+                    _buildLeadDetailRow(Icons.timeline, "Timeline", lead.timeline),
+                    _buildLeadDetailRow(Icons.flag_outlined, "Priority", lead.priority),
+                    _buildLeadDetailRow(Icons.trending_up, "Sales Stage", lead.salesStage),
+                    if (lead.probability > 0) _buildLeadDetailRow(Icons.percent, "Win Probability", "${lead.probability.toStringAsFixed(0)}%"),
+                    _buildLeadDetailRow(Icons.person_pin_outlined, "Assigned Agent", _getDisplayOwner(lead.owner, state)),
+                    const SizedBox(height: 16),
+                    
+                    if (lead.notes.isNotEmpty) ...[
+                      const Divider(color: AppColors.border),
+                      const SizedBox(height: 12),
+                      const Text("Previous Notes", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: 14)),
+                      const SizedBox(height: 8),
+                      ...lead.notes.map((n) {
+                        return Container(
+                          width: double.infinity,
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: isCurrent ? chipColor.withOpacity(0.15) : Colors.transparent,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: isCurrent ? chipColor : AppColors.border,
-                              width: 1.5,
-                            ),
+                            color: Colors.amber[50],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.amber[200]!),
                           ),
-                          child: Text(
-                            st,
-                            style: TextStyle(
-                              color: isCurrent ? chipColor : AppColors.textSecondary,
-                              fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
-                              fontSize: 14,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(n.content, style: const TextStyle(fontSize: 14, color: AppColors.textPrimary)),
+                              const SizedBox(height: 4),
+                              if (n.createdAt != null)
+                                Text(
+                                  "${n.createdAt!.day.toString().padLeft(2, '0')}/${n.createdAt!.month.toString().padLeft(2, '0')}/${n.createdAt!.year} ${n.createdAt!.hour.toString().padLeft(2, '0')}:${n.createdAt!.minute.toString().padLeft(2, '0')}",
+                                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ],
+                    
+                    const Divider(color: AppColors.border),
+                    const SizedBox(height: 12),
+                    const Text("Add Note / Description", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: 14)),
+                    const SizedBox(height: 8),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: noteCtrl,
+                            decoration: InputDecoration(
+                              hintText: "Enter details here...",
+                              filled: true,
+                              fillColor: Colors.grey[50],
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(color: AppColors.border),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(color: AppColors.border),
+                              ),
                             ),
+                            maxLines: 2,
+                            minLines: 1,
                           ),
                         ),
-                      );
-                    }).toList(),
-                  ),
-                  if (state.currentRole != UserRole.employee) ...[
-                    const SizedBox(height: 24),
+                        const SizedBox(width: 8),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.send, color: Colors.white, size: 20),
+                            onPressed: () {
+                              if (noteCtrl.text.trim().isNotEmpty && Get.isRegistered<CrmController>()) {
+                                Get.find<CrmController>().addLeadNote(lead.id, noteCtrl.text.trim());
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text("Note saved successfully")),
+                                );
+                                noteCtrl.clear();
+                                FocusScope.of(context).unfocus();
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
                     const Text(
-                      "Quick Assign",
+                      "Move Stage",
                       style: TextStyle(
                         color: AppColors.textPrimary,
                         fontWeight: FontWeight.bold,
@@ -1001,30 +908,101 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                       ),
                     ),
                     const SizedBox(height: 8),
-                    DropdownButtonFormField<String>(
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: Colors.grey[50],
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                      hint: const Text("Select Agent to Assign"),
-                      items: state.employees.where((e) => e.department.toLowerCase() == 'sales').map((e) => e.id).toSet().map((id) {
-                        final emp = state.employees.firstWhere((e) => e.id == id);
-                        return DropdownMenuItem(value: emp.id, child: Text("${emp.name} (${emp.department})"));
-                      }).toList(),
-                      onChanged: (empId) {
-                        if (empId != null && Get.isRegistered<CrmController>()) {
-                          Get.find<CrmController>().assignLead(lead.id, empId);
-                          Navigator.of(context).pop();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("Assigning lead to agent...")),
-                          );
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _displayStages.map((st) {
+                        final isCurrent = lead.status == st;
+                        Color chipColor;
+                        switch (st) {
+                          case 'New':
+                            chipColor = Colors.blue;
+                            break;
+                          case 'Hot':
+                            chipColor = Colors.red;
+                            break;
+                          case 'Cold':
+                            chipColor = Colors.cyan;
+                            break;
+                          case 'Converted':
+                            chipColor = AppColors.success;
+                            break;
+                          case 'Lost':
+                            chipColor = AppColors.danger;
+                            break;
+                          case 'Follow-up':
+                            chipColor = Colors.orange;
+                            break;
+                          case 'Meeting':
+                            chipColor = Colors.purple;
+                            break;
+                          default:
+                            chipColor = Colors.grey;
                         }
-                      },
+
+                        return InkWell(
+                          onTap: () {
+                            state.updateLeadStatus(lead.id, st);
+                            Navigator.of(context).pop();
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: isCurrent ? chipColor.withOpacity(0.15) : Colors.transparent,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: isCurrent ? chipColor : AppColors.border,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Text(
+                              st,
+                              style: TextStyle(
+                                color: isCurrent ? chipColor : AppColors.textSecondary,
+                                fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
                     ),
+                    if (state.currentRole != UserRole.employee) ...[
+                      const SizedBox(height: 24),
+                      const Text(
+                        "Quick Assign",
+                        style: TextStyle(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<String>(
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        hint: const Text("Select Agent to Assign"),
+                        items: state.employees.where((e) => e.department.toLowerCase() == 'sales').map((e) => e.id).toSet().map((id) {
+                          final emp = state.employees.firstWhere((e) => e.id == id);
+                          return DropdownMenuItem(value: emp.id, child: Text("${emp.name} (${emp.department})"));
+                        }).toList(),
+                        onChanged: (empId) {
+                          if (empId != null && Get.isRegistered<CrmController>()) {
+                            Get.find<CrmController>().assignLead(lead.id, empId);
+                            Navigator.of(context).pop();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("Assigning lead to agent...")),
+                            );
+                          }
+                        },
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             );
           },
@@ -1062,75 +1040,241 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header & Add Lead Button
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Expanded(
-                    child: Column(
+              isDesktop
+                  ? Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          "Sales Lead Pipeline",
-                          style: TextStyle(
-                            color: AppColors.textPrimary,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Sales Lead Pipeline",
+                                style: TextStyle(
+                                  color: AppColors.textPrimary,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                "Manage sales client opportunities, stages, values, and tracking.",
+                                style: TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        SizedBox(height: 4),
-                        Text(
-                          "Manage sales client opportunities, stages, values, and tracking.",
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 16,
-                          ),
+                        const SizedBox(width: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          alignment: WrapAlignment.end,
+                          children: [
+                            if (_isBulkAssignMode) ...[
+                              OutlinedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _isBulkAssignMode = false;
+                                    _selectedLeadIds.clear();
+                                  });
+                                },
+                                child: const Text("Cancel", style: TextStyle(color: AppColors.textSecondary)),
+                              ),
+                              if (state.currentRole == UserRole.superAdmin)
+                                ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red,
+                                    foregroundColor: Colors.white,
+                                  ),
+                                  icon: const Icon(Icons.delete, size: 18),
+                                  label: Text("Delete (${_selectedLeadIds.length})"),
+                                  onPressed: _selectedLeadIds.isEmpty
+                                      ? null
+                                      : () => _showBulkDeleteDialog(context, state),
+                                ),
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: Colors.white,
+                                ),
+                                icon: const Icon(Icons.check, size: 18),
+                                label: Text("Assign (${_selectedLeadIds.length})"),
+                                onPressed: _selectedLeadIds.isEmpty
+                                    ? null
+                                    : () => _showBulkAssignDialog(context, state),
+                              ),
+                            ] else ...[
+                              if (state.currentRole != UserRole.employee)
+                                CustomButton(
+                                  text: "Select Leads",
+                                  icon: Icons.checklist,
+                                  backgroundColor: AppColors.info,
+                                  onPressed: () {
+                                    setState(() {
+                                      _isBulkAssignMode = true;
+                                    });
+                                  },
+                                ),
+                              if (state.currentRole == UserRole.superAdmin)
+                                CustomButton(
+                                  text: "Create Lead",
+                                  icon: Icons.add,
+                                  onPressed: () => _showLeadDialog(context, state),
+                                ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Sales Lead Pipeline",
+                              style: TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              "Manage sales client opportunities, stages, values, and tracking.",
+                              style: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          alignment: WrapAlignment.start,
+                          children: [
+                            if (_isBulkAssignMode) ...[
+                              OutlinedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _isBulkAssignMode = false;
+                                    _selectedLeadIds.clear();
+                                  });
+                                },
+                                child: const Text("Cancel", style: TextStyle(color: AppColors.textSecondary)),
+                              ),
+                              if (state.currentRole == UserRole.superAdmin)
+                                ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red,
+                                    foregroundColor: Colors.white,
+                                  ),
+                                  icon: const Icon(Icons.delete, size: 18),
+                                  label: Text("Delete (${_selectedLeadIds.length})"),
+                                  onPressed: _selectedLeadIds.isEmpty
+                                      ? null
+                                      : () => _showBulkDeleteDialog(context, state),
+                                ),
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: Colors.white,
+                                ),
+                                icon: const Icon(Icons.check, size: 18),
+                                label: Text("Assign (${_selectedLeadIds.length})"),
+                                onPressed: _selectedLeadIds.isEmpty
+                                    ? null
+                                    : () => _showBulkAssignDialog(context, state),
+                              ),
+                            ] else ...[
+                              if (state.currentRole != UserRole.employee)
+                                CustomButton(
+                                  text: "Select Leads",
+                                  icon: Icons.checklist,
+                                  backgroundColor: AppColors.info,
+                                  onPressed: () {
+                                    setState(() {
+                                      _isBulkAssignMode = true;
+                                    });
+                                  },
+                                ),
+                              if (state.currentRole == UserRole.superAdmin)
+                                CustomButton(
+                                  text: "Create Lead",
+                                  icon: Icons.add,
+                                  onPressed: () => _showLeadDialog(context, state),
+                                ),
+                            ],
+                          ],
                         ),
                       ],
                     ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: CustomTextField(
+                      label: "Search Leads",
+                      controller: _searchController,
+                      hint: "Search by lead name, phone, or assigned employee...",
+                      prefixIcon: Icons.search,
+                    ),
                   ),
-                  const SizedBox(width: 12),
-                  if (_isBulkAssignMode) ...[
-                    OutlinedButton(
-                      onPressed: () {
-                        setState(() {
-                          _isBulkAssignMode = false;
-                          _selectedLeadIds.clear();
-                        });
-                      },
-                      child: const Text("Cancel", style: TextStyle(color: AppColors.textSecondary)),
+                  if (state.currentRole == UserRole.superAdmin || state.currentRole == UserRole.hr) ...[
+                    const SizedBox(width: 16),
+                    Expanded(
+                      flex: 1,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Filter by Assignment",
+                            style: TextStyle(
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: AppColors.border),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: _filterAssignmentStatus,
+                                isExpanded: true,
+                                icon: const Icon(Icons.arrow_drop_down, color: AppColors.textSecondary),
+                                items: ['All', 'Assigned', 'Unassigned'].map((String value) {
+                                  return DropdownMenuItem<String>(
+                                    value: value,
+                                    child: Text(value, style: const TextStyle(fontSize: 14)),
+                                  );
+                                }).toList(),
+                                onChanged: (newValue) {
+                                  if (newValue != null) {
+                                    setState(() {
+                                      _filterAssignmentStatus = newValue;
+                                    });
+                                  }
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(width: 8),
-                    ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                      ),
-                      icon: const Icon(Icons.check, size: 18),
-                      label: Text("Assign (${_selectedLeadIds.length})"),
-                      onPressed: _selectedLeadIds.isEmpty
-                          ? null
-                          : () => _showBulkAssignDialog(context, state),
-                    ),
-                  ] else ...[
-                    if (state.currentRole != UserRole.employee) ...[
-                      CustomButton(
-                        text: "Bulk Assign",
-                        icon: Icons.checklist,
-                        backgroundColor: AppColors.info,
-                        onPressed: () {
-                          setState(() {
-                            _isBulkAssignMode = true;
-                          });
-                        },
-                      ),
-                      const SizedBox(width: 8),
-                    ],
-                    if (state.currentRole == UserRole.superAdmin)
-                      CustomButton(
-                        text: "Create Lead",
-                        icon: Icons.add,
-                        onPressed: () => _showLeadDialog(context, state),
-                      ),
                   ],
                 ],
               ),
@@ -1191,7 +1335,7 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                 // Desktop Web Columns Sidebar view
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: _stages.map((stage) {
+                  children: _displayStages.map((stage) {
                     final stageLeads = _getStageLeads(controller.leads, stage);
                     final stageTotalValue = stageLeads.fold<double>(0, (sum, l) => sum + l.value);
 
@@ -1269,7 +1413,7 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                       unselectedLabelColor: AppColors.textSecondary,
                       indicatorColor: AppColors.primary,
                       isScrollable: true,
-                      tabs: _stages.map((st) {
+                      tabs: _displayStages.map((st) {
                         final count = _getStageLeads(controller.leads, st).length;
                         return Tab(text: "$st ($count)");
                       }).toList(),
@@ -1279,7 +1423,7 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                       height: 500,
                       child: TabBarView(
                         controller: _tabController,
-                        children: _stages.map((st) {
+                        children: _displayStages.map((st) {
                           final stageLeads = _getStageLeads(controller.leads, st);
                           if (stageLeads.isEmpty) {
                             return const Center(
@@ -1310,70 +1454,87 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
   }
 
   Widget _buildLeadCard(BuildContext context, Lead lead, MockDataService state) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
+    return InkWell(
+      onTap: () => _showLeadActions(context, lead, state),
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.border),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    lead.name,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (_isBulkAssignMode)
+                  SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: Checkbox(
+                      value: _selectedLeadIds.contains(lead.id),
+                      activeColor: AppColors.primary,
+                      onChanged: (val) {
+                        setState(() {
+                          if (val == true) {
+                            _selectedLeadIds.add(lead.id);
+                          } else {
+                            _selectedLeadIds.remove(lead.id);
+                          }
+                        });
+                      },
+                    ),
+                  )
+                else
+                  const Icon(Icons.star, color: Colors.amber, size: 14),
+              ],
+            ),
+            const SizedBox(height: 2),
+            Text(
+              lead.company,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 13,
+              ),
+            ),
+            if (lead.requirement.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
                 child: Text(
-                  lead.name,
+                  lead.requirement,
                   style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
+                    color: AppColors.textSecondary,
+                    fontSize: 12,
+                    fontStyle: FontStyle.italic,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              if (_isBulkAssignMode)
-                SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: Checkbox(
-                    value: _selectedLeadIds.contains(lead.id),
-                    activeColor: AppColors.primary,
-                    onChanged: (val) {
-                      setState(() {
-                        if (val == true) {
-                          _selectedLeadIds.add(lead.id);
-                        } else {
-                          _selectedLeadIds.remove(lead.id);
-                        }
-                      });
-                    },
-                  ),
-                )
-              else
-                const Icon(Icons.star, color: Colors.amber, size: 14),
-            ],
-          ),
-          const SizedBox(height: 2),
-          Text(
-            lead.company,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 13,
-            ),
-          ),
-          const SizedBox(height: 10),
+            const SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -1458,6 +1619,42 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
           ),
         ],
       ),
+    ));
+  }
+
+  void _showBulkDeleteDialog(BuildContext context, MockDataService state) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Delete Selected Leads"),
+          content: Text("Are you sure you want to delete ${_selectedLeadIds.length} leads? This action cannot be undone."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel", style: TextStyle(color: AppColors.textSecondary)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+              onPressed: () async {
+                final controller = Get.find<CrmController>();
+                Navigator.pop(context);
+                final success = await controller.bulkDeleteLeads(_selectedLeadIds.toList());
+                if (success) {
+                  setState(() {
+                    _isBulkAssignMode = false;
+                    _selectedLeadIds.clear();
+                  });
+                  Get.snackbar("Success", "Leads deleted successfully", backgroundColor: Colors.green, colorText: Colors.white);
+                } else {
+                  Get.snackbar("Error", "Failed to delete leads", backgroundColor: Colors.red, colorText: Colors.white);
+                }
+              },
+              child: const Text("Delete"),
+            ),
+          ],
+        );
+      },
     );
   }
 

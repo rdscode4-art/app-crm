@@ -1,3 +1,29 @@
+class LeadNote {
+  final String id;
+  final String content;
+  final String createdBy;
+  final bool isImportant;
+  final DateTime? createdAt;
+
+  LeadNote({
+    required this.id,
+    required this.content,
+    required this.createdBy,
+    this.isImportant = false,
+    this.createdAt,
+  });
+
+  factory LeadNote.fromJson(Map<String, dynamic> json) {
+    return LeadNote(
+      id: json['_id']?.toString() ?? '',
+      content: json['content']?.toString() ?? '',
+      createdBy: json['createdBy']?.toString() ?? '',
+      isImportant: json['isImportant'] ?? false,
+      createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'].toString()) : null,
+    );
+  }
+}
+
 class Lead {
   final String id;
   final String name;
@@ -9,6 +35,7 @@ class Lead {
   final String source; // 'WhatsApp', 'Facebook', 'Instagram', 'Call', 'Walk-in', 'Referral', 'Other', 'Website'
   final DateTime dateCreated;
   final String owner;
+  final List<LeadNote> notes; // Added notes field
 
   // New expanded fields
   final String alternatePhone;
@@ -32,7 +59,8 @@ class Lead {
     required this.status,
     required this.source,
     required this.dateCreated,
-    required this.owner,
+    this.owner = '',
+    this.notes = const [],
     this.alternatePhone = '',
     this.salesStage = 'Inquiry',
     this.probability = 0.0,
@@ -56,6 +84,7 @@ class Lead {
     String? source,
     DateTime? dateCreated,
     String? owner,
+    List<LeadNote>? notes,
     String? alternatePhone,
     String? salesStage,
     double? probability,
@@ -78,6 +107,7 @@ class Lead {
       source: source ?? this.source,
       dateCreated: dateCreated ?? this.dateCreated,
       owner: owner ?? this.owner,
+      notes: notes ?? this.notes,
       alternatePhone: alternatePhone ?? this.alternatePhone,
       salesStage: salesStage ?? this.salesStage,
       probability: probability ?? this.probability,
@@ -101,6 +131,7 @@ class Lead {
     if (lower == 'lost') return 'Lost';
     if (lower == 'follow-up' || lower == 'followup' || lower == 'follow_up') return 'Follow-up';
     if (lower == 'assigned') return 'Assigned';
+    if (lower == 'meeting') return 'Meeting';
     return 'New';
   }
 
@@ -132,8 +163,10 @@ class Lead {
              json['assignedTo']?['_id']?.toString() ??
              json['assignedTo']?.toString() ??
              json['owner']?.toString() ?? 
-             json['createdBy']?['name']?.toString() ?? 
-             'Sales Agent',
+             'Unassigned',
+      notes: (json['notes'] as List<dynamic>?)
+          ?.map((e) => LeadNote.fromJson(e as Map<String, dynamic>))
+          .toList() ?? [],
       alternatePhone: json['alternatePhone']?.toString() ?? json['alternatePhone']?.toString() ?? '',
       salesStage: json['salesStage']?.toString() ?? json['salesStage']?.toString() ?? 'Inquiry',
       probability: double.tryParse(json['probability']?.toString() ?? '') ?? 
@@ -166,6 +199,13 @@ class Lead {
       'timeline': timeline,
       'priority': priority,
       'requirement': requirement,
+      'notes': notes.map((e) => {
+        '_id': e.id,
+        'content': e.content,
+        'createdBy': e.createdBy,
+        'isImportant': e.isImportant,
+        'createdAt': e.createdAt?.toIso8601String(),
+      }).toList(),
       // API compatibility
       'customerName': name,
       'productInterest': company,

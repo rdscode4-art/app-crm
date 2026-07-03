@@ -31,14 +31,13 @@ class SidebarNavigation extends StatelessWidget {
       _SidebarItem(index: 11, title: "Asset Management", icon: Icons.devices_other_outlined),
       _SidebarItem(index: 12, title: "Daily Report", icon: Icons.note_alt_outlined),
       _SidebarItem(index: 13, title: "Role Management", icon: Icons.admin_panel_settings_outlined),
-      _SidebarItem(index: 14, title: "Call Logs", icon: Icons.phone_in_talk_outlined),
     ];
 
     final role = state.currentRole;
     final List<_SidebarItem> menuItems;
 
     if (role == UserRole.superAdmin) {
-      menuItems = allItems.where((item) => [0, 1, 13, 14, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 9].contains(item.index)).toList();
+      menuItems = allItems.where((item) => [0, 1, 13, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 9].contains(item.index)).toList();
     } else if (role == UserRole.hr) {
       menuItems = allItems.where((item) => [0, 4, 6, 7, 11, 10, 12, 9].contains(item.index)).toList();
     } else {
@@ -60,27 +59,10 @@ class SidebarNavigation extends StatelessWidget {
             padding: const EdgeInsets.all(24),
             child: Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.bolt,
-                    color: AppColors.primary,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Text(
-                  "RidealCRM",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
+                Image.asset(
+                  'assets/rdslogo.jpeg',
+                  height: 40,
+                  fit: BoxFit.contain,
                 ),
               ],
             ),

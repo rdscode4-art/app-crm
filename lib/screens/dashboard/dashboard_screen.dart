@@ -1803,7 +1803,7 @@ class _LeadBarChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = MockDataService();
-    final stages = ['New', 'Contacted', 'Proposal', 'Won', 'Lost'];
+    final stages = ['New', 'Contacted', 'Meeting', 'Proposal', 'Won', 'Lost'];
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1820,6 +1820,9 @@ class _LeadBarChart extends StatelessWidget {
             break;
           case 'Contacted':
             barColor = Colors.orange;
+            break;
+          case 'Meeting':
+            barColor = Colors.pink;
             break;
           case 'Proposal':
             barColor = Colors.purple;

@@ -87,7 +87,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   child: Opacity(
                     opacity: _opacityAnimation.value,
                     child: Image.asset(
-                      'assets/splash.png',
+                      'assets/rdslogo.jpeg',
                       width: 280,
                       fit: BoxFit.contain,
                     ),

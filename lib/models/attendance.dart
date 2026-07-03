@@ -46,11 +46,13 @@ class Attendance {
     String empName = 'Employee';
     if (json['employee'] != null) {
       if (json['employee'] is Map) {
-        empId = json['employee']['_id']?.toString() ?? '';
+        empId = json['employee']['employeeId']?.toString() ?? json['employee']['_id']?.toString() ?? '';
         empName = json['employee']['name']?.toString() ?? 'Employee';
       } else {
-        empId = json['employee'].toString();
+        empId = json['employeeId']?.toString() ?? json['employee'].toString();
       }
+    } else {
+      empId = json['employeeId']?.toString() ?? '';
     }
 
     final parsedDate = json['date'] != null
