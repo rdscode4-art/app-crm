@@ -6,6 +6,7 @@ import '../../core/widgets/metric_card.dart';
 import '../../services/mock_data_service.dart';
 import '../../core/widgets/custom_button.dart';
 import '../../controllers/crm_controller.dart';
+import '../../models/lead.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -15,25 +16,32 @@ class DashboardScreen extends StatelessWidget {
     final state = MockDataService();
     final controller = Get.find<CrmController>();
 
-    if (controller.dashboardStats.value == null && !controller.isLoadingDashboardStats.value) {
+    if (controller.dashboardStats.value == null &&
+        !controller.isLoadingDashboardStats.value) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         controller.fetchDashboardStats();
       });
     }
 
     return Obx(() {
-      if (controller.isLoadingDashboardStats.value && controller.dashboardStats.value == null) {
+      if (controller.isLoadingDashboardStats.value &&
+          controller.dashboardStats.value == null) {
         return const Center(
           child: CircularProgressIndicator(color: AppColors.primary),
         );
       }
 
-      if (controller.dashboardStatsError.value != null && controller.dashboardStats.value == null) {
+      if (controller.dashboardStatsError.value != null &&
+          controller.dashboardStats.value == null) {
         return Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: AppColors.danger),
+              const Icon(
+                Icons.error_outline,
+                size: 48,
+                color: AppColors.danger,
+              ),
               const SizedBox(height: 16),
               Text(
                 "Error: ${controller.dashboardStatsError.value}",
@@ -50,7 +58,12 @@ class DashboardScreen extends StatelessWidget {
       }
 
       if (controller.dashboardStats.value != null) {
-        return _buildApiStatsDashboard(context, controller.dashboardStats.value!, controller, state);
+        return _buildApiStatsDashboard(
+          context,
+          controller.dashboardStats.value!,
+          controller,
+          state,
+        );
       }
 
       switch (state.currentRole) {
@@ -64,33 +77,38 @@ class DashboardScreen extends StatelessWidget {
     });
   }
 
-  Widget _buildApiStatsDashboard(BuildContext context, Map<String, dynamic> stats, CrmController controller, MockDataService state) {
+  Widget _buildApiStatsDashboard(
+    BuildContext context,
+    Map<String, dynamic> stats,
+    CrmController controller,
+    MockDataService state,
+  ) {
     final width = MediaQuery.of(context).size.width;
     final isDesktop = width >= 1000;
-    
+
     final employees = stats['employees'] ?? {};
     final attendance = stats['attendance'] ?? {};
     final leaves = stats['leaves'] ?? {};
     final tasks = stats['tasks'] ?? {};
-    final leadStats = controller.leadStats.value ?? {};
 
     final totalEmployees = employees['total'] ?? 0;
     final activeEmployees = employees['active'] ?? 0;
     final newEmployees = employees['newThisMonth'] ?? 0;
 
     final todayPresent = attendance['todayPresent'] ?? 0;
-    final attendanceRate = attendance['attendanceRate']?.toString() ?? '0';
-
+    final todayAbsent = attendance['todayAbsent'] ?? 0;
     final pendingLeaves = leaves['pending'] ?? 0;
-    final approvedLeaves = leaves['approvedThisMonth'] ?? 0;
-
+    final onLeaveToday = leaves['todayOnLeave'] ?? 0;
     final pendingTasks = tasks['pending'] ?? 0;
-    final inProgressTasks = tasks['inProgress'] ?? 0;
     final completedTasks = tasks['completed'] ?? 0;
 
     final recentTasks = List<Map<String, dynamic>>.from(tasks['recent'] ?? []);
-    final recentEmployees = List<Map<String, dynamic>>.from(employees['recent'] ?? []);
-    final byDepartment = List<Map<String, dynamic>>.from(employees['byDepartment'] ?? []);
+    final recentEmployees = List<Map<String, dynamic>>.from(
+      employees['recent'] ?? [],
+    );
+    final byDepartment = List<Map<String, dynamic>>.from(
+      employees['byDepartment'] ?? [],
+    );
 
     return RefreshIndicator(
       onRefresh: () => controller.fetchDashboardStats(),
@@ -103,10 +121,11 @@ class DashboardScreen extends StatelessWidget {
             _buildGreetingHeaderCard(
               context: context,
               userName: "RidealCRM Overview",
-              subtitle: "Real-time corporate overview: $activeEmployees / $totalEmployees personnel active today.",
+              subtitle:
+                  "Real-time corporate overview: $activeEmployees / $totalEmployees personnel active today.",
               trailing: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.12),
+                  color: Colors.white.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
@@ -128,61 +147,77 @@ class DashboardScreen extends StatelessWidget {
               ),
               children: [
                 MetricCard(
-                  title: "Active Personnel",
-                  value: "$activeEmployees / $totalEmployees",
-                  changeText: "+$newEmployees this month",
+                  title: "Total Employees",
+                  value: "$totalEmployees",
+                  changeText: "",
                   isPositive: true,
-                  icon: Icons.people_outline,
-                  iconBgColor: const Color(0xFFEFF6FF),
-                  iconColor: AppColors.info,
+                  icon: Icons.groups,
+                  iconColor: const Color(0xFF6F52ED),
+                  onTap: () => state.setMenuIndex(1),
                 ),
                 MetricCard(
-                  title: "Today's Attendance",
-                  value: "$todayPresent Present",
-                  changeText: "$attendanceRate% attendance rate",
+                  title: "Present Today",
+                  value: "$todayPresent",
+                  changeText: "",
                   isPositive: true,
-                  icon: Icons.done_all_outlined,
-                  iconBgColor: const Color(0xFFD1FAE5),
-                  iconColor: AppColors.primary,
+                  icon: Icons.how_to_reg,
+                  iconColor: const Color(0xFF00B074),
+                  onTap: () => state.setMenuIndex(3),
                 ),
                 MetricCard(
-                  title: "Leaves Pending",
-                  value: "$pendingLeaves Request${pendingLeaves == 1 ? '' : 's'}",
-                  changeText: "$approvedLeaves approved this month",
+                  title: "Absent Today",
+                  value: "$todayAbsent",
+                  changeText: "",
                   isPositive: false,
-                  icon: Icons.beach_access_outlined,
-                  iconBgColor: const Color(0xFFFEF3C7),
-                  iconColor: AppColors.warning,
+                  icon: Icons.person_off,
+                  iconColor: const Color(0xFFE93B3B),
+                  onTap: () => state.setMenuIndex(3),
+                ),
+                MetricCard(
+                  title: "On Leave",
+                  value: "$onLeaveToday",
+                  changeText: "",
+                  isPositive: false,
+                  icon: Icons.event_busy,
+                  iconColor: const Color(0xFFE48900),
+                  onTap: () => state.setMenuIndex(4),
                 ),
                 MetricCard(
                   title: "Pending Tasks",
-                  value: "$pendingTasks Open",
-                  changeText: "$inProgressTasks in progress, $completedTasks done",
+                  value: "$pendingTasks",
+                  changeText: "",
                   isPositive: true,
-                  icon: Icons.assignment_outlined,
-                  iconBgColor: const Color(0xFFFEE2E2),
-                  iconColor: AppColors.danger,
+                  icon: Icons.format_list_bulleted,
+                  iconColor: const Color(0xFF6F52ED),
+                  onTap: () => state.setMenuIndex(6),
                 ),
-                if (leadStats.isNotEmpty) ...[
-                  MetricCard(
-                    title: "Total Leads",
-                    value: "${leadStats['total'] ?? 0}",
-                    changeText: "${leadStats['converted'] ?? 0} converted, ${leadStats['lost'] ?? 0} lost",
-                    isPositive: true,
-                    icon: Icons.leaderboard_outlined,
-                    iconBgColor: const Color(0xFFE0E7FF),
-                    iconColor: Colors.indigo,
-                  ),
-                  MetricCard(
-                    title: "Deal Value",
-                    value: "₹${(leadStats['totalValue'] ?? 0).toStringAsFixed(0)}",
-                    changeText: "Active potential revenue",
-                    isPositive: true,
-                    icon: Icons.currency_rupee,
-                    iconBgColor: const Color(0xFFDCFCE7),
-                    iconColor: Colors.green,
-                  ),
-                ],
+                MetricCard(
+                  title: "Tasks Done",
+                  value: "$completedTasks",
+                  changeText: "",
+                  isPositive: true,
+                  icon: Icons.check_circle_outline,
+                  iconColor: const Color(0xFF00B074),
+                  onTap: () => state.setMenuIndex(6),
+                ),
+                MetricCard(
+                  title: "Leave Requests",
+                  value: "$pendingLeaves",
+                  changeText: "",
+                  isPositive: false,
+                  icon: Icons.hourglass_bottom,
+                  iconColor: const Color(0xFFE48900),
+                  onTap: () => state.setMenuIndex(4),
+                ),
+                MetricCard(
+                  title: "New This Month",
+                  value: "$newEmployees",
+                  changeText: "",
+                  isPositive: true,
+                  icon: Icons.person_add_alt_1,
+                  iconColor: const Color(0xFF00B074),
+                  onTap: () => state.setMenuIndex(1),
+                ),
               ],
             ),
             const SizedBox(height: 24),
@@ -195,7 +230,8 @@ class DashboardScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (state.currentRole == UserRole.superAdmin && controller.leads.isNotEmpty) ...[
+                      if (state.currentRole == UserRole.superAdmin &&
+                          controller.leads.isNotEmpty) ...[
                         _buildDashboardCard(
                           padding: const EdgeInsets.all(24),
                           child: Column(
@@ -214,34 +250,60 @@ class DashboardScreen extends StatelessWidget {
                                 builder: (context) {
                                   final leadsByAgent = <String, int>{};
                                   for (var lead in controller.leads) {
-                                    leadsByAgent[lead.owner] = (leadsByAgent[lead.owner] ?? 0) + 1;
+                                    leadsByAgent[lead.owner] =
+                                        (leadsByAgent[lead.owner] ?? 0) + 1;
                                   }
-                                  final sortedAgents = leadsByAgent.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
-                                  
+                                  final sortedAgents =
+                                      leadsByAgent.entries.toList()..sort(
+                                        (a, b) => b.value.compareTo(a.value),
+                                      );
+
                                   return ListView.separated(
                                     shrinkWrap: true,
-                                    physics: const NeverScrollableScrollPhysics(),
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
                                     itemCount: sortedAgents.length,
-                                    separatorBuilder: (context, index) => const Divider(height: 1),
+                                    separatorBuilder: (context, index) =>
+                                        const Divider(height: 1),
                                     itemBuilder: (context, index) {
                                       final entry = sortedAgents[index];
                                       return ListTile(
                                         contentPadding: EdgeInsets.zero,
                                         leading: CircleAvatar(
-                                          backgroundColor: AppColors.primary.withOpacity(0.1),
+                                          backgroundColor: AppColors.primary
+                                              .withValues(alpha: 0.1),
                                           foregroundColor: AppColors.primary,
-                                          child: Text(entry.key.isNotEmpty ? entry.key[0].toUpperCase() : '?'),
+                                          child: Text(
+                                            entry.key.isNotEmpty
+                                                ? entry.key[0].toUpperCase()
+                                                : '?',
+                                          ),
                                         ),
-                                        title: Text(entry.key, style: const TextStyle(fontWeight: FontWeight.w600)),
+                                        title: Text(
+                                          entry.key,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
                                         trailing: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 4,
+                                          ),
                                           decoration: BoxDecoration(
-                                            color: AppColors.primary.withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(12),
+                                            color: AppColors.primary.withValues(
+                                              alpha: 0.1,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
                                           ),
                                           child: Text(
                                             "${entry.value} Leads",
-                                            style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                                            style: const TextStyle(
+                                              color: AppColors.primary,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
                                         ),
                                       );
@@ -271,7 +333,12 @@ class DashboardScreen extends StatelessWidget {
                             if (controller.isLoadingFollowups.value)
                               const Padding(
                                 padding: EdgeInsets.symmetric(vertical: 20),
-                                child: Center(child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2)),
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    color: AppColors.primary,
+                                    strokeWidth: 2,
+                                  ),
+                                ),
                               )
                             else if (controller.upcomingFollowups.isEmpty)
                               const Padding(
@@ -279,7 +346,9 @@ class DashboardScreen extends StatelessWidget {
                                 child: Center(
                                   child: Text(
                                     "No upcoming follow-ups in the next 5 days.",
-                                    style: TextStyle(color: AppColors.textSecondary),
+                                    style: TextStyle(
+                                      color: AppColors.textSecondary,
+                                    ),
                                   ),
                                 ),
                               )
@@ -287,19 +356,42 @@ class DashboardScreen extends StatelessWidget {
                               ListView.separated(
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
-                                itemCount: controller.upcomingFollowups.length > 3 ? 3 : controller.upcomingFollowups.length,
-                                separatorBuilder: (context, index) => const Divider(height: 1),
+                                itemCount:
+                                    controller.upcomingFollowups.length > 3
+                                    ? 3
+                                    : controller.upcomingFollowups.length,
+                                separatorBuilder: (context, index) =>
+                                    const Divider(height: 1),
                                 itemBuilder: (context, index) {
-                                  final lead = controller.upcomingFollowups[index];
+                                  final lead =
+                                      controller.upcomingFollowups[index];
                                   return ListTile(
                                     contentPadding: EdgeInsets.zero,
                                     leading: CircleAvatar(
-                                      backgroundColor: AppColors.warning.withValues(alpha: 0.1),
-                                      child: const Icon(Icons.notifications_active, color: AppColors.warning),
+                                      backgroundColor: AppColors.warning
+                                          .withValues(alpha: 0.1),
+                                      child: const Icon(
+                                        Icons.notifications_active,
+                                        color: AppColors.warning,
+                                      ),
                                     ),
-                                    title: Text(lead.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                                    subtitle: Text(lead.company, style: const TextStyle(fontSize: 12)),
-                                    trailing: Text(lead.status, style: const TextStyle(color: AppColors.warning, fontWeight: FontWeight.bold)),
+                                    title: Text(
+                                      lead.name,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    subtitle: Text(
+                                      lead.company,
+                                      style: const TextStyle(fontSize: 12),
+                                    ),
+                                    trailing: Text(
+                                      lead.status,
+                                      style: const TextStyle(
+                                        color: AppColors.warning,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                                   );
                                 },
                               ),
@@ -327,69 +419,113 @@ class DashboardScreen extends StatelessWidget {
                                     child: Center(
                                       child: Text(
                                         "No tasks registered in the system.",
-                                        style: TextStyle(color: AppColors.textSecondary),
+                                        style: TextStyle(
+                                          color: AppColors.textSecondary,
+                                        ),
                                       ),
                                     ),
                                   )
                                 : ListView.separated(
                                     shrinkWrap: true,
-                                    physics: const NeverScrollableScrollPhysics(),
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
                                     itemCount: recentTasks.length,
-                                    separatorBuilder: (context, index) => const SizedBox(height: 8),
+                                    separatorBuilder: (context, index) =>
+                                        const SizedBox(height: 8),
                                     itemBuilder: (context, index) {
                                       final task = recentTasks[index];
-                                      final priority = task['priority']?.toString() ?? 'medium';
-                                      final status = task['status']?.toString() ?? 'pending';
-                                      final assignees = List.from(task['assignedTo'] ?? []);
-                                      final assigneeNames = assignees.map((a) => a['name']).join(', ');
+                                      final priority =
+                                          task['priority']?.toString() ??
+                                          'medium';
+                                      final status =
+                                          task['status']?.toString() ??
+                                          'pending';
+                                      final assignees = List.from(
+                                        task['assignedTo'] ?? [],
+                                      );
+                                      final assigneeNames = assignees
+                                          .map((a) => a['name'])
+                                          .join(', ');
 
                                       Color priorityColor = Colors.grey;
-                                      if (priority.toLowerCase() == 'high' || priority.toLowerCase() == 'urgent') {
+                                      if (priority.toLowerCase() == 'high' ||
+                                          priority.toLowerCase() == 'urgent') {
                                         priorityColor = AppColors.danger;
-                                      } else if (priority.toLowerCase() == 'medium') {
+                                      } else if (priority.toLowerCase() ==
+                                          'medium') {
                                         priorityColor = AppColors.warning;
                                       }
 
                                       Color statusColor = Colors.grey;
-                                      if (status.toLowerCase() == 'completed' || status.toLowerCase() == 'done') {
+                                      if (status.toLowerCase() == 'completed' ||
+                                          status.toLowerCase() == 'done') {
                                         statusColor = AppColors.success;
-                                      } else if (status.toLowerCase() == 'in-progress' || status.toLowerCase() == 'in progress') {
+                                      } else if (status.toLowerCase() ==
+                                              'in-progress' ||
+                                          status.toLowerCase() ==
+                                              'in progress') {
                                         statusColor = AppColors.primary;
                                       } else {
                                         statusColor = AppColors.textSecondary;
                                       }
 
                                       return _HoverListTile(
-                                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 8,
+                                          horizontal: 10,
+                                        ),
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Row(
-                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
                                               children: [
                                                 Expanded(
                                                   child: Text(
-                                                    task['title']?.toString() ?? 'Untitled Task',
+                                                    task['title']?.toString() ??
+                                                        'Untitled Task',
                                                     style: const TextStyle(
-                                                      color: AppColors.textPrimary,
-                                                      fontWeight: FontWeight.bold,
+                                                      color:
+                                                          AppColors.textPrimary,
+                                                      fontWeight:
+                                                          FontWeight.bold,
                                                       fontSize: 16,
                                                     ),
                                                   ),
                                                 ),
                                                 const SizedBox(width: 8),
                                                 Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 10,
+                                                        vertical: 4,
+                                                      ),
                                                   decoration: BoxDecoration(
-                                                    color: priorityColor.withOpacity(0.08),
-                                                    borderRadius: BorderRadius.circular(20),
-                                                    border: Border.all(color: priorityColor.withOpacity(0.2), width: 1),
+                                                    color: priorityColor
+                                                        .withValues(
+                                                          alpha: 0.08,
+                                                        ),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          20,
+                                                        ),
+                                                    border: Border.all(
+                                                      color: priorityColor
+                                                          .withValues(
+                                                            alpha: 0.2,
+                                                          ),
+                                                      width: 1,
+                                                    ),
                                                   ),
                                                   child: Text(
                                                     priority.toUpperCase(),
                                                     style: TextStyle(
                                                       color: priorityColor,
-                                                      fontWeight: FontWeight.bold,
+                                                      fontWeight:
+                                                          FontWeight.bold,
                                                       fontSize: 11,
                                                       letterSpacing: 0.5,
                                                     ),
@@ -399,7 +535,8 @@ class DashboardScreen extends StatelessWidget {
                                             ),
                                             const SizedBox(height: 6),
                                             Text(
-                                              task['description']?.toString() ?? '',
+                                              task['description']?.toString() ??
+                                                  '',
                                               style: const TextStyle(
                                                 color: AppColors.textSecondary,
                                                 fontSize: 14,
@@ -409,32 +546,54 @@ class DashboardScreen extends StatelessWidget {
                                             ),
                                             const SizedBox(height: 8),
                                             Row(
-                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
                                               children: [
                                                 Expanded(
                                                   child: Text(
                                                     "Assigned to: ${assigneeNames.isNotEmpty ? assigneeNames : 'Unassigned'}",
                                                     style: const TextStyle(
-                                                      color: AppColors.textSecondary,
+                                                      color: AppColors
+                                                          .textSecondary,
                                                       fontSize: 13,
-                                                      fontStyle: FontStyle.italic,
+                                                      fontStyle:
+                                                          FontStyle.italic,
                                                     ),
                                                     maxLines: 1,
-                                                    overflow: TextOverflow.ellipsis,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
                                                   ),
                                                 ),
                                                 Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 10,
+                                                        vertical: 4,
+                                                      ),
                                                   decoration: BoxDecoration(
-                                                    color: statusColor.withOpacity(0.08),
-                                                    borderRadius: BorderRadius.circular(20),
-                                                    border: Border.all(color: statusColor.withOpacity(0.2), width: 1),
+                                                    color: statusColor
+                                                        .withValues(
+                                                          alpha: 0.08,
+                                                        ),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          20,
+                                                        ),
+                                                    border: Border.all(
+                                                      color: statusColor
+                                                          .withValues(
+                                                            alpha: 0.2,
+                                                          ),
+                                                      width: 1,
+                                                    ),
                                                   ),
                                                   child: Text(
                                                     status.toUpperCase(),
                                                     style: TextStyle(
                                                       color: statusColor,
-                                                      fontWeight: FontWeight.bold,
+                                                      fontWeight:
+                                                          FontWeight.bold,
                                                       fontSize: 11,
                                                       letterSpacing: 0.5,
                                                     ),
@@ -471,32 +630,43 @@ class DashboardScreen extends StatelessWidget {
                                     child: Center(
                                       child: Text(
                                         "No department data available.",
-                                        style: TextStyle(color: AppColors.textSecondary),
+                                        style: TextStyle(
+                                          color: AppColors.textSecondary,
+                                        ),
                                       ),
                                     ),
                                   )
                                 : ListView.builder(
                                     shrinkWrap: true,
-                                    physics: const NeverScrollableScrollPhysics(),
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
                                     itemCount: byDepartment.length,
                                     itemBuilder: (context, index) {
                                       final dept = byDepartment[index];
                                       final deptName = dept['_id'] ?? 'Unknown';
                                       final count = dept['count'] ?? 0;
-                                      final pct = totalEmployees > 0 ? (count / totalEmployees) : 0.0;
+                                      final pct = totalEmployees > 0
+                                          ? (count / totalEmployees)
+                                          : 0.0;
 
                                       return Padding(
-                                        padding: const EdgeInsets.only(bottom: 12),
+                                        padding: const EdgeInsets.only(
+                                          bottom: 12,
+                                        ),
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Row(
-                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
                                               children: [
                                                 Text(
                                                   deptName,
                                                   style: const TextStyle(
-                                                    color: AppColors.textPrimary,
+                                                    color:
+                                                        AppColors.textPrimary,
                                                     fontWeight: FontWeight.w600,
                                                     fontSize: 15,
                                                   ),
@@ -504,7 +674,8 @@ class DashboardScreen extends StatelessWidget {
                                                 Text(
                                                   "$count member${count == 1 ? '' : 's'}",
                                                   style: const TextStyle(
-                                                    color: AppColors.textSecondary,
+                                                    color:
+                                                        AppColors.textSecondary,
                                                     fontWeight: FontWeight.bold,
                                                     fontSize: 15,
                                                   ),
@@ -513,12 +684,17 @@ class DashboardScreen extends StatelessWidget {
                                             ),
                                             const SizedBox(height: 6),
                                             ClipRRect(
-                                              borderRadius: BorderRadius.circular(4),
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
                                               child: LinearProgressIndicator(
                                                 value: pct,
                                                 minHeight: 8,
-                                                backgroundColor: Colors.grey[200],
-                                                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                                                backgroundColor:
+                                                    Colors.grey[200],
+                                                valueColor:
+                                                    const AlwaysStoppedAnimation<
+                                                      Color
+                                                    >(AppColors.primary),
                                               ),
                                             ),
                                           ],
@@ -537,9 +713,11 @@ class DashboardScreen extends StatelessWidget {
                   const SizedBox(width: 24),
                   Expanded(
                     flex: 1,
-                    child: _buildDashboardCard(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
+                    child: Column(
+                      children: [
+                        _buildDashboardCard(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
@@ -557,7 +735,9 @@ class DashboardScreen extends StatelessWidget {
                                   child: Center(
                                     child: Text(
                                       "No recent employees found.",
-                                      style: TextStyle(color: AppColors.textSecondary),
+                                      style: TextStyle(
+                                        color: AppColors.textSecondary,
+                                      ),
                                     ),
                                   ),
                                 )
@@ -565,7 +745,8 @@ class DashboardScreen extends StatelessWidget {
                                   shrinkWrap: true,
                                   physics: const NeverScrollableScrollPhysics(),
                                   itemCount: recentEmployees.length,
-                                  separatorBuilder: (context, index) => const SizedBox(height: 6),
+                                  separatorBuilder: (context, index) =>
+                                      const SizedBox(height: 6),
                                   itemBuilder: (context, index) {
                                     final emp = recentEmployees[index];
                                     final name = emp['name'] ?? 'Unknown';
@@ -573,26 +754,36 @@ class DashboardScreen extends StatelessWidget {
                                     final desig = emp['designation'] ?? 'Staff';
 
                                     return _HoverListTile(
-                                      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 6,
+                                        horizontal: 8,
+                                      ),
                                       child: Row(
                                         children: [
                                           CircleAvatar(
-                                            backgroundColor: AppColors.primary.withOpacity(0.1),
+                                            backgroundColor: AppColors.primary
+                                                .withValues(alpha: 0.1),
                                             foregroundColor: AppColors.primary,
                                             child: Text(
-                                              name.isNotEmpty ? name[0].toUpperCase() : '?',
-                                              style: const TextStyle(fontWeight: FontWeight.bold),
+                                              name.isNotEmpty
+                                                  ? name[0].toUpperCase()
+                                                  : '?',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                             ),
                                           ),
                                           const SizedBox(width: 12),
                                           Expanded(
                                             child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
                                                 Text(
                                                   name,
                                                   style: const TextStyle(
-                                                    color: AppColors.textPrimary,
+                                                    color:
+                                                        AppColors.textPrimary,
                                                     fontWeight: FontWeight.bold,
                                                     fontSize: 15,
                                                   ),
@@ -600,7 +791,8 @@ class DashboardScreen extends StatelessWidget {
                                                 Text(
                                                   "$desig • $dept",
                                                   style: const TextStyle(
-                                                    color: AppColors.textSecondary,
+                                                    color:
+                                                        AppColors.textSecondary,
                                                     fontSize: 13,
                                                   ),
                                                 ),
@@ -615,11 +807,40 @@ class DashboardScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                  ),
-                ],
-              ],
-            ),
-            
+                    const SizedBox(height: 24),
+                    _buildDashboardCard(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Sales Leads Performance (Today)",
+                            style: TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Obx(() {
+                            final now = DateTime.now();
+                            final todaysLeads = controller.leads.where((l) => 
+                              l.dateCreated.year == now.year && 
+                              l.dateCreated.month == now.month && 
+                              l.dateCreated.day == now.day
+                            ).toList();
+                            return _SalesLeadPerformanceChart(leads: todaysLeads);
+                          }),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+
             if (!isDesktop) ...[
               const SizedBox(height: 24),
               _buildDashboardCard(
@@ -642,7 +863,9 @@ class DashboardScreen extends StatelessWidget {
                             child: Center(
                               child: Text(
                                 "No recent employees found.",
-                                style: TextStyle(color: AppColors.textSecondary),
+                                style: TextStyle(
+                                  color: AppColors.textSecondary,
+                                ),
                               ),
                             ),
                           )
@@ -650,7 +873,8 @@ class DashboardScreen extends StatelessWidget {
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             itemCount: recentEmployees.length,
-                            separatorBuilder: (context, index) => const SizedBox(height: 6),
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(height: 6),
                             itemBuilder: (context, index) {
                               final emp = recentEmployees[index];
                               final name = emp['name'] ?? 'Unknown';
@@ -658,21 +882,30 @@ class DashboardScreen extends StatelessWidget {
                               final desig = emp['designation'] ?? 'Staff';
 
                               return _HoverListTile(
-                                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 6,
+                                  horizontal: 8,
+                                ),
                                 child: Row(
                                   children: [
                                     CircleAvatar(
-                                      backgroundColor: AppColors.primary.withOpacity(0.1),
+                                      backgroundColor: AppColors.primary
+                                          .withValues(alpha: 0.1),
                                       foregroundColor: AppColors.primary,
                                       child: Text(
-                                        name.isNotEmpty ? name[0].toUpperCase() : '?',
-                                        style: const TextStyle(fontWeight: FontWeight.bold),
+                                        name.isNotEmpty
+                                            ? name[0].toUpperCase()
+                                            : '?',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             name,
@@ -700,24 +933,61 @@ class DashboardScreen extends StatelessWidget {
                   ],
                 ),
               ),
+              const SizedBox(height: 24),
+              _buildDashboardCard(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Sales Leads Performance (Today)",
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Obx(() {
+                      final now = DateTime.now();
+                      final todaysLeads = controller.leads.where((l) => 
+                        l.dateCreated.year == now.year && 
+                        l.dateCreated.month == now.month && 
+                        l.dateCreated.day == now.day
+                      ).toList();
+                      return _SalesLeadPerformanceChart(leads: todaysLeads);
+                    }),
+                  ],
+                ),
+              ),
+            ],
           ],
-        ],
         ),
       ),
     );
   }
 
   // --- Super Admin Dashboard ---
-  Widget _buildSuperAdminDashboard(BuildContext context, MockDataService state) {
+  Widget _buildSuperAdminDashboard(
+    BuildContext context,
+    MockDataService state,
+  ) {
     final totalEmployees = state.employees.length;
-    final activeEmployees = state.employees.where((e) => e.status == 'Active').length;
-    
+    final activeEmployees = state.employees
+        .where((e) => e.status == 'Active')
+        .length;
+
     final wonLeadsValue = state.leads
         .where((l) => l.status == 'Won')
         .fold<double>(0, (sum, l) => sum + l.value);
-        
+
     final pipelineValue = state.leads
-        .where((l) => l.status == 'New' || l.status == 'Contacted' || l.status == 'Proposal')
+        .where(
+          (l) =>
+              l.status == 'New' ||
+              l.status == 'Contacted' ||
+              l.status == 'Proposal',
+        )
         .fold<double>(0, (sum, l) => sum + l.value);
 
     final pendingTasks = state.tasks.where((t) => t.status != 'Done').length;
@@ -735,7 +1005,8 @@ class DashboardScreen extends StatelessWidget {
           _buildGreetingHeaderCard(
             context: context,
             userName: state.currentUser?.name ?? 'Super Admin',
-            subtitle: "Here's what is happening with your workforce and sales pipelines today.",
+            subtitle:
+                "Here's what is happening with your workforce and sales pipelines today.",
           ),
           const SizedBox(height: 24),
 
@@ -807,9 +1078,15 @@ class DashboardScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildChartCard("Sales Revenue Progression", const _RevenueCurveChart()),
+                    _buildChartCard(
+                      "Sales Revenue Progression",
+                      const _RevenueCurveChart(),
+                    ),
                     const SizedBox(height: 24),
-                    _buildChartCard("Leads Funnel Stage Breakdown", const _LeadBarChart()),
+                    _buildChartCard(
+                      "Leads Funnel Stage Breakdown",
+                      const _LeadBarChart(),
+                    ),
                   ],
                 ),
               ),
@@ -844,9 +1121,15 @@ class DashboardScreen extends StatelessWidget {
   // --- HR Dashboard ---
   Widget _buildHRDashboard(BuildContext context, MockDataService state) {
     final totalEmployees = state.employees.length;
-    final activeEmployees = state.employees.where((e) => e.status == 'Active').length;
-    final pendingLeaves = state.leaveRequests.where((l) => l.status.toLowerCase() == 'pending').length;
-    final assignedAssets = state.assets.where((a) => a.status == 'Assigned').length;
+    final activeEmployees = state.employees
+        .where((e) => e.status == 'Active')
+        .length;
+    final pendingLeaves = state.leaveRequests
+        .where((l) => l.status.toLowerCase() == 'pending')
+        .length;
+    final assignedAssets = state.assets
+        .where((a) => a.status == 'Assigned')
+        .length;
     final reportsCount = state.dailyReports.length;
 
     final width = MediaQuery.of(context).size.width;
@@ -860,7 +1143,8 @@ class DashboardScreen extends StatelessWidget {
           _buildGreetingHeaderCard(
             context: context,
             userName: state.currentUser?.name ?? 'HR Manager',
-            subtitle: "HR Control Center: Monitor personnel, approve leave requests, and track company assets.",
+            subtitle:
+                "HR Control Center: Monitor personnel, approve leave requests, and track company assets.",
           ),
           const SizedBox(height: 24),
 
@@ -938,36 +1222,60 @@ class DashboardScreen extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 16),
-                          state.leaveRequests.where((l) => l.status.toLowerCase() == 'pending').isEmpty
+                          state.leaveRequests
+                                  .where(
+                                    (l) => l.status.toLowerCase() == 'pending',
+                                  )
+                                  .isEmpty
                               ? const Padding(
                                   padding: EdgeInsets.symmetric(vertical: 32),
                                   child: Center(
                                     child: Text(
                                       "No pending leave requests.",
-                                      style: TextStyle(color: AppColors.textSecondary),
+                                      style: TextStyle(
+                                        color: AppColors.textSecondary,
+                                      ),
                                     ),
                                   ),
                                 )
                               : ListView.separated(
                                   shrinkWrap: true,
                                   physics: const NeverScrollableScrollPhysics(),
-                                  itemCount: state.leaveRequests.where((l) => l.status.toLowerCase() == 'pending').length,
-                                  separatorBuilder: (context, index) => const SizedBox(height: 6),
+                                  itemCount: state.leaveRequests
+                                      .where(
+                                        (l) =>
+                                            l.status.toLowerCase() == 'pending',
+                                      )
+                                      .length,
+                                  separatorBuilder: (context, index) =>
+                                      const SizedBox(height: 6),
                                   itemBuilder: (context, index) {
-                                    final req = state.leaveRequests.where((l) => l.status.toLowerCase() == 'pending').toList()[index];
+                                    final req = state.leaveRequests
+                                        .where(
+                                          (l) =>
+                                              l.status.toLowerCase() ==
+                                              'pending',
+                                        )
+                                        .toList()[index];
                                     return _HoverListTile(
-                                      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 6,
+                                        horizontal: 8,
+                                      ),
                                       child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
                                           Expanded(
                                             child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
                                                 Text(
                                                   req.employeeName,
                                                   style: const TextStyle(
-                                                    color: AppColors.textPrimary,
+                                                    color:
+                                                        AppColors.textPrimary,
                                                     fontWeight: FontWeight.bold,
                                                     fontSize: 16,
                                                   ),
@@ -976,11 +1284,13 @@ class DashboardScreen extends StatelessWidget {
                                                 Text(
                                                   "${req.type} | ${req.reason}",
                                                   style: const TextStyle(
-                                                    color: AppColors.textSecondary,
+                                                    color:
+                                                        AppColors.textSecondary,
                                                     fontSize: 14,
                                                   ),
                                                   maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
                                                 ),
                                               ],
                                             ),
@@ -988,15 +1298,27 @@ class DashboardScreen extends StatelessWidget {
                                           Row(
                                             children: [
                                               IconButton(
-                                                icon: const Icon(Icons.check_circle_outline, color: AppColors.primary),
+                                                icon: const Icon(
+                                                  Icons.check_circle_outline,
+                                                  color: AppColors.primary,
+                                                ),
                                                 onPressed: () {
-                                                  state.updateLeaveStatus(req.id, 'Approved');
+                                                  state.updateLeaveStatus(
+                                                    req.id,
+                                                    'Approved',
+                                                  );
                                                 },
                                               ),
                                               IconButton(
-                                                icon: const Icon(Icons.cancel_outlined, color: AppColors.danger),
+                                                icon: const Icon(
+                                                  Icons.cancel_outlined,
+                                                  color: AppColors.danger,
+                                                ),
                                                 onPressed: () {
-                                                  state.updateLeaveStatus(req.id, 'Rejected');
+                                                  state.updateLeaveStatus(
+                                                    req.id,
+                                                    'Rejected',
+                                                  );
                                                 },
                                               ),
                                             ],
@@ -1028,13 +1350,18 @@ class DashboardScreen extends StatelessWidget {
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             itemCount: state.assets.take(3).length,
-                            separatorBuilder: (context, index) => const SizedBox(height: 6),
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(height: 6),
                             itemBuilder: (context, index) {
                               final asset = state.assets[index];
                               return _HoverListTile(
-                                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                  horizontal: 10,
+                                ),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       asset.name,
@@ -1079,10 +1406,16 @@ class DashboardScreen extends StatelessWidget {
   // --- Employee Dashboard ---
   Widget _buildEmployeeDashboard(BuildContext context, MockDataService state) {
     final userId = state.currentUser?.id ?? '';
-    final myTasks = state.tasks.where((t) => t.assignedTo == state.currentUser?.name && t.status != 'Done').toList();
-    final myLeaves = state.leaveRequests.where((l) => l.employeeId == userId).toList();
+    final myTasks = state.tasks
+        .where(
+          (t) => t.assignedTo == state.currentUser?.name && t.status != 'Done',
+        )
+        .toList();
+    final myLeaves = state.leaveRequests
+        .where((l) => l.employeeId == userId)
+        .toList();
     final myLeavesCount = myLeaves.length;
-    
+
     final width = MediaQuery.of(context).size.width;
     final crossAxisCount = width < 600 ? 2 : 4;
 
@@ -1094,7 +1427,8 @@ class DashboardScreen extends StatelessWidget {
           _buildGreetingHeaderCard(
             context: context,
             userName: state.currentUser?.name ?? 'Employee',
-            subtitle: "Employee Portal: View active tasks, submit leaves, and track daily attendance shifts.",
+            subtitle:
+                "Employee Portal: View active tasks, submit leaves, and track daily attendance shifts.",
             trailing: _buildWorkingStatusDropdown(state),
           ),
           const SizedBox(height: 24),
@@ -1122,7 +1456,8 @@ class DashboardScreen extends StatelessWidget {
               MetricCard(
                 title: "Leave Requests",
                 value: "$myLeavesCount Submitted",
-                changeText: "Approved: ${myLeaves.where((l) => l.status == 'Approved').length}",
+                changeText:
+                    "Approved: ${myLeaves.where((l) => l.status == 'Approved').length}",
                 isPositive: true,
                 icon: Icons.beach_access_outlined,
                 iconBgColor: const Color(0xFFD1FAE5),
@@ -1131,11 +1466,17 @@ class DashboardScreen extends StatelessWidget {
               MetricCard(
                 title: "Punch Status",
                 value: state.isPunchedIn ? "Punched In" : "Punched Out",
-                changeText: state.todayAttendance != null ? "Started at ${state.todayAttendance!.checkInTime}" : "Not clocked-in today",
+                changeText: state.todayAttendance != null
+                    ? "Started at ${state.todayAttendance!.checkInTime}"
+                    : "Not clocked-in today",
                 isPositive: state.isPunchedIn,
                 icon: Icons.fingerprint,
-                iconBgColor: state.isPunchedIn ? const Color(0xFFD1FAE5) : const Color(0xFFFEE2E2),
-                iconColor: state.isPunchedIn ? AppColors.primary : AppColors.danger,
+                iconBgColor: state.isPunchedIn
+                    ? const Color(0xFFD1FAE5)
+                    : const Color(0xFFFEE2E2),
+                iconColor: state.isPunchedIn
+                    ? AppColors.primary
+                    : AppColors.danger,
               ),
               MetricCard(
                 title: "Performance KPI",
@@ -1180,7 +1521,9 @@ class DashboardScreen extends StatelessWidget {
                                   child: Center(
                                     child: Text(
                                       "Great job! You have no pending tasks.",
-                                      style: TextStyle(color: AppColors.textSecondary),
+                                      style: TextStyle(
+                                        color: AppColors.textSecondary,
+                                      ),
                                     ),
                                   ),
                                 )
@@ -1188,22 +1531,29 @@ class DashboardScreen extends StatelessWidget {
                                   shrinkWrap: true,
                                   physics: const NeverScrollableScrollPhysics(),
                                   itemCount: myTasks.length,
-                                  separatorBuilder: (context, index) => const SizedBox(height: 6),
+                                  separatorBuilder: (context, index) =>
+                                      const SizedBox(height: 6),
                                   itemBuilder: (context, index) {
                                     final task = myTasks[index];
                                     return _HoverListTile(
-                                      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 6,
+                                        horizontal: 8,
+                                      ),
                                       child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
                                           Expanded(
                                             child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
                                                 Text(
                                                   task.title,
                                                   style: const TextStyle(
-                                                    color: AppColors.textPrimary,
+                                                    color:
+                                                        AppColors.textPrimary,
                                                     fontWeight: FontWeight.bold,
                                                     fontSize: 16,
                                                   ),
@@ -1212,20 +1562,31 @@ class DashboardScreen extends StatelessWidget {
                                                 Text(
                                                   task.description,
                                                   style: const TextStyle(
-                                                    color: AppColors.textSecondary,
+                                                    color:
+                                                        AppColors.textSecondary,
                                                     fontSize: 14,
                                                   ),
                                                   maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
                                                 ),
                                               ],
                                             ),
                                           ),
                                           IconButton(
-                                            icon: const Icon(Icons.check_circle_outline, color: AppColors.primary),
+                                            icon: const Icon(
+                                              Icons.check_circle_outline,
+                                              color: AppColors.primary,
+                                            ),
                                             onPressed: () {
-                                              state.updateTaskStatus(task.id, 'Done');
-                                              state.addNotification("Task Completed", "You marked task '${task.title}' as done!");
+                                              state.updateTaskStatus(
+                                                task.id,
+                                                'Done',
+                                              );
+                                              state.addNotification(
+                                                "Task Completed",
+                                                "You marked task '${task.title}' as done!",
+                                              );
                                             },
                                           ),
                                         ],
@@ -1260,7 +1621,7 @@ class DashboardScreen extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.15),
+            color: Colors.white.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(20),
           ),
           child: DropdownButtonHideUnderline(
@@ -1268,10 +1629,17 @@ class DashboardScreen extends StatelessWidget {
               value: currentStatus,
               dropdownColor: AppColors.sidebarBackground,
               icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
-              items: ['Available', 'On Call', 'In Meeting', 'Offline']
-                  .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                  .toList(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+              ),
+              items: [
+                'Available',
+                'On Call',
+                'In Meeting',
+                'Offline',
+              ].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
               onChanged: (val) {
                 if (val != null) {
                   state.updateWorkingStatus(val);
@@ -1306,28 +1674,46 @@ class DashboardScreen extends StatelessWidget {
               ? const Padding(
                   padding: EdgeInsets.symmetric(vertical: 32),
                   child: Center(
-                    child: Text("No calls logged.", style: TextStyle(color: AppColors.textSecondary)),
+                    child: Text(
+                      "No calls logged.",
+                      style: TextStyle(color: AppColors.textSecondary),
+                    ),
                   ),
                 )
               : ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: recentCalls.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 8),
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final log = recentCalls[index];
                     Color outcomeColor = AppColors.success;
-                    if (log.outcome == 'No Answer' || log.outcome == 'Voicemail') outcomeColor = AppColors.warning;
-                    if (log.outcome == 'Busy') outcomeColor = AppColors.danger;
+                    if (log.outcome == 'No Answer' ||
+                        log.outcome == 'Voicemail') {
+                      outcomeColor = AppColors.warning;
+                    }
+                    if (log.outcome == 'Busy') {
+                      outcomeColor = AppColors.danger;
+                    }
 
                     return _HoverListTile(
-                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 8,
+                        horizontal: 8,
+                      ),
                       child: Row(
                         children: [
                           CircleAvatar(
                             radius: 16,
-                            backgroundColor: outcomeColor.withValues(alpha: 0.1),
-                            child: Icon(Icons.phone_in_talk, color: outcomeColor, size: 16),
+                            backgroundColor: outcomeColor.withValues(
+                              alpha: 0.1,
+                            ),
+                            child: Icon(
+                              Icons.phone_in_talk,
+                              color: outcomeColor,
+                              size: 16,
+                            ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -1336,14 +1722,21 @@ class DashboardScreen extends StatelessWidget {
                               children: [
                                 Text(
                                   "${log.employeeName} → ${log.leadName}",
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                    color: AppColors.textPrimary,
+                                  ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
                                   "${log.durationMinutes} min • ${log.outcome}",
-                                  style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.textSecondary,
+                                  ),
                                 ),
                               ],
                             ),
@@ -1358,7 +1751,10 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSystemNotificationsLog(BuildContext context, MockDataService state) {
+  Widget _buildSystemNotificationsLog(
+    BuildContext context,
+    MockDataService state,
+  ) {
     return SizedBox(
       height: 600,
       child: _buildDashboardCard(
@@ -1381,7 +1777,10 @@ class DashboardScreen extends StatelessWidget {
                 itemBuilder: (context, index) {
                   final item = state.notifications[index];
                   return _HoverListTile(
-                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 8,
+                    ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -1390,15 +1789,21 @@ class DashboardScreen extends StatelessWidget {
                           width: 8,
                           height: 8,
                           decoration: BoxDecoration(
-                            color: item.isRead ? Colors.grey[300] : AppColors.primary,
+                            color: item.isRead
+                                ? Colors.grey[300]
+                                : AppColors.primary,
                             shape: BoxShape.circle,
-                            boxShadow: item.isRead ? [] : [
-                              BoxShadow(
-                                color: AppColors.primary.withOpacity(0.3),
-                                blurRadius: 4,
-                                spreadRadius: 1,
-                              )
-                            ],
+                            boxShadow: item.isRead
+                                ? []
+                                : [
+                                    BoxShadow(
+                                      color: AppColors.primary.withValues(
+                                        alpha: 0.3,
+                                      ),
+                                      blurRadius: 4,
+                                      spreadRadius: 1,
+                                    ),
+                                  ],
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -1465,11 +1870,7 @@ class DashboardScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          SizedBox(
-            height: 200,
-            width: double.infinity,
-            child: chartWidget,
-          ),
+          SizedBox(height: 200, width: double.infinity, child: chartWidget),
         ],
       ),
     );
@@ -1511,17 +1912,17 @@ class DashboardScreen extends StatelessWidget {
         gradient: const LinearGradient(
           colors: [
             AppColors.sidebarBackground, // Dark slate
-            Color(0xFF272F3F),          // Slightly lighter slate/navy
+            Color(0xFF272F3F), // Slightly lighter slate/navy
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 15,
             offset: const Offset(0, 5),
-          )
+          ),
         ],
       ),
       child: Row(
@@ -1537,7 +1938,7 @@ class DashboardScreen extends StatelessWidget {
                     Text(
                       "$greeting,",
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
+                        color: Colors.white.withValues(alpha: 0.7),
                         fontSize: isMobile ? 13 : 15,
                         fontWeight: FontWeight.w500,
                       ),
@@ -1558,7 +1959,7 @@ class DashboardScreen extends StatelessWidget {
                 Text(
                   subtitle,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.6),
+                    color: Colors.white.withValues(alpha: 0.6),
                     fontSize: isMobile ? 12 : 14,
                     height: 1.4,
                   ),
@@ -1566,10 +1967,7 @@ class DashboardScreen extends StatelessWidget {
               ],
             ),
           ),
-          if (trailing != null) ...[
-            const SizedBox(width: 16),
-            trailing,
-          ],
+          if (trailing != null) ...[const SizedBox(width: 16), trailing],
         ],
       ),
     );
@@ -1587,7 +1985,7 @@ class DashboardScreen extends StatelessWidget {
         border: Border.all(color: AppColors.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.015),
+            color: Colors.black.withValues(alpha: 0.015),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -1604,9 +2002,7 @@ class _RevenueCurveChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: _LineChartPainter(),
-    );
+    return CustomPaint(painter: _LineChartPainter());
   }
 }
 
@@ -1624,7 +2020,7 @@ class _LineChartPainter extends CustomPainter {
     if (chartWidth <= 0 || chartHeight <= 0) return;
 
     final paintGrid = Paint()
-      ..color = AppColors.border.withOpacity(0.6)
+      ..color = AppColors.border.withValues(alpha: 0.6)
       ..strokeWidth = 1.0;
 
     // Draw Y-axis grid lines and labels
@@ -1632,7 +2028,11 @@ class _LineChartPainter extends CustomPainter {
     final yLabels = ['₹0', '₹25k', '₹50k', '₹75k', '₹100k'];
     for (int i = 0; i <= gridCount; i++) {
       final y = paddingTop + chartHeight * (1 - i / gridCount);
-      canvas.drawLine(Offset(paddingLeft, y), Offset(paddingLeft + chartWidth, y), paintGrid);
+      canvas.drawLine(
+        Offset(paddingLeft, y),
+        Offset(paddingLeft + chartWidth, y),
+        paintGrid,
+      );
 
       // Y-axis Label
       final textSpan = TextSpan(
@@ -1659,7 +2059,7 @@ class _LineChartPainter extends CustomPainter {
     final xStep = chartWidth / (xLabels.length - 1);
     for (int i = 0; i < xLabels.length; i++) {
       final x = paddingLeft + i * xStep;
-      
+
       final textSpan = TextSpan(
         text: xLabels[i],
         style: const TextStyle(
@@ -1697,9 +2097,12 @@ class _LineChartPainter extends CustomPainter {
       final controlPoint1 = Offset(p1.dx + (p2.dx - p1.dx) / 2, p1.dy);
       final controlPoint2 = Offset(p1.dx + (p2.dx - p1.dx) / 2, p2.dy);
       path.cubicTo(
-        controlPoint1.dx, controlPoint1.dy,
-        controlPoint2.dx, controlPoint2.dy,
-        p2.dx, p2.dy,
+        controlPoint1.dx,
+        controlPoint1.dy,
+        controlPoint2.dx,
+        controlPoint2.dy,
+        p2.dx,
+        p2.dy,
       );
     }
 
@@ -1710,21 +2113,24 @@ class _LineChartPainter extends CustomPainter {
     fillPath.close();
 
     final paintFill = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          AppColors.primary.withOpacity(0.24),
-          AppColors.primary.withOpacity(0.0),
-        ],
-      ).createShader(Rect.fromLTWH(paddingLeft, paddingTop, chartWidth, chartHeight))
+      ..shader =
+          LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.primary.withValues(alpha: 0.24),
+              AppColors.primary.withValues(alpha: 0.0),
+            ],
+          ).createShader(
+            Rect.fromLTWH(paddingLeft, paddingTop, chartWidth, chartHeight),
+          )
       ..style = PaintingStyle.fill;
 
     canvas.drawPath(fillPath, paintFill);
 
     // Glowing Line shadow
     final paintShadow = Paint()
-      ..color = AppColors.primary.withOpacity(0.18)
+      ..color = AppColors.primary.withValues(alpha: 0.18)
       ..strokeWidth = 6.0
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
@@ -1741,9 +2147,9 @@ class _LineChartPainter extends CustomPainter {
     // Draw vertical indicator line for the latest month (June)
     final latestPt = points.last;
     final paintIndicator = Paint()
-      ..color = AppColors.primary.withOpacity(0.4)
+      ..color = AppColors.primary.withValues(alpha: 0.4)
       ..strokeWidth = 1.0;
-    
+
     // Draw indicator line
     canvas.drawLine(
       Offset(latestPt.dx, paddingTop),
@@ -1757,7 +2163,7 @@ class _LineChartPainter extends CustomPainter {
     for (int i = 0; i < points.length; i++) {
       final pt = points[i];
       final isLast = i == points.length - 1;
-      
+
       canvas.drawCircle(pt, isLast ? 6.0 : 4.5, paintDots);
       canvas.drawCircle(pt, isLast ? 3.0 : 2.0, paintWhite);
     }
@@ -1768,7 +2174,10 @@ class _LineChartPainter extends CustomPainter {
       width: 78,
       height: 22,
     );
-    final rrect = RRect.fromRectAndRadius(tooltipRect, const Radius.circular(6));
+    final rrect = RRect.fromRectAndRadius(
+      tooltipRect,
+      const Radius.circular(6),
+    );
     final paintTooltipBg = Paint()..color = AppColors.sidebarBackground;
     canvas.drawRRect(rrect, paintTooltipBg);
 
@@ -1787,8 +2196,10 @@ class _LineChartPainter extends CustomPainter {
     textPainter.layout();
     textPainter.paint(
       canvas,
-      Offset(tooltipRect.left + (tooltipRect.width - textPainter.width) / 2,
-             tooltipRect.top + (tooltipRect.height - textPainter.height) / 2),
+      Offset(
+        tooltipRect.left + (tooltipRect.width - textPainter.width) / 2,
+        tooltipRect.top + (tooltipRect.height - textPainter.height) / 2,
+      ),
     );
   }
 
@@ -1869,7 +2280,7 @@ class _LeadBarItemState extends State<_LeadBarItem> {
   Widget build(BuildContext context) {
     const double maxBarHeight = 140.0;
     final barHeight = maxBarHeight * widget.percentage;
-    
+
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
@@ -1897,7 +2308,7 @@ class _LeadBarItemState extends State<_LeadBarItem> {
                   width: 32,
                   height: maxBarHeight,
                   decoration: BoxDecoration(
-                    color: AppColors.border.withOpacity(0.3),
+                    color: AppColors.border.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(6),
                   ),
                 ),
@@ -1911,19 +2322,21 @@ class _LeadBarItemState extends State<_LeadBarItem> {
                     gradient: LinearGradient(
                       colors: [
                         widget.barColor,
-                        widget.barColor.withOpacity(0.6),
+                        widget.barColor.withValues(alpha: 0.6),
                       ],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                     ),
                     borderRadius: BorderRadius.circular(6),
-                    boxShadow: _isHovered ? [
-                      BoxShadow(
-                        color: widget.barColor.withOpacity(0.3),
-                        blurRadius: 8,
-                        spreadRadius: 1,
-                      )
-                    ] : [],
+                    boxShadow: _isHovered
+                        ? [
+                            BoxShadow(
+                              color: widget.barColor.withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              spreadRadius: 1,
+                            ),
+                          ]
+                        : [],
                   ),
                 ),
               ],
@@ -1932,7 +2345,9 @@ class _LeadBarItemState extends State<_LeadBarItem> {
             Text(
               widget.stage,
               style: TextStyle(
-                color: _isHovered ? AppColors.textPrimary : AppColors.textSecondary,
+                color: _isHovered
+                    ? AppColors.textPrimary
+                    : AppColors.textSecondary,
                 fontWeight: _isHovered ? FontWeight.bold : FontWeight.normal,
                 fontSize: 13,
               ),
@@ -1943,15 +2358,18 @@ class _LeadBarItemState extends State<_LeadBarItem> {
     );
   }
 }
+
 class _DashboardAttendanceCard extends StatefulWidget {
   final MockDataService state;
-  const _DashboardAttendanceCard({super.key, required this.state});
+  const _DashboardAttendanceCard({required this.state});
 
   @override
-  State<_DashboardAttendanceCard> createState() => _DashboardAttendanceCardState();
+  State<_DashboardAttendanceCard> createState() =>
+      _DashboardAttendanceCardState();
 }
 
-class _DashboardAttendanceCardState extends State<_DashboardAttendanceCard> with SingleTickerProviderStateMixin {
+class _DashboardAttendanceCardState extends State<_DashboardAttendanceCard>
+    with SingleTickerProviderStateMixin {
   Timer? _timer;
   Duration _elapsed = Duration.zero;
   late AnimationController _pulseController;
@@ -2003,7 +2421,13 @@ class _DashboardAttendanceCardState extends State<_DashboardAttendanceCard> with
         final hour = int.parse(parts[0]);
         final min = int.parse(parts[1]);
         final now = DateTime.now();
-        final checkInDateTime = DateTime(now.year, now.month, now.day, hour, min);
+        final checkInDateTime = DateTime(
+          now.year,
+          now.month,
+          now.day,
+          hour,
+          min,
+        );
         final diff = now.difference(checkInDateTime);
         if (diff.isNegative) {
           _elapsed = Duration.zero;
@@ -2049,10 +2473,12 @@ class _DashboardAttendanceCardState extends State<_DashboardAttendanceCard> with
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.success.withOpacity(0.4 * (1 - pulseVal)),
+                          color: AppColors.success.withValues(
+                            alpha: 0.4 * (1 - pulseVal),
+                          ),
                           blurRadius: 10 * pulseVal,
                           spreadRadius: 6 * pulseVal,
-                        )
+                        ),
                       ],
                     ),
                   );
@@ -2075,14 +2501,20 @@ class _DashboardAttendanceCardState extends State<_DashboardAttendanceCard> with
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-              color: AppColors.success.withOpacity(0.06),
+              color: AppColors.success.withValues(alpha: 0.06),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.success.withOpacity(0.15)),
+              border: Border.all(
+                color: AppColors.success.withValues(alpha: 0.15),
+              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.timer_outlined, color: AppColors.success, size: 18),
+                const Icon(
+                  Icons.timer_outlined,
+                  color: AppColors.success,
+                  size: 18,
+                ),
                 const SizedBox(width: 10),
                 Text(
                   _formatDuration(_elapsed),
@@ -2110,14 +2542,20 @@ class _DashboardAttendanceCardState extends State<_DashboardAttendanceCard> with
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: AppColors.danger.withOpacity(0.06),
+              color: AppColors.danger.withValues(alpha: 0.06),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.danger.withOpacity(0.15)),
+              border: Border.all(
+                color: AppColors.danger.withValues(alpha: 0.15),
+              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.info_outline, color: AppColors.danger, size: 16),
+                const Icon(
+                  Icons.info_outline,
+                  color: AppColors.danger,
+                  size: 16,
+                ),
                 const SizedBox(width: 8),
                 const Text(
                   "Not clocked-in for today yet",
@@ -2159,21 +2597,17 @@ class _DashboardAttendanceCardState extends State<_DashboardAttendanceCard> with
         border: Border.all(color: AppColors.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
-          )
+          ),
         ],
       ),
       child: isMobile
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
-              children: [
-                infoColumn,
-                const SizedBox(height: 20),
-                actionButton,
-              ],
+              children: [infoColumn, const SizedBox(height: 20), actionButton],
             )
           : Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -2194,9 +2628,8 @@ class _HoverListTile extends StatefulWidget {
 
   const _HoverListTile({
     required this.child,
-    this.onTap,
     this.padding = const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-  });
+  }) : onTap = null;
 
   @override
   State<_HoverListTile> createState() => _HoverListTileState();
@@ -2222,6 +2655,54 @@ class _HoverListTileState extends State<_HoverListTile> {
           child: widget.child,
         ),
       ),
+    );
+  }
+}
+
+class _SalesLeadPerformanceChart extends StatelessWidget {
+  final List<Lead> leads;
+  const _SalesLeadPerformanceChart({required this.leads});
+
+  @override
+  Widget build(BuildContext context) {
+    final stages = ['New', 'Contacted', 'Meeting', 'Proposal', 'Won', 'Lost'];
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: stages.map((stage) {
+        final count = leads.where((l) => l.status == stage).length;
+        final maxCount = leads.length;
+        final pct = maxCount > 0 ? (count / maxCount) : 0.0;
+
+        Color barColor;
+        switch (stage) {
+          case 'New':
+            barColor = AppColors.info;
+            break;
+          case 'Contacted':
+            barColor = Colors.orange;
+            break;
+          case 'Meeting':
+            barColor = Colors.pink;
+            break;
+          case 'Proposal':
+            barColor = Colors.purple;
+            break;
+          case 'Won':
+            barColor = AppColors.success;
+            break;
+          default:
+            barColor = AppColors.danger;
+        }
+
+        return _LeadBarItem(
+          stage: stage,
+          count: count,
+          percentage: pct,
+          barColor: barColor,
+        );
+      }).toList(),
     );
   }
 }

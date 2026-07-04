@@ -18,17 +18,30 @@ class LeadScreen extends StatefulWidget {
   State<LeadScreen> createState() => _LeadScreenState();
 }
 
-class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+class _LeadScreenState extends State<LeadScreen>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late TabController _tabController;
-  final List<String> _stages = ['New', 'Meeting', 'Assigned', 'Hot', 'Cold', 'Converted', 'Lost', 'Follow-up'];
-  
+  final List<String> _stages = [
+    'New',
+    'Meeting',
+    'Assigned',
+    'Hot',
+    'Cold',
+    'Converted',
+    'Lost',
+    'Follow-up',
+  ];
+
   List<String> get _displayStages {
-    final state = Get.isRegistered<MockDataService>() ? Get.find<MockDataService>() : MockDataService();
+    final state = Get.isRegistered<MockDataService>()
+        ? Get.find<MockDataService>()
+        : MockDataService();
     final currentUser = state.currentUser;
-    final bool isSales = currentUser?.department.toLowerCase() == 'sales' || 
-                         (currentUser?.designation?.toLowerCase().contains('sales') ?? false) ||
-                         (currentUser?.role.toLowerCase().contains('sales') ?? false);
-    
+    final bool isSales =
+        currentUser?.department.toLowerCase() == 'sales' ||
+        (currentUser?.designation?.toLowerCase().contains('sales') ?? false) ||
+        (currentUser?.role.toLowerCase().contains('sales') ?? false);
+
     return isSales ? _stages.where((s) => s != 'Assigned').toList() : _stages;
   }
 
@@ -37,7 +50,7 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
   DateTime? _callStartTime;
 
   bool _isBulkAssignMode = false;
-  Set<String> _selectedLeadIds = {};
+  final Set<String> _selectedLeadIds = {};
 
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
@@ -59,15 +72,20 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
   }
 
   bool _isAssigned(Lead l) {
-    return l.owner.isNotEmpty && l.owner.toLowerCase() != 'sales agent' && l.owner.toLowerCase() != 'unassigned';
+    return l.owner.isNotEmpty &&
+        l.owner.toLowerCase() != 'sales agent' &&
+        l.owner.toLowerCase() != 'unassigned';
   }
 
   List<Lead> _getStageLeads(List<Lead> allLeads, String stage) {
-    final state = Get.isRegistered<MockDataService>() ? Get.find<MockDataService>() : MockDataService();
+    final state = Get.isRegistered<MockDataService>()
+        ? Get.find<MockDataService>()
+        : MockDataService();
     final currentUser = state.currentUser;
-    final bool isSales = currentUser?.department.toLowerCase() == 'sales' || 
-                         (currentUser?.designation?.toLowerCase().contains('sales') ?? false) ||
-                         (currentUser?.role.toLowerCase().contains('sales') ?? false);
+    final bool isSales =
+        currentUser?.department.toLowerCase() == 'sales' ||
+        (currentUser?.designation?.toLowerCase().contains('sales') ?? false) ||
+        (currentUser?.role.toLowerCase().contains('sales') ?? false);
 
     List<Lead> filteredLeads = allLeads;
 
@@ -75,7 +93,10 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
       filteredLeads = filteredLeads.where((l) {
         final matchName = l.name.toLowerCase().contains(_searchQuery);
         final matchPhone = l.phone.toLowerCase().contains(_searchQuery);
-        final matchOwnerName = _getDisplayOwner(l.owner, state).toLowerCase().contains(_searchQuery);
+        final matchOwnerName = _getDisplayOwner(
+          l.owner,
+          state,
+        ).toLowerCase().contains(_searchQuery);
         return matchName || matchPhone || matchOwnerName;
       }).toList();
     }
@@ -90,13 +111,22 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
     if (stage == 'New') {
       if (isSales) {
         // Sales employees see both 'New' and 'Assigned' leads in the 'New' tab
-        return filteredLeads.where((l) => (l.status == 'New' || l.status == 'Assigned')).toList();
+        return filteredLeads
+            .where((l) => (l.status == 'New' || l.status == 'Assigned'))
+            .toList();
       }
-      return filteredLeads.where((l) => l.status == 'New' && !_isAssigned(l)).toList();
+      return filteredLeads
+          .where((l) => l.status == 'New' && !_isAssigned(l))
+          .toList();
     }
     if (stage == 'Assigned') {
       if (isSales) return []; // Should not be rendered anyway, but just in case
-      return filteredLeads.where((l) => (l.status == 'New' || l.status == 'Assigned') && _isAssigned(l)).toList();
+      return filteredLeads
+          .where(
+            (l) =>
+                (l.status == 'New' || l.status == 'Assigned') && _isAssigned(l),
+          )
+          .toList();
     }
     return filteredLeads.where((l) => l.status == stage).toList();
   }
@@ -136,13 +166,15 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
 
     try {
       if (await Permission.phone.request().isGranted) {
-        Iterable<call_log_plugin.CallLogEntry> entries = await call_log_plugin.CallLog.query(
-          dateFrom: startTime.millisecondsSinceEpoch,
-        );
+        Iterable<call_log_plugin.CallLogEntry> entries = await call_log_plugin
+            .CallLog.query(dateFrom: startTime.millisecondsSinceEpoch);
 
         if (entries.isNotEmpty) {
           final entry = entries.firstWhere(
-            (e) => e.number != null && (e.number!.contains(lead.phone) || lead.phone.contains(e.number!)),
+            (e) =>
+                e.number != null &&
+                (e.number!.contains(lead.phone) ||
+                    lead.phone.contains(e.number!)),
             orElse: () => call_log_plugin.CallLogEntry(),
           );
 
@@ -150,9 +182,11 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
             logFound = true;
             int durationSeconds = entry.duration ?? 0;
             durationMinutes = (durationSeconds / 60).ceil();
-            
-            if (entry.callType == call_log_plugin.CallType.missed) outcome = 'No Answer';
-            if (entry.callType == call_log_plugin.CallType.rejected) outcome = 'Busy';
+
+            if (entry.callType == call_log_plugin.CallType.missed)
+              outcome = 'No Answer';
+            if (entry.callType == call_log_plugin.CallType.rejected)
+              outcome = 'Busy';
           }
         }
       }
@@ -174,11 +208,18 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
         timestamp: DateTime.now(),
       );
       state.addCallLog(log);
-      
-      Get.find<CrmController>().addLeadNote(lead.id, "Auto-logged from phone dialer.");
+
+      Get.find<CrmController>().addLeadNote(
+        lead.id,
+        "Auto-logged from phone dialer.",
+      );
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Logged call with ${lead.name} ($durationMinutes mins)")),
+        SnackBar(
+          content: Text(
+            "Logged call with ${lead.name} ($durationMinutes mins)",
+          ),
+        ),
       );
     }
   }
@@ -199,7 +240,11 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
     }
   }
 
-  void _showLeadDialog(BuildContext context, MockDataService state, {Lead? lead}) {
+  void _showLeadDialog(
+    BuildContext context,
+    MockDataService state, {
+    Lead? lead,
+  }) {
     final formKey = GlobalKey<FormState>();
     final isDesktop = MediaQuery.of(context).size.width >= 750;
 
@@ -208,8 +253,12 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
     final phoneCtrl = TextEditingController(text: lead?.phone);
     final emailCtrl = TextEditingController(text: lead?.email);
     final altPhoneCtrl = TextEditingController(text: lead?.alternatePhone);
-    final valueCtrl = TextEditingController(text: lead != null ? lead.value.toStringAsFixed(0) : "");
-    final probabilityCtrl = TextEditingController(text: lead != null ? lead.probability.toStringAsFixed(0) : "0");
+    final valueCtrl = TextEditingController(
+      text: lead != null ? lead.value.toStringAsFixed(0) : "",
+    );
+    final probabilityCtrl = TextEditingController(
+      text: lead != null ? lead.probability.toStringAsFixed(0) : "0",
+    );
     final productInterestCtrl = TextEditingController(text: lead?.company);
     final requirementCtrl = TextEditingController(text: lead?.requirement);
     final streetCtrl = TextEditingController(text: lead?.street);
@@ -218,18 +267,62 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
     final stateCtrl = TextEditingController(text: lead?.state);
 
     // Dropdown Items Lists
-    final List<String> sources = ['WhatsApp', 'Facebook', 'Instagram', 'Call', 'Walk-in', 'Referral', 'Other', 'Website'];
-    final List<String> statuses = ['New', 'Meeting', 'Hot', 'Cold', 'Converted', 'Lost', 'Follow-up'];
-    final List<String> stages = ['Inquiry', 'Demo', 'Negotiation', 'Closed', 'Booking', 'Lost'];
+    final List<String> sources = [
+      'WhatsApp',
+      'Facebook',
+      'Instagram',
+      'Call',
+      'Walk-in',
+      'Referral',
+      'Other',
+      'Website',
+    ];
+    final List<String> statuses = [
+      'New',
+      'Meeting',
+      'Hot',
+      'Cold',
+      'Converted',
+      'Lost',
+      'Follow-up',
+    ];
+    final List<String> stages = [
+      'Inquiry',
+      'Demo',
+      'Negotiation',
+      'Closed',
+      'Booking',
+      'Lost',
+    ];
     final List<String> priorities = ['High', 'Medium', 'Low', 'Critical'];
-    final List<String> timelines = ['Immediate', 'Within 1 Month', '1-3 Months', '3-6 Months'];
+    final List<String> timelines = [
+      'Immediate',
+      'Within 1 Month',
+      '1-3 Months',
+      '3-6 Months',
+    ];
 
     // Safe parsed dropdown values
-    String source = sources.firstWhere((s) => s.toLowerCase() == (lead?.source ?? 'Call').toLowerCase(), orElse: () => 'Call');
-    String status = statuses.firstWhere((s) => s.toLowerCase() == (lead?.status ?? 'New').toLowerCase(), orElse: () => 'New');
-    String salesStage = stages.firstWhere((s) => s.toLowerCase() == (lead?.salesStage ?? 'Inquiry').toLowerCase(), orElse: () => 'Inquiry');
-    String priority = priorities.firstWhere((p) => p.toLowerCase() == (lead?.priority ?? 'Medium').toLowerCase(), orElse: () => 'Medium');
-    String timeline = timelines.firstWhere((t) => t.toLowerCase() == (lead?.timeline ?? 'Immediate').toLowerCase(), orElse: () => 'Immediate');
+    String source = sources.firstWhere(
+      (s) => s.toLowerCase() == (lead?.source ?? 'Call').toLowerCase(),
+      orElse: () => 'Call',
+    );
+    String status = statuses.firstWhere(
+      (s) => s.toLowerCase() == (lead?.status ?? 'New').toLowerCase(),
+      orElse: () => 'New',
+    );
+    String salesStage = stages.firstWhere(
+      (s) => s.toLowerCase() == (lead?.salesStage ?? 'Inquiry').toLowerCase(),
+      orElse: () => 'Inquiry',
+    );
+    String priority = priorities.firstWhere(
+      (p) => p.toLowerCase() == (lead?.priority ?? 'Medium').toLowerCase(),
+      orElse: () => 'Medium',
+    );
+    String timeline = timelines.firstWhere(
+      (t) => t.toLowerCase() == (lead?.timeline ?? 'Immediate').toLowerCase(),
+      orElse: () => 'Immediate',
+    );
 
     // Owner logic
     final Set<String> employeeNamesSet = state.employees
@@ -243,34 +336,42 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
 
     String owner = lead?.owner ?? "Unassigned";
     employeeNamesSet.add(owner);
-    
+
     final List<String> employeeNames = employeeNamesSet.toList();
 
-    Widget _buildResponsiveRow(List<Widget> children) {
+    Widget buildResponsiveRow(List<Widget> children) {
       if (isDesktop && children.length > 1) {
         return Padding(
           padding: const EdgeInsets.only(bottom: 16),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: children.map((c) => Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: c,
-              ),
-            )).toList(),
+            children: children
+                .map(
+                  (c) => Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: c,
+                    ),
+                  ),
+                )
+                .toList(),
           ),
         );
       } else {
         return Column(
-          children: children.map((c) => Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: c,
-          )).toList(),
+          children: children
+              .map(
+                (c) => Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: c,
+                ),
+              )
+              .toList(),
         );
       }
     }
 
-    Widget _buildDropdown({
+    Widget buildDropdown({
       required String label,
       required String value,
       required List<String> items,
@@ -301,10 +402,17 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
               child: DropdownButton<String>(
                 value: value,
                 isExpanded: true,
-                items: items.map((item) => DropdownMenuItem(
-                  value: item,
-                  child: Text(itemLabels?[item] ?? item, style: const TextStyle(fontSize: 14)),
-                )).toList(),
+                items: items
+                    .map(
+                      (item) => DropdownMenuItem(
+                        value: item,
+                        child: Text(
+                          itemLabels?[item] ?? item,
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ),
+                    )
+                    .toList(),
                 onChanged: onChanged,
               ),
             ),
@@ -319,7 +427,9 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               backgroundColor: Colors.white,
               title: Text(
                 lead == null ? "Create Sales Lead" : "Edit Sales Lead",
@@ -329,30 +439,34 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                 ),
               ),
               content: SizedBox(
-                width: isDesktop ? 750 : MediaQuery.of(context).size.width * 0.9,
+                width: isDesktop
+                    ? 750
+                    : MediaQuery.of(context).size.width * 0.9,
                 child: Form(
                   key: formKey,
                   child: SingleChildScrollView(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildResponsiveRow([
+                        buildResponsiveRow([
                           CustomTextField(
                             label: "Customer Name *",
                             hint: "e.g., Raminder Mittal",
                             prefixIcon: Icons.person_outline,
                             controller: nameCtrl,
-                            validator: (val) => val == null || val.isEmpty ? "Required" : null,
+                            validator: (val) =>
+                                val == null || val.isEmpty ? "Required" : null,
                           ),
                           CustomTextField(
                             label: "Mobile *",
                             hint: "e.g., +919915006927",
                             prefixIcon: Icons.phone_outlined,
                             controller: phoneCtrl,
-                            validator: (val) => val == null || val.isEmpty ? "Required" : null,
+                            validator: (val) =>
+                                val == null || val.isEmpty ? "Required" : null,
                           ),
                         ]),
-                        _buildResponsiveRow([
+                        buildResponsiveRow([
                           CustomTextField(
                             label: "Email",
                             hint: "raminder@ashoka.com",
@@ -366,8 +480,8 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                             controller: altPhoneCtrl,
                           ),
                         ]),
-                        _buildResponsiveRow([
-                          _buildDropdown(
+                        buildResponsiveRow([
+                          buildDropdown(
                             label: "Lead Source *",
                             value: source,
                             items: sources,
@@ -377,7 +491,7 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                               }
                             },
                           ),
-                          _buildDropdown(
+                          buildDropdown(
                             label: "Lead Status",
                             value: status,
                             items: statuses,
@@ -388,8 +502,8 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                             },
                           ),
                         ]),
-                        _buildResponsiveRow([
-                          _buildDropdown(
+                        buildResponsiveRow([
+                          buildDropdown(
                             label: "Sales Stage",
                             value: salesStage,
                             items: stages,
@@ -399,7 +513,7 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                               }
                             },
                           ),
-                          _buildDropdown(
+                          buildDropdown(
                             label: "Priority",
                             value: priority,
                             items: priorities,
@@ -410,7 +524,7 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                             },
                           ),
                         ]),
-                        _buildResponsiveRow([
+                        buildResponsiveRow([
                           CustomTextField(
                             label: "Deal Value (₹)",
                             hint: "e.g., 50000",
@@ -419,7 +533,9 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                             keyboardType: TextInputType.number,
                             validator: (val) {
                               if (val == null || val.isEmpty) return null;
-                              return double.tryParse(val) == null ? "Number required" : null;
+                              return double.tryParse(val) == null
+                                  ? "Number required"
+                                  : null;
                             },
                           ),
                           CustomTextField(
@@ -437,8 +553,8 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                             },
                           ),
                         ]),
-                        _buildResponsiveRow([
-                          _buildDropdown(
+                        buildResponsiveRow([
+                          buildDropdown(
                             label: "Timeline",
                             value: timeline,
                             items: timelines,
@@ -463,7 +579,8 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                           padding: const EdgeInsets.only(bottom: 16),
                           child: CustomTextField(
                             label: "Requirement",
-                            hint: "e.g., CRM with calling feature and auto dialer",
+                            hint:
+                                "e.g., CRM with calling feature and auto dialer",
                             prefixIcon: Icons.description_outlined,
                             controller: requirementCtrl,
                           ),
@@ -488,7 +605,7 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                             controller: streetCtrl,
                           ),
                         ),
-                        _buildResponsiveRow([
+                        buildResponsiveRow([
                           CustomTextField(
                             label: "City",
                             hint: "e.g., Chandigarh",
@@ -502,7 +619,7 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                             controller: pincodeCtrl,
                           ),
                         ]),
-                        _buildResponsiveRow([
+                        buildResponsiveRow([
                           CustomTextField(
                             label: "State",
                             hint: "e.g., Punjab",
@@ -519,14 +636,19 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text("Cancel", style: TextStyle(color: AppColors.textSecondary)),
+                  child: const Text(
+                    "Cancel",
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
                 ),
                 CustomButton(
                   text: lead == null ? "Save Lead" : "Update Lead",
                   onPressed: () {
                     if (formKey.currentState!.validate()) {
-                      final parsedValue = double.tryParse(valueCtrl.text) ?? 0.0;
-                      final parsedProb = double.tryParse(probabilityCtrl.text) ?? 0.0;
+                      final parsedValue =
+                          double.tryParse(valueCtrl.text) ?? 0.0;
+                      final parsedProb =
+                          double.tryParse(probabilityCtrl.text) ?? 0.0;
 
                       if (lead == null) {
                         final newLead = Lead(
@@ -587,58 +709,106 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
     );
   }
 
-  void _showCallHistoryDialog(BuildContext context, Lead lead, MockDataService state) {
+  void _showCallHistoryDialog(
+    BuildContext context,
+    Lead lead,
+    MockDataService state,
+  ) {
     final calls = state.callLogs.where((log) => log.leadId == lead.id).toList();
 
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           backgroundColor: Colors.white,
-          title: Text("Call History: ${lead.name}", style: const TextStyle(fontWeight: FontWeight.bold)),
+          title: Text(
+            "Call History: ${lead.name}",
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
           content: SizedBox(
             width: 500,
             height: 400,
             child: calls.isEmpty
-                ? const Center(child: Text("No calls logged for this lead yet.", style: TextStyle(color: AppColors.textSecondary)))
+                ? const Center(
+                    child: Text(
+                      "No calls logged for this lead yet.",
+                      style: TextStyle(color: AppColors.textSecondary),
+                    ),
+                  )
                 : ListView.separated(
                     itemCount: calls.length,
                     separatorBuilder: (context, index) => const Divider(),
                     itemBuilder: (context, index) {
                       final log = calls[index];
-                      final dateStr = "${log.timestamp.year}-${log.timestamp.month.toString().padLeft(2, '0')}-${log.timestamp.day.toString().padLeft(2, '0')}";
-                      final timeStr = "${log.timestamp.hour.toString().padLeft(2, '0')}:${log.timestamp.minute.toString().padLeft(2, '0')}";
-                      
+                      final dateStr =
+                          "${log.timestamp.year}-${log.timestamp.month.toString().padLeft(2, '0')}-${log.timestamp.day.toString().padLeft(2, '0')}";
+                      final timeStr =
+                          "${log.timestamp.hour.toString().padLeft(2, '0')}:${log.timestamp.minute.toString().padLeft(2, '0')}";
+
                       Color outcomeColor = AppColors.success;
-                      if (log.outcome == 'No Answer' || log.outcome == 'Voicemail') outcomeColor = AppColors.warning;
-                      if (log.outcome == 'Busy') outcomeColor = AppColors.danger;
+                      if (log.outcome == 'No Answer' ||
+                          log.outcome == 'Voicemail')
+                        outcomeColor = AppColors.warning;
+                      if (log.outcome == 'Busy')
+                        outcomeColor = AppColors.danger;
 
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
                         leading: CircleAvatar(
                           backgroundColor: outcomeColor.withValues(alpha: 0.1),
-                          child: Icon(Icons.phone_in_talk, color: outcomeColor, size: 18),
+                          child: Icon(
+                            Icons.phone_in_talk,
+                            color: outcomeColor,
+                            size: 18,
+                          ),
                         ),
-                        title: Text(log.employeeName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        title: Text(
+                          log.employeeName,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const SizedBox(height: 4),
-                            Text("$dateStr at $timeStr • ${log.durationMinutes} min", style: const TextStyle(fontSize: 12)),
+                            Text(
+                              "$dateStr at $timeStr • ${log.durationMinutes} min",
+                              style: const TextStyle(fontSize: 12),
+                            ),
                             if (log.notes.isNotEmpty) ...[
                               const SizedBox(height: 4),
-                              Text(log.notes, style: const TextStyle(fontSize: 15, fontStyle: FontStyle.italic)),
-                            ]
+                              Text(
+                                log.notes,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                         trailing: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: outcomeColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: Text(log.outcome, style: TextStyle(color: outcomeColor, fontSize: 13, fontWeight: FontWeight.bold)),
+                          child: Text(
+                            log.outcome,
+                            style: TextStyle(
+                              color: outcomeColor,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       );
                     },
@@ -647,7 +817,10 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text("Close", style: TextStyle(color: AppColors.textSecondary)),
+              child: const Text(
+                "Close",
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
             ),
           ],
         );
@@ -655,24 +828,38 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
     );
   }
 
-  void _showDeleteConfirmation(BuildContext context, Lead lead, MockDataService state) {
+  void _showDeleteConfirmation(
+    BuildContext context,
+    Lead lead,
+    MockDataService state,
+  ) {
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          title: const Text("Delete Lead", style: TextStyle(fontWeight: FontWeight.bold)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          title: const Text(
+            "Delete Lead",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           content: Text("Are you sure you want to delete lead '${lead.name}'?"),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text("Cancel", style: TextStyle(color: AppColors.textSecondary)),
+              child: const Text(
+                "Cancel",
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.danger,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               onPressed: () {
                 state.deleteLead(lead.id);
@@ -689,9 +876,11 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
     );
   }
 
-
-
-  void _showLeadActions(BuildContext context, Lead lead, MockDataService state) {
+  void _showLeadActions(
+    BuildContext context,
+    Lead lead,
+    MockDataService state,
+  ) {
     final noteCtrl = TextEditingController();
     showModalBottomSheet(
       context: context,
@@ -707,7 +896,9 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
             return SingleChildScrollView(
               child: Padding(
                 padding: EdgeInsets.only(
-                  left: 24, right: 24, top: 24,
+                  left: 24,
+                  right: 24,
+                  top: 24,
                   bottom: MediaQuery.of(context).viewInsets.bottom + 24,
                 ),
                 child: Column(
@@ -757,7 +948,11 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                             runSpacing: 0,
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.call, color: Colors.green, size: 22),
+                                icon: const Icon(
+                                  Icons.call,
+                                  color: Colors.green,
+                                  size: 22,
+                                ),
                                 tooltip: "Call Now",
                                 onPressed: () {
                                   Navigator.of(context).pop();
@@ -766,7 +961,11 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                               ),
                               // Removed manual log call button
                               IconButton(
-                                icon: const Icon(Icons.history, color: AppColors.info, size: 22),
+                                icon: const Icon(
+                                  Icons.history,
+                                  color: AppColors.info,
+                                  size: 22,
+                                ),
                                 tooltip: "View Call History",
                                 onPressed: () {
                                   Navigator.of(context).pop();
@@ -774,7 +973,11 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                                 },
                               ),
                               IconButton(
-                                icon: const Icon(Icons.edit, color: AppColors.primary, size: 22),
+                                icon: const Icon(
+                                  Icons.edit,
+                                  color: AppColors.primary,
+                                  size: 22,
+                                ),
                                 onPressed: () {
                                   Navigator.of(context).pop();
                                   _showLeadDialog(context, state, lead: lead);
@@ -782,10 +985,18 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                               ),
                               if (state.currentRole == UserRole.superAdmin)
                                 IconButton(
-                                  icon: const Icon(Icons.delete_outline, color: AppColors.danger, size: 22),
+                                  icon: const Icon(
+                                    Icons.delete_outline,
+                                    color: AppColors.danger,
+                                    size: 22,
+                                  ),
                                   onPressed: () {
                                     Navigator.of(context).pop();
-                                    _showDeleteConfirmation(context, lead, state);
+                                    _showDeleteConfirmation(
+                                      context,
+                                      lead,
+                                      state,
+                                    );
                                   },
                                 ),
                             ],
@@ -796,31 +1007,100 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                     const SizedBox(height: 20),
                     const Divider(color: AppColors.border),
                     const SizedBox(height: 12),
-                    const Text("Contact Details", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: 14)),
+                    const Text(
+                      "Contact Details",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                        fontSize: 14,
+                      ),
+                    ),
                     const SizedBox(height: 8),
-                    _buildLeadDetailRow(Icons.email_outlined, "Email", lead.email.isEmpty ? "N/A" : lead.email),
-                    _buildLeadDetailRow(Icons.phone_outlined, "Phone", lead.phone),
-                    if (lead.alternatePhone.isNotEmpty) _buildLeadDetailRow(Icons.phone_android_outlined, "Alt Phone", lead.alternatePhone),
-                    if (lead.city.isNotEmpty || lead.state.isNotEmpty) _buildLeadDetailRow(Icons.location_city_outlined, "Location", "${lead.city.isNotEmpty ? lead.city : ''}${lead.city.isNotEmpty && lead.state.isNotEmpty ? ', ' : ''}${lead.state}"),
-                    
+                    _buildLeadDetailRow(
+                      Icons.email_outlined,
+                      "Email",
+                      lead.email.isEmpty ? "N/A" : lead.email,
+                    ),
+                    _buildLeadDetailRow(
+                      Icons.phone_outlined,
+                      "Phone",
+                      lead.phone,
+                    ),
+                    if (lead.alternatePhone.isNotEmpty)
+                      _buildLeadDetailRow(
+                        Icons.phone_android_outlined,
+                        "Alt Phone",
+                        lead.alternatePhone,
+                      ),
+                    if (lead.city.isNotEmpty || lead.state.isNotEmpty)
+                      _buildLeadDetailRow(
+                        Icons.location_city_outlined,
+                        "Location",
+                        "${lead.city.isNotEmpty ? lead.city : ''}${lead.city.isNotEmpty && lead.state.isNotEmpty ? ', ' : ''}${lead.state}",
+                      ),
+
                     const SizedBox(height: 12),
                     const Divider(color: AppColors.border),
                     const SizedBox(height: 12),
-                    const Text("Lead Qualification", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: 14)),
+                    const Text(
+                      "Lead Qualification",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                        fontSize: 14,
+                      ),
+                    ),
                     const SizedBox(height: 8),
-                    _buildLeadDetailRow(Icons.source_outlined, "Source", lead.source),
-                    if (lead.requirement.isNotEmpty) _buildLeadDetailRow(Icons.shopping_bag_outlined, "Requirement", lead.requirement),
-                    _buildLeadDetailRow(Icons.timeline, "Timeline", lead.timeline),
-                    _buildLeadDetailRow(Icons.flag_outlined, "Priority", lead.priority),
-                    _buildLeadDetailRow(Icons.trending_up, "Sales Stage", lead.salesStage),
-                    if (lead.probability > 0) _buildLeadDetailRow(Icons.percent, "Win Probability", "${lead.probability.toStringAsFixed(0)}%"),
-                    _buildLeadDetailRow(Icons.person_pin_outlined, "Assigned Agent", _getDisplayOwner(lead.owner, state)),
+                    _buildLeadDetailRow(
+                      Icons.source_outlined,
+                      "Source",
+                      lead.source,
+                    ),
+                    if (lead.requirement.isNotEmpty)
+                      _buildLeadDetailRow(
+                        Icons.shopping_bag_outlined,
+                        "Requirement",
+                        lead.requirement,
+                      ),
+                    _buildLeadDetailRow(
+                      Icons.timeline,
+                      "Timeline",
+                      lead.timeline,
+                    ),
+                    _buildLeadDetailRow(
+                      Icons.flag_outlined,
+                      "Priority",
+                      lead.priority,
+                    ),
+                    _buildLeadDetailRow(
+                      Icons.trending_up,
+                      "Sales Stage",
+                      lead.salesStage,
+                    ),
+                    if (lead.probability > 0)
+                      _buildLeadDetailRow(
+                        Icons.percent,
+                        "Win Probability",
+                        "${lead.probability.toStringAsFixed(0)}%",
+                      ),
+                    _buildLeadDetailRow(
+                      Icons.person_pin_outlined,
+                      "Assigned Agent",
+                      _getDisplayOwner(lead.owner, state),
+                    ),
                     const SizedBox(height: 16),
-                    
+
                     if (lead.notes.isNotEmpty) ...[
                       const Divider(color: AppColors.border),
                       const SizedBox(height: 12),
-                      const Text("Previous Notes", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: 14)),
+                      const Text(
+                        "Previous Notes",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                          fontSize: 14,
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       ...lead.notes.map((n) {
                         return Container(
@@ -835,22 +1115,38 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(n.content, style: const TextStyle(fontSize: 14, color: AppColors.textPrimary)),
+                              Text(
+                                n.content,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
                               const SizedBox(height: 4),
                               if (n.createdAt != null)
                                 Text(
                                   "${n.createdAt!.day.toString().padLeft(2, '0')}/${n.createdAt!.month.toString().padLeft(2, '0')}/${n.createdAt!.year} ${n.createdAt!.hour.toString().padLeft(2, '0')}:${n.createdAt!.minute.toString().padLeft(2, '0')}",
-                                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary,
+                                  ),
                                 ),
                             ],
                           ),
                         );
-                      }).toList(),
+                      }),
                     ],
-                    
+
                     const Divider(color: AppColors.border),
                     const SizedBox(height: 12),
-                    const Text("Add Note / Description", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: 14)),
+                    const Text(
+                      "Add Note / Description",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                        fontSize: 14,
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
@@ -862,14 +1158,21 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                               hintText: "Enter details here...",
                               filled: true,
                               fillColor: Colors.grey[50],
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 12,
+                              ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(color: AppColors.border),
+                                borderSide: const BorderSide(
+                                  color: AppColors.border,
+                                ),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(color: AppColors.border),
+                                borderSide: const BorderSide(
+                                  color: AppColors.border,
+                                ),
                               ),
                             ),
                             maxLines: 2,
@@ -883,12 +1186,22 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: IconButton(
-                            icon: const Icon(Icons.send, color: Colors.white, size: 20),
+                            icon: const Icon(
+                              Icons.send,
+                              color: Colors.white,
+                              size: 20,
+                            ),
                             onPressed: () {
-                              if (noteCtrl.text.trim().isNotEmpty && Get.isRegistered<CrmController>()) {
-                                Get.find<CrmController>().addLeadNote(lead.id, noteCtrl.text.trim());
+                              if (noteCtrl.text.trim().isNotEmpty &&
+                                  Get.isRegistered<CrmController>()) {
+                                Get.find<CrmController>().addLeadNote(
+                                  lead.id,
+                                  noteCtrl.text.trim(),
+                                );
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text("Note saved successfully")),
+                                  const SnackBar(
+                                    content: Text("Note saved successfully"),
+                                  ),
                                 );
                                 noteCtrl.clear();
                                 FocusScope.of(context).unfocus();
@@ -946,9 +1259,14 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                             Navigator.of(context).pop();
                           },
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
                             decoration: BoxDecoration(
-                              color: isCurrent ? chipColor.withOpacity(0.15) : Colors.transparent,
+                              color: isCurrent
+                                  ? chipColor.withValues(alpha: 0.15)
+                                  : Colors.transparent,
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
                                 color: isCurrent ? chipColor : AppColors.border,
@@ -958,8 +1276,12 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                             child: Text(
                               st,
                               style: TextStyle(
-                                color: isCurrent ? chipColor : AppColors.textSecondary,
-                                fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                                color: isCurrent
+                                    ? chipColor
+                                    : AppColors.textSecondary,
+                                fontWeight: isCurrent
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
                                 fontSize: 14,
                               ),
                             ),
@@ -982,20 +1304,41 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                         decoration: InputDecoration(
                           filled: true,
                           fillColor: Colors.grey[50],
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                         hint: const Text("Select Agent to Assign"),
-                        items: state.employees.where((e) => e.department.toLowerCase() == 'sales').map((e) => e.id).toSet().map((id) {
-                          final emp = state.employees.firstWhere((e) => e.id == id);
-                          return DropdownMenuItem(value: emp.id, child: Text("${emp.name} (${emp.department})"));
-                        }).toList(),
+                        items: state.employees
+                            .where((e) => e.department.toLowerCase() == 'sales')
+                            .map((e) => e.id)
+                            .toSet()
+                            .map((id) {
+                              final emp = state.employees.firstWhere(
+                                (e) => e.id == id,
+                              );
+                              return DropdownMenuItem(
+                                value: emp.id,
+                                child: Text("${emp.name} (${emp.department})"),
+                              );
+                            })
+                            .toList(),
                         onChanged: (empId) {
-                          if (empId != null && Get.isRegistered<CrmController>()) {
-                            Get.find<CrmController>().assignLead(lead.id, empId);
+                          if (empId != null &&
+                              Get.isRegistered<CrmController>()) {
+                            Get.find<CrmController>().assignLead(
+                              lead.id,
+                              empId,
+                            );
                             Navigator.of(context).pop();
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text("Assigning lead to agent...")),
+                              SnackBar(
+                                content: Text("Assigning lead to agent..."),
+                              ),
                             );
                           }
                         },
@@ -1018,8 +1361,21 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
         children: [
           Icon(icon, size: 16, color: AppColors.textSecondary),
           const SizedBox(width: 8),
-          Text("$label: ", style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-          Text(value, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w500, fontSize: 13)),
+          Text(
+            "$label: ",
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 13,
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w500,
+              fontSize: 13,
+            ),
+          ),
         ],
       ),
     );
@@ -1032,108 +1388,20 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
     final width = MediaQuery.of(context).size.width;
     final isDesktop = width >= 1000;
 
-    return Obx(
-      () {
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header & Add Lead Button
-              isDesktop
-                  ? Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "Sales Lead Pipeline",
-                                style: TextStyle(
-                                  color: AppColors.textPrimary,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                "Manage sales client opportunities, stages, values, and tracking.",
-                                style: TextStyle(
-                                  color: AppColors.textSecondary,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          alignment: WrapAlignment.end,
-                          children: [
-                            if (_isBulkAssignMode) ...[
-                              OutlinedButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _isBulkAssignMode = false;
-                                    _selectedLeadIds.clear();
-                                  });
-                                },
-                                child: const Text("Cancel", style: TextStyle(color: AppColors.textSecondary)),
-                              ),
-                              if (state.currentRole == UserRole.superAdmin)
-                                ElevatedButton.icon(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.red,
-                                    foregroundColor: Colors.white,
-                                  ),
-                                  icon: const Icon(Icons.delete, size: 18),
-                                  label: Text("Delete (${_selectedLeadIds.length})"),
-                                  onPressed: _selectedLeadIds.isEmpty
-                                      ? null
-                                      : () => _showBulkDeleteDialog(context, state),
-                                ),
-                              ElevatedButton.icon(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primary,
-                                  foregroundColor: Colors.white,
-                                ),
-                                icon: const Icon(Icons.check, size: 18),
-                                label: Text("Assign (${_selectedLeadIds.length})"),
-                                onPressed: _selectedLeadIds.isEmpty
-                                    ? null
-                                    : () => _showBulkAssignDialog(context, state),
-                              ),
-                            ] else ...[
-                              if (state.currentRole != UserRole.employee)
-                                CustomButton(
-                                  text: "Select Leads",
-                                  icon: Icons.checklist,
-                                  backgroundColor: AppColors.info,
-                                  onPressed: () {
-                                    setState(() {
-                                      _isBulkAssignMode = true;
-                                    });
-                                  },
-                                ),
-                              if (state.currentRole == UserRole.superAdmin)
-                                CustomButton(
-                                  text: "Create Lead",
-                                  icon: Icons.add,
-                                  onPressed: () => _showLeadDialog(context, state),
-                                ),
-                            ],
-                          ],
-                        ),
-                      ],
-                    )
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Column(
+    return Obx(() {
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header & Add Lead Button
+            isDesktop
+                ? Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Expanded(
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
@@ -1154,306 +1422,458 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          alignment: WrapAlignment.start,
-                          children: [
-                            if (_isBulkAssignMode) ...[
-                              OutlinedButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _isBulkAssignMode = false;
-                                    _selectedLeadIds.clear();
-                                  });
-                                },
-                                child: const Text("Cancel", style: TextStyle(color: AppColors.textSecondary)),
-                              ),
-                              if (state.currentRole == UserRole.superAdmin)
-                                ElevatedButton.icon(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.red,
-                                    foregroundColor: Colors.white,
-                                  ),
-                                  icon: const Icon(Icons.delete, size: 18),
-                                  label: Text("Delete (${_selectedLeadIds.length})"),
-                                  onPressed: _selectedLeadIds.isEmpty
-                                      ? null
-                                      : () => _showBulkDeleteDialog(context, state),
+                      ),
+                      const SizedBox(width: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        alignment: WrapAlignment.end,
+                        children: [
+                          if (_isBulkAssignMode) ...[
+                            OutlinedButton(
+                              onPressed: () {
+                                setState(() {
+                                  _isBulkAssignMode = false;
+                                  _selectedLeadIds.clear();
+                                });
+                              },
+                              child: const Text(
+                                "Cancel",
+                                style: TextStyle(
+                                  color: AppColors.textSecondary,
                                 ),
+                              ),
+                            ),
+                            if (state.currentRole == UserRole.superAdmin)
                               ElevatedButton.icon(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primary,
+                                  backgroundColor: Colors.red,
                                   foregroundColor: Colors.white,
                                 ),
-                                icon: const Icon(Icons.check, size: 18),
-                                label: Text("Assign (${_selectedLeadIds.length})"),
+                                icon: const Icon(Icons.delete, size: 18),
+                                label: Text(
+                                  "Delete (${_selectedLeadIds.length})",
+                                ),
                                 onPressed: _selectedLeadIds.isEmpty
                                     ? null
-                                    : () => _showBulkAssignDialog(context, state),
+                                    : () =>
+                                          _showBulkDeleteDialog(context, state),
                               ),
-                            ] else ...[
-                              if (state.currentRole != UserRole.employee)
-                                CustomButton(
-                                  text: "Select Leads",
-                                  icon: Icons.checklist,
-                                  backgroundColor: AppColors.info,
-                                  onPressed: () {
-                                    setState(() {
-                                      _isBulkAssignMode = true;
-                                    });
-                                  },
-                                ),
-                              if (state.currentRole == UserRole.superAdmin)
-                                CustomButton(
-                                  text: "Create Lead",
-                                  icon: Icons.add,
-                                  onPressed: () => _showLeadDialog(context, state),
-                                ),
-                            ],
-                          ],
-                        ),
-                      ],
-                    ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: CustomTextField(
-                      label: "Search Leads",
-                      controller: _searchController,
-                      hint: "Search by lead name, phone, or assigned employee...",
-                      prefixIcon: Icons.search,
-                    ),
-                  ),
-                  if (state.currentRole == UserRole.superAdmin || state.currentRole == UserRole.hr) ...[
-                    const SizedBox(width: 16),
-                    Expanded(
-                      flex: 1,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            "Filter by Assignment",
-                            style: TextStyle(
-                              color: AppColors.textPrimary,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.white,
+                              ),
+                              icon: const Icon(Icons.check, size: 18),
+                              label: Text(
+                                "Assign (${_selectedLeadIds.length})",
+                              ),
+                              onPressed: _selectedLeadIds.isEmpty
+                                  ? null
+                                  : () => _showBulkAssignDialog(context, state),
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: AppColors.border),
-                            ),
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                value: _filterAssignmentStatus,
-                                isExpanded: true,
-                                icon: const Icon(Icons.arrow_drop_down, color: AppColors.textSecondary),
-                                items: ['All', 'Assigned', 'Unassigned'].map((String value) {
-                                  return DropdownMenuItem<String>(
-                                    value: value,
-                                    child: Text(value, style: const TextStyle(fontSize: 14)),
-                                  );
-                                }).toList(),
-                                onChanged: (newValue) {
-                                  if (newValue != null) {
-                                    setState(() {
-                                      _filterAssignmentStatus = newValue;
-                                    });
-                                  }
+                          ] else ...[
+                            if (state.currentRole != UserRole.employee)
+                              CustomButton(
+                                text: "Select Leads",
+                                icon: Icons.checklist,
+                                backgroundColor: AppColors.info,
+                                onPressed: () {
+                                  setState(() {
+                                    _isBulkAssignMode = true;
+                                  });
                                 },
                               ),
+                            if (state.currentRole == UserRole.superAdmin)
+                              CustomButton(
+                                text: "Create Lead",
+                                icon: Icons.add,
+                                onPressed: () =>
+                                    _showLeadDialog(context, state),
+                              ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Sales Lead Pipeline",
+                            style: TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            "Manage sales client opportunities, stages, values, and tracking.",
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 16,
                             ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
-                ],
-              ),
-              if (controller.isLoadingLeads.value) ...[
-                const SizedBox(height: 16),
-                const ClipRRect(
-                  borderRadius: BorderRadius.all(Radius.circular(4)),
-                  child: LinearProgressIndicator(
-                    minHeight: 4,
-                    backgroundColor: AppColors.border,
-                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                  ),
-                ),
-              ],
-              if (controller.leadsError.value != null) ...[
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: AppColors.danger.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.danger.withOpacity(0.2)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.error_outline, color: AppColors.danger, size: 20),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          controller.leadsError.value!,
-                          style: const TextStyle(
-                            color: AppColors.danger,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      TextButton.icon(
-                        style: TextButton.styleFrom(
-                          foregroundColor: AppColors.danger,
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          backgroundColor: AppColors.danger.withOpacity(0.1),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                        ),
-                        icon: const Icon(Icons.refresh, size: 16),
-                        label: const Text("Retry", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                        onPressed: () => controller.fetchLeads(),
+                      const SizedBox(height: 16),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        alignment: WrapAlignment.start,
+                        children: [
+                          if (_isBulkAssignMode) ...[
+                            OutlinedButton(
+                              onPressed: () {
+                                setState(() {
+                                  _isBulkAssignMode = false;
+                                  _selectedLeadIds.clear();
+                                });
+                              },
+                              child: const Text(
+                                "Cancel",
+                                style: TextStyle(
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                            if (state.currentRole == UserRole.superAdmin)
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                  foregroundColor: Colors.white,
+                                ),
+                                icon: const Icon(Icons.delete, size: 18),
+                                label: Text(
+                                  "Delete (${_selectedLeadIds.length})",
+                                ),
+                                onPressed: _selectedLeadIds.isEmpty
+                                    ? null
+                                    : () =>
+                                          _showBulkDeleteDialog(context, state),
+                              ),
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.white,
+                              ),
+                              icon: const Icon(Icons.check, size: 18),
+                              label: Text(
+                                "Assign (${_selectedLeadIds.length})",
+                              ),
+                              onPressed: _selectedLeadIds.isEmpty
+                                  ? null
+                                  : () => _showBulkAssignDialog(context, state),
+                            ),
+                          ] else ...[
+                            if (state.currentRole != UserRole.employee)
+                              CustomButton(
+                                text: "Select Leads",
+                                icon: Icons.checklist,
+                                backgroundColor: AppColors.info,
+                                onPressed: () {
+                                  setState(() {
+                                    _isBulkAssignMode = true;
+                                  });
+                                },
+                              ),
+                            if (state.currentRole == UserRole.superAdmin)
+                              CustomButton(
+                                text: "Create Lead",
+                                icon: Icons.add,
+                                onPressed: () =>
+                                    _showLeadDialog(context, state),
+                              ),
+                          ],
+                        ],
                       ),
                     ],
                   ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: CustomTextField(
+                    label: "Search Leads",
+                    controller: _searchController,
+                    hint: "Search by lead name, phone, or assigned employee...",
+                    prefixIcon: Icons.search,
+                  ),
                 ),
-              ],
-              const SizedBox(height: 24),
-
-              // Responsive Pipeline Container
-              if (isDesktop) ...[
-                // Desktop Web Columns Sidebar view
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: _displayStages.map((stage) {
-                    final stageLeads = _getStageLeads(controller.leads, stage);
-                    final stageTotalValue = stageLeads.fold<double>(0, (sum, l) => sum + l.value);
-
-                    return Expanded(
-                      child: Container(
-                        margin: const EdgeInsets.only(right: 12),
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.border),
+                if (state.currentRole == UserRole.superAdmin ||
+                    state.currentRole == UserRole.hr) ...[
+                  const SizedBox(width: 16),
+                  Expanded(
+                    flex: 1,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Filter by Assignment",
+                          style: TextStyle(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Column Header
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  stage.toUpperCase(),
-                                  style: TextStyle(
-                                    color: AppColors.textPrimary,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: AppColors.border),
-                                  ),
-                                  child: Text(
-                                    "${stageLeads.length}",
-                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              "₹${stageTotalValue.toStringAsFixed(0)} value",
-                              style: const TextStyle(
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: _filterAssignmentStatus,
+                              isExpanded: true,
+                              icon: const Icon(
+                                Icons.arrow_drop_down,
                                 color: AppColors.textSecondary,
-                                fontSize: 13,
                               ),
-                            ),
-                            const SizedBox(height: 12),
-                            // Leads Cards list in stage
-                            ListView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: stageLeads.length,
-                              itemBuilder: (context, idx) {
-                                final lead = stageLeads[idx];
-                                return _buildLeadCard(context, lead, state);
+                              items: ['All', 'Assigned', 'Unassigned'].map((
+                                String value,
+                              ) {
+                                return DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Text(
+                                    value,
+                                    style: const TextStyle(fontSize: 14),
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (newValue) {
+                                if (newValue != null) {
+                                  setState(() {
+                                    _filterAssignmentStatus = newValue;
+                                  });
+                                }
                               },
                             ),
-                          ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            if (controller.isLoadingLeads.value) ...[
+              const SizedBox(height: 16),
+              const ClipRRect(
+                borderRadius: BorderRadius.all(Radius.circular(4)),
+                child: LinearProgressIndicator(
+                  minHeight: 4,
+                  backgroundColor: AppColors.border,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                ),
+              ),
+            ],
+            if (controller.leadsError.value != null) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.danger.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: AppColors.danger.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      color: AppColors.danger,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        controller.leadsError.value!,
+                        style: const TextStyle(
+                          color: AppColors.danger,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                    );
-                  }).toList(),
-                ),
-              ] else ...[
-                // Mobile Tabbar View
-                Column(
-                  children: [
-                    TabBar(
-                      controller: _tabController,
-                      labelColor: AppColors.primary,
-                      unselectedLabelColor: AppColors.textSecondary,
-                      indicatorColor: AppColors.primary,
-                      isScrollable: true,
-                      tabs: _displayStages.map((st) {
-                        final count = _getStageLeads(controller.leads, st).length;
-                        return Tab(text: "$st ($count)");
-                      }).toList(),
                     ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      height: 500,
-                      child: TabBarView(
-                        controller: _tabController,
-                        children: _displayStages.map((st) {
-                          final stageLeads = _getStageLeads(controller.leads, st);
-                          if (stageLeads.isEmpty) {
-                            return const Center(
-                              child: Text(
-                                "No leads in this stage.",
-                                style: TextStyle(color: AppColors.textSecondary),
+                    const SizedBox(width: 12),
+                    TextButton.icon(
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.danger,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        backgroundColor: AppColors.danger.withValues(
+                          alpha: 0.1,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                      icon: const Icon(Icons.refresh, size: 16),
+                      label: const Text(
+                        "Retry",
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      onPressed: () => controller.fetchLeads(),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            const SizedBox(height: 24),
+
+            // Responsive Pipeline Container
+            if (isDesktop) ...[
+              // Desktop Web Columns Sidebar view
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: _displayStages.map((stage) {
+                  final stageLeads = _getStageLeads(controller.leads, stage);
+                  final stageTotalValue = stageLeads.fold<double>(
+                    0,
+                    (sum, l) => sum + l.value,
+                  );
+
+                  return Expanded(
+                    child: Container(
+                      margin: const EdgeInsets.only(right: 12),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Column Header
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                stage.toUpperCase(),
+                                style: TextStyle(
+                                  color: AppColors.textPrimary,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                ),
                               ),
-                            );
-                          }
-                          return ListView.builder(
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: AppColors.border),
+                                ),
+                                child: Text(
+                                  "${stageLeads.length}",
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "₹${stageTotalValue.toStringAsFixed(0)} value",
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          // Leads Cards list in stage
+                          ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
                             itemCount: stageLeads.length,
                             itemBuilder: (context, idx) {
                               final lead = stageLeads[idx];
                               return _buildLeadCard(context, lead, state);
                             },
-                          );
-                        }).toList(),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              ],
+                  );
+                }).toList(),
+              ),
+            ] else ...[
+              // Mobile Tabbar View
+              Column(
+                children: [
+                  TabBar(
+                    controller: _tabController,
+                    labelColor: AppColors.primary,
+                    unselectedLabelColor: AppColors.textSecondary,
+                    indicatorColor: AppColors.primary,
+                    isScrollable: true,
+                    tabs: _displayStages.map((st) {
+                      final count = _getStageLeads(controller.leads, st).length;
+                      return Tab(text: "$st ($count)");
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: 500,
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: _displayStages.map((st) {
+                        final stageLeads = _getStageLeads(controller.leads, st);
+                        if (stageLeads.isEmpty) {
+                          return const Center(
+                            child: Text(
+                              "No leads in this stage.",
+                              style: TextStyle(color: AppColors.textSecondary),
+                            ),
+                          );
+                        }
+                        return ListView.builder(
+                          itemCount: stageLeads.length,
+                          itemBuilder: (context, idx) {
+                            final lead = stageLeads[idx];
+                            return _buildLeadCard(context, lead, state);
+                          },
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ],
+              ),
             ],
-          ),
-        );
-      },
-    );
+          ],
+        ),
+      );
+    });
   }
 
-  Widget _buildLeadCard(BuildContext context, Lead lead, MockDataService state) {
+  Widget _buildLeadCard(
+    BuildContext context,
+    Lead lead,
+    MockDataService state,
+  ) {
     return InkWell(
       onTap: () => _showLeadActions(context, lead, state),
       borderRadius: BorderRadius.circular(8),
@@ -1466,7 +1886,7 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
           border: Border.all(color: AppColors.border),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withValues(alpha: 0.02),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -1535,91 +1955,113 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
                 ),
               ),
             const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "₹${lead.value.toStringAsFixed(0)}",
-                      style: const TextStyle(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
-                    ),
-                    if (_isAssigned(lead))
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          "Agent: ${_getDisplayOwner(lead.owner, state)}",
-                          style: const TextStyle(
-                            color: AppColors.info,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "₹${lead.value.toStringAsFixed(0)}",
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
                         ),
                       ),
-                  ],
+                      if (_isAssigned(lead))
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            "Agent: ${_getDisplayOwner(lead.owner, state)}",
+                            style: const TextStyle(
+                              color: AppColors.info,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.call, size: 16, color: Colors.green),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    splashRadius: 16,
-                    onPressed: () => _initiateCall(lead),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    icon: const Icon(Icons.edit, size: 16, color: AppColors.primary),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    splashRadius: 16,
-                    onPressed: () => _showLeadDialog(context, state, lead: lead),
-                  ),
-                  const SizedBox(width: 8),
-                  if (state.currentRole == UserRole.superAdmin) ...[
+                const SizedBox(width: 8),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                     IconButton(
-                      icon: const Icon(Icons.delete_outline, size: 16, color: AppColors.danger),
+                      icon: const Icon(
+                        Icons.call,
+                        size: 16,
+                        color: Colors.green,
+                      ),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                       splashRadius: 16,
-                      onPressed: () => _showDeleteConfirmation(context, lead, state),
+                      onPressed: () => _initiateCall(lead),
                     ),
                     const SizedBox(width: 8),
-                  ],
-                  InkWell(
-                    onTap: () => _showLeadActions(context, lead, state),
-                    borderRadius: BorderRadius.circular(4),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: AppColors.border),
+                    IconButton(
+                      icon: const Icon(
+                        Icons.edit,
+                        size: 16,
+                        color: AppColors.primary,
                       ),
-                      child: const Text(
-                        "Actions",
-                        style: TextStyle(color: AppColors.textPrimary, fontSize: 10, fontWeight: FontWeight.bold),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      splashRadius: 16,
+                      onPressed: () =>
+                          _showLeadDialog(context, state, lead: lead),
+                    ),
+                    const SizedBox(width: 8),
+                    if (state.currentRole == UserRole.superAdmin) ...[
+                      IconButton(
+                        icon: const Icon(
+                          Icons.delete_outline,
+                          size: 16,
+                          color: AppColors.danger,
+                        ),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        splashRadius: 16,
+                        onPressed: () =>
+                            _showDeleteConfirmation(context, lead, state),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    InkWell(
+                      onTap: () => _showLeadActions(context, lead, state),
+                      borderRadius: BorderRadius.circular(4),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: const Text(
+                          "Actions",
+                          style: TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
-    ));
+    );
   }
 
   void _showBulkDeleteDialog(BuildContext context, MockDataService state) {
@@ -1628,26 +2070,46 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
       builder: (context) {
         return AlertDialog(
           title: const Text("Delete Selected Leads"),
-          content: Text("Are you sure you want to delete ${_selectedLeadIds.length} leads? This action cannot be undone."),
+          content: Text(
+            "Are you sure you want to delete ${_selectedLeadIds.length} leads? This action cannot be undone.",
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel", style: TextStyle(color: AppColors.textSecondary)),
+              child: const Text(
+                "Cancel",
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
               onPressed: () async {
                 final controller = Get.find<CrmController>();
                 Navigator.pop(context);
-                final success = await controller.bulkDeleteLeads(_selectedLeadIds.toList());
+                final success = await controller.bulkDeleteLeads(
+                  _selectedLeadIds.toList(),
+                );
                 if (success) {
                   setState(() {
                     _isBulkAssignMode = false;
                     _selectedLeadIds.clear();
                   });
-                  Get.snackbar("Success", "Leads deleted successfully", backgroundColor: Colors.green, colorText: Colors.white);
+                  Get.snackbar(
+                    "Success",
+                    "Leads deleted successfully",
+                    backgroundColor: Colors.green,
+                    colorText: Colors.white,
+                  );
                 } else {
-                  Get.snackbar("Error", "Failed to delete leads", backgroundColor: Colors.red, colorText: Colors.white);
+                  Get.snackbar(
+                    "Error",
+                    "Failed to delete leads",
+                    backgroundColor: Colors.red,
+                    colorText: Colors.white,
+                  );
                 }
               },
               child: const Text("Delete"),
@@ -1675,31 +2137,52 @@ class _LeadScreenState extends State<LeadScreen> with SingleTickerProviderStateM
             children: [
               Text(
                 "Bulk Assign ${_selectedLeadIds.length} Leads",
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 24),
               DropdownButtonFormField<String>(
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: Colors.grey[50],
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
                 hint: const Text("Select Agent to Assign"),
-                items: state.employees.where((e) => e.department.toLowerCase() == 'sales').map((e) => e.id).toSet().map((id) {
-                  final emp = state.employees.firstWhere((e) => e.id == id);
-                  return DropdownMenuItem(value: emp.id, child: Text("${emp.name} (${emp.department})"));
-                }).toList(),
+                items: state.employees
+                    .where((e) => e.department.toLowerCase() == 'sales')
+                    .map((e) => e.id)
+                    .toSet()
+                    .map((id) {
+                      final emp = state.employees.firstWhere((e) => e.id == id);
+                      return DropdownMenuItem(
+                        value: emp.id,
+                        child: Text("${emp.name} (${emp.department})"),
+                      );
+                    })
+                    .toList(),
                 onChanged: (empId) {
                   if (empId != null && Get.isRegistered<CrmController>()) {
-                    Get.find<CrmController>().bulkAssignLeads(_selectedLeadIds.toList(), empId);
+                    Get.find<CrmController>().bulkAssignLeads(
+                      _selectedLeadIds.toList(),
+                      empId,
+                    );
                     setState(() {
                       _isBulkAssignMode = false;
                       _selectedLeadIds.clear();
                     });
                     Navigator.of(context).pop();
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Assigning leads to agent...")),
+                      const SnackBar(
+                        content: Text("Assigning leads to agent..."),
+                      ),
                     );
                   }
                 },

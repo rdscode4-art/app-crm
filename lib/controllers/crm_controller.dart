@@ -1,6 +1,4 @@
 import 'package:get/get.dart';
-import 'package:flutter/foundation.dart';
-import 'package:call_log/call_log.dart' as native_log;
 import '../models/leave.dart';
 import '../models/lead.dart';
 import '../models/document.dart';
@@ -15,7 +13,6 @@ import '../models/employee.dart';
 import '../models/call_log.dart';
 import '../services/api_service.dart';
 import '../services/mock_data_service.dart';
-import '../services/call_log_service.dart';
 
 class CrmController extends GetxController {
   final ApiService _apiService = ApiService();
@@ -30,7 +27,7 @@ class CrmController extends GetxController {
   final RxBool isLoadingLeads = false.obs;
   final RxnString leadsError = RxnString();
   final Rxn<Map<String, dynamic>> leadStats = Rxn<Map<String, dynamic>>();
-  
+
   final RxList<Lead> upcomingFollowups = <Lead>[].obs;
   final RxBool isLoadingFollowups = false.obs;
 
@@ -113,11 +110,12 @@ class CrmController extends GetxController {
     fetchRoles();
     fetchPerformanceReviews();
     fetchPayrolls(year: 2026, month: 7);
-    
+
     final today = DateTime.now();
-    final todayStr = "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
+    final todayStr =
+        "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
     fetchAttendance(startDate: '2026-06-01', endDate: todayStr);
-    
+
     fetchEmployees();
     fetchCallLogs();
   }
@@ -299,7 +297,8 @@ class CrmController extends GetxController {
       CRMTask(
         id: "TSK-201",
         title: "Send Proposal to Bruce Wayne",
-        description: "Draft Enterprise SLA package for Wayne Enterprises smart grid integration and email PDF.",
+        description:
+            "Draft Enterprise SLA package for Wayne Enterprises smart grid integration and email PDF.",
         assignedTo: "Marcus Aurelius",
         dueDate: DateTime.now().add(const Duration(days: 2)),
         startDate: DateTime.now().subtract(const Duration(days: 1)),
@@ -310,7 +309,8 @@ class CrmController extends GetxController {
       CRMTask(
         id: "TSK-202",
         title: "Onboard Elena Rostova",
-        description: "Arrange orientation session, workspace setup, and system login credentials.",
+        description:
+            "Arrange orientation session, workspace setup, and system login credentials.",
         assignedTo: "Diana Prince",
         dueDate: DateTime.now().subtract(const Duration(days: 1)),
         startDate: DateTime.now().subtract(const Duration(days: 5)),
@@ -321,7 +321,8 @@ class CrmController extends GetxController {
       CRMTask(
         id: "TSK-203",
         title: "Schedule Call with Clark Kent",
-        description: "Initial introductory call to understand Daily Planet CRM scalability needs.",
+        description:
+            "Initial introductory call to understand Daily Planet CRM scalability needs.",
         assignedTo: "Sarah Jenkins",
         dueDate: DateTime.now().add(const Duration(days: 5)),
         startDate: DateTime.now().add(const Duration(days: 1)),
@@ -366,7 +367,8 @@ class CrmController extends GetxController {
         id: "REP-001",
         employeeName: "Diana Prince",
         date: DateTime.now().subtract(const Duration(days: 1)),
-        summary: "Completed HR onboarding guidelines draft and reviewed leave approval queues.",
+        summary:
+            "Completed HR onboarding guidelines draft and reviewed leave approval queues.",
         tasksCompleted: "Onboarded Elena, Reviewed Leave balance reports",
         blocks: "None",
         status: "approved",
@@ -378,7 +380,8 @@ class CrmController extends GetxController {
         id: "REP-002",
         employeeName: "Marcus Aurelius",
         date: DateTime.now().subtract(const Duration(days: 1)),
-        summary: "Conducted sales alignment meetings and updated the proposal pipelines.",
+        summary:
+            "Conducted sales alignment meetings and updated the proposal pipelines.",
         tasksCompleted: "Stark Proposal draft, Wayne proposal sent",
         blocks: "Awaiting legal signature from Stark team",
         status: "reviewed",
@@ -399,11 +402,36 @@ class CrmController extends GetxController {
     ]);
 
     userRoles.assignAll([
-      UserRoleInfo(id: "EMP-001", name: "Diana Prince", email: "diana.prince@company.com", role: "HR Director"),
-      UserRoleInfo(id: "EMP-002", name: "Marcus Aurelius", email: "marcus.aurelius@company.com", role: "VP of Sales"),
-      UserRoleInfo(id: "EMP-003", name: "Sarah Jenkins", email: "sarah.jenkins@company.com", role: "Senior Account Executive"),
-      UserRoleInfo(id: "EMP-004", name: "David Chen", email: "david.chen@company.com", role: "Customer Success Lead"),
-      UserRoleInfo(id: "EMP-005", name: "Elena Rostova", email: "elena.rostova@company.com", role: "HR Generalist"),
+      UserRoleInfo(
+        id: "EMP-001",
+        name: "Diana Prince",
+        email: "diana.prince@company.com",
+        role: "HR Director",
+      ),
+      UserRoleInfo(
+        id: "EMP-002",
+        name: "Marcus Aurelius",
+        email: "marcus.aurelius@company.com",
+        role: "VP of Sales",
+      ),
+      UserRoleInfo(
+        id: "EMP-003",
+        name: "Sarah Jenkins",
+        email: "sarah.jenkins@company.com",
+        role: "Senior Account Executive",
+      ),
+      UserRoleInfo(
+        id: "EMP-004",
+        name: "David Chen",
+        email: "david.chen@company.com",
+        role: "Customer Success Lead",
+      ),
+      UserRoleInfo(
+        id: "EMP-005",
+        name: "Elena Rostova",
+        email: "elena.rostova@company.com",
+        role: "HR Generalist",
+      ),
     ]);
   }
 
@@ -422,7 +450,14 @@ class CrmController extends GetxController {
   }
 
   // Submit Leave
-  Future<bool> submitLeave(String type, DateTime start, DateTime end, String reason, String employeeId, String employeeName) async {
+  Future<bool> submitLeave(
+    String type,
+    DateTime start,
+    DateTime end,
+    String reason,
+    String employeeId,
+    String employeeName,
+  ) async {
     final req = Leave(
       id: "LV-${leaveRequests.length + 100}",
       employeeId: employeeId,
@@ -560,10 +595,16 @@ class CrmController extends GetxController {
     try {
       String? employeeId;
       if (lead.owner != "Unassigned") {
-        final employee = employees.firstWhere((e) => e.name == lead.owner, orElse: () => employees.first);
+        final employee = employees.firstWhere(
+          (e) => e.name == lead.owner,
+          orElse: () => employees.first,
+        );
         employeeId = employee.id;
       }
-      final success = await _apiService.submitLead(lead, assignedToId: employeeId);
+      final success = await _apiService.submitLead(
+        lead,
+        assignedToId: employeeId,
+      );
       if (success) {
         await fetchLeads();
         return true;
@@ -584,10 +625,16 @@ class CrmController extends GetxController {
     try {
       String? employeeId;
       if (lead.owner != "Unassigned") {
-        final employee = employees.firstWhere((e) => e.name == lead.owner, orElse: () => employees.first);
+        final employee = employees.firstWhere(
+          (e) => e.name == lead.owner,
+          orElse: () => employees.first,
+        );
         employeeId = employee.id;
       }
-      final success = await _apiService.updateLead(lead, assignedToId: employeeId);
+      final success = await _apiService.updateLead(
+        lead,
+        assignedToId: employeeId,
+      );
       if (success) {
         await fetchLeads();
         return true;
@@ -629,7 +676,7 @@ class CrmController extends GetxController {
     // Remove from local list first for optimistic UI update
     final backupLeads = List<Lead>.from(leads);
     leads.removeWhere((l) => ids.contains(l.id));
-    
+
     try {
       final success = await _apiService.bulkDeleteLeads(ids);
       if (success) {
@@ -646,7 +693,6 @@ class CrmController extends GetxController {
       return false;
     }
   }
-
 
   // Update Lead Status
   Future<void> updateLeadStatus(String leadId, String newStatus) async {
@@ -778,7 +824,11 @@ class CrmController extends GetxController {
   }
 
   // Daily Reports Methods
-  Future<void> fetchDailyReports({String? employeeId, String? from, String? to}) async {
+  Future<void> fetchDailyReports({
+    String? employeeId,
+    String? from,
+    String? to,
+  }) async {
     isLoadingDailyReports.value = true;
     dailyReportsError.value = null;
     try {
@@ -791,10 +841,7 @@ class CrmController extends GetxController {
           to: to,
         );
       } else {
-        fetched = await _apiService.fetchMyDailyReports(
-          from: from,
-          to: to,
-        );
+        fetched = await _apiService.fetchMyDailyReports(from: from, to: to);
       }
       dailyReports.assignAll(fetched);
     } catch (e) {
@@ -816,9 +863,17 @@ class CrmController extends GetxController {
     return true;
   }
 
-  Future<bool> reviewDailyReport(String id, String status, String reviewNote) async {
+  Future<bool> reviewDailyReport(
+    String id,
+    String status,
+    String reviewNote,
+  ) async {
     try {
-      final success = await _apiService.reviewDailyReport(id, status, reviewNote);
+      final success = await _apiService.reviewDailyReport(
+        id,
+        status,
+        reviewNote,
+      );
       if (success) {
         await fetchDailyReports();
         return true;
@@ -922,7 +977,10 @@ class CrmController extends GetxController {
     isLoadingAttendance.value = true;
     attendanceError.value = null;
     try {
-      final fetched = await _apiService.fetchAttendance(startDate: startDate, endDate: endDate);
+      final fetched = await _apiService.fetchAttendance(
+        startDate: startDate,
+        endDate: endDate,
+      );
       attendanceLogs.assignAll(fetched);
     } catch (e) {
       attendanceError.value = e.toString();
@@ -937,7 +995,8 @@ class CrmController extends GetxController {
       final success = await _apiService.punchIn();
       if (success) {
         final today = DateTime.now();
-        final todayStr = "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
+        final todayStr =
+            "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
         await fetchAttendance(startDate: '2026-06-01', endDate: todayStr);
         return true;
       }
@@ -950,7 +1009,8 @@ class CrmController extends GetxController {
       final success = await _apiService.punchOut();
       if (success) {
         final today = DateTime.now();
-        final todayStr = "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
+        final todayStr =
+            "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
         await fetchAttendance(startDate: '2026-06-01', endDate: todayStr);
         return true;
       }
@@ -995,7 +1055,7 @@ class CrmController extends GetxController {
       final data = await _apiService.fetchDashboardStats();
       dashboardStats.value = data;
       // Fetch leads to ensure leadStats are accurately computed locally for the dashboard
-      await fetchLeads(); 
+      await fetchLeads();
     } catch (e) {
       dashboardStatsError.value = e.toString();
     } finally {

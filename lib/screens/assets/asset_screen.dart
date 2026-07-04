@@ -41,7 +41,9 @@ class _AssetScreenState extends State<AssetScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               backgroundColor: Colors.white,
               title: const Text(
                 "Register New Asset",
@@ -62,7 +64,9 @@ class _AssetScreenState extends State<AssetScreen> {
                         hint: "e.g. MacBook Pro 16\", Dell Monitor",
                         prefixIcon: Icons.devices,
                         controller: nameCtrl,
-                        validator: (val) => val == null || val.isEmpty ? "Asset name is required" : null,
+                        validator: (val) => val == null || val.isEmpty
+                            ? "Asset name is required"
+                            : null,
                       ),
                       const SizedBox(height: 16),
                       CustomTextField(
@@ -70,7 +74,9 @@ class _AssetScreenState extends State<AssetScreen> {
                         hint: "e.g. SN-88273AHS, IMEI...",
                         prefixIcon: Icons.qr_code,
                         controller: serialCtrl,
-                        validator: (val) => val == null || val.isEmpty ? "Serial number is required" : null,
+                        validator: (val) => val == null || val.isEmpty
+                            ? "Serial number is required"
+                            : null,
                       ),
                       const SizedBox(height: 16),
                       const Text(
@@ -86,7 +92,10 @@ class _AssetScreenState extends State<AssetScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.border, width: 1.5),
+                          border: Border.all(
+                            color: AppColors.border,
+                            width: 1.5,
+                          ),
                           color: Colors.white,
                         ),
                         child: DropdownButtonHideUnderline(
@@ -94,10 +103,15 @@ class _AssetScreenState extends State<AssetScreen> {
                             value: category,
                             isExpanded: true,
                             items: ['Laptop', 'Phone', 'Accessory', 'Other']
-                                .map((s) => DropdownMenuItem(
-                                      value: s,
-                                      child: Text(s, style: const TextStyle(fontSize: 14)),
-                                    ))
+                                .map(
+                                  (s) => DropdownMenuItem(
+                                    value: s,
+                                    child: Text(
+                                      s,
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
+                                  ),
+                                )
                                 .toList(),
                             onChanged: (val) {
                               if (val != null) {
@@ -130,7 +144,10 @@ class _AssetScreenState extends State<AssetScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.border, width: 1.5),
+                          border: Border.all(
+                            color: AppColors.border,
+                            width: 1.5,
+                          ),
                           color: Colors.white,
                         ),
                         child: DropdownButtonHideUnderline(
@@ -138,10 +155,15 @@ class _AssetScreenState extends State<AssetScreen> {
                             value: status,
                             isExpanded: true,
                             items: ['Available', 'Assigned', 'Maintenance']
-                                .map((s) => DropdownMenuItem(
-                                      value: s,
-                                      child: Text(s, style: const TextStyle(fontSize: 14)),
-                                    ))
+                                .map(
+                                  (s) => DropdownMenuItem(
+                                    value: s,
+                                    child: Text(
+                                      s,
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
+                                  ),
+                                )
                                 .toList(),
                             onChanged: (val) {
                               if (val != null) {
@@ -160,7 +182,10 @@ class _AssetScreenState extends State<AssetScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text("Cancel", style: TextStyle(color: AppColors.textSecondary)),
+                  child: const Text(
+                    "Cancel",
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
                 ),
                 CustomButton(
                   text: "Register Asset",
@@ -171,7 +196,9 @@ class _AssetScreenState extends State<AssetScreen> {
                         name: nameCtrl.text,
                         serialNumber: serialCtrl.text,
                         category: category,
-                        assignedTo: assignedToCtrl.text.isEmpty ? "Unassigned" : assignedToCtrl.text,
+                        assignedTo: assignedToCtrl.text.isEmpty
+                            ? "Unassigned"
+                            : assignedToCtrl.text,
                         status: status,
                         dateAssigned: DateTime.now(),
                       );
@@ -197,7 +224,9 @@ class _AssetScreenState extends State<AssetScreen> {
 
     return Obx(() {
       final list = state.assets;
-      final controller = Get.isRegistered<CrmController>() ? Get.find<CrmController>() : null;
+      final controller = Get.isRegistered<CrmController>()
+          ? Get.find<CrmController>()
+          : null;
       final isLoading = controller?.isLoadingAssets.value ?? false;
       final error = controller?.assetsError.value;
 
@@ -264,10 +293,30 @@ class _AssetScreenState extends State<AssetScreen> {
                 childAspectRatio: isMobile ? 1.35 : 2.0,
               ),
               children: [
-                _buildMetricCard("Total Devices", "$total", Icons.devices, AppColors.info),
-                _buildMetricCard("Assigned", "$assigned", Icons.person, AppColors.primary),
-                _buildMetricCard("Available", "$available", Icons.check_circle, Colors.teal),
-                _buildMetricCard("Maintenance", "$maintenance", Icons.build, AppColors.warning),
+                _buildMetricCard(
+                  "Total Devices",
+                  "$total",
+                  Icons.devices,
+                  AppColors.info,
+                ),
+                _buildMetricCard(
+                  "Assigned",
+                  "$assigned",
+                  Icons.person,
+                  AppColors.primary,
+                ),
+                _buildMetricCard(
+                  "Available",
+                  "$available",
+                  Icons.check_circle,
+                  Colors.teal,
+                ),
+                _buildMetricCard(
+                  "Maintenance",
+                  "$maintenance",
+                  Icons.build,
+                  AppColors.warning,
+                ),
               ],
             ),
             const SizedBox(height: 24),
@@ -276,7 +325,9 @@ class _AssetScreenState extends State<AssetScreen> {
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: ['All', 'Laptop', 'Phone', 'Accessory', 'Other'].map((cat) {
+                children: ['All', 'Laptop', 'Phone', 'Accessory', 'Other'].map((
+                  cat,
+                ) {
                   final isSelected = selectedFilter == cat;
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
@@ -284,16 +335,22 @@ class _AssetScreenState extends State<AssetScreen> {
                       selected: isSelected,
                       label: Text(cat),
                       backgroundColor: Colors.white,
-                      selectedColor: AppColors.primary.withOpacity(0.12),
+                      selectedColor: AppColors.primary.withValues(alpha: 0.12),
                       checkmarkColor: AppColors.primary,
                       labelStyle: TextStyle(
-                        color: isSelected ? AppColors.primary : AppColors.textSecondary,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.textSecondary,
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.normal,
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                         side: BorderSide(
-                          color: isSelected ? AppColors.primary : AppColors.border,
+                          color: isSelected
+                              ? AppColors.primary
+                              : AppColors.border,
                         ),
                       ),
                       onSelected: (val) {
@@ -321,7 +378,9 @@ class _AssetScreenState extends State<AssetScreen> {
                     const Padding(
                       padding: EdgeInsets.all(48),
                       child: Center(
-                        child: CircularProgressIndicator(color: AppColors.primary),
+                        child: CircularProgressIndicator(
+                          color: AppColors.primary,
+                        ),
                       ),
                     )
                   else if (error != null)
@@ -340,11 +399,18 @@ class _AssetScreenState extends State<AssetScreen> {
                       child: Center(
                         child: Column(
                           children: [
-                            Icon(Icons.inventory_2_outlined, size: 48, color: AppColors.textSecondary),
+                            Icon(
+                              Icons.inventory_2_outlined,
+                              size: 48,
+                              color: AppColors.textSecondary,
+                            ),
                             SizedBox(height: 12),
                             Text(
                               "No devices match this category yet",
-                              style: TextStyle(color: AppColors.textSecondary, fontSize: 15),
+                              style: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 15,
+                              ),
                             ),
                           ],
                         ),
@@ -355,7 +421,8 @@ class _AssetScreenState extends State<AssetScreen> {
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: filteredList.length,
-                      separatorBuilder: (context, index) => const Divider(color: AppColors.border, height: 1),
+                      separatorBuilder: (context, index) =>
+                          const Divider(color: AppColors.border, height: 1),
                       itemBuilder: (context, index) {
                         final asset = filteredList[index];
                         return _buildAssetRow(context, asset);
@@ -370,7 +437,12 @@ class _AssetScreenState extends State<AssetScreen> {
     });
   }
 
-  Widget _buildMetricCard(String title, String value, IconData icon, Color color) {
+  Widget _buildMetricCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -383,7 +455,7 @@ class _AssetScreenState extends State<AssetScreen> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: color, size: 20),
@@ -455,8 +527,8 @@ class _AssetScreenState extends State<AssetScreen> {
               asset.category == 'Laptop'
                   ? Icons.laptop_mac
                   : asset.category == 'Phone'
-                      ? Icons.phone_android
-                      : Icons.device_hub,
+                  ? Icons.phone_android
+                  : Icons.device_hub,
               color: AppColors.textPrimary,
               size: 20,
             ),
@@ -507,9 +579,13 @@ class _AssetScreenState extends State<AssetScreen> {
                 Text(
                   asset.assignedTo,
                   style: TextStyle(
-                    color: asset.assignedTo == 'Unassigned' ? AppColors.textSecondary : AppColors.textPrimary,
+                    color: asset.assignedTo == 'Unassigned'
+                        ? AppColors.textSecondary
+                        : AppColors.textPrimary,
                     fontSize: 13,
-                    fontWeight: asset.assignedTo == 'Unassigned' ? FontWeight.normal : FontWeight.w500,
+                    fontWeight: asset.assignedTo == 'Unassigned'
+                        ? FontWeight.normal
+                        : FontWeight.w500,
                   ),
                 ),
               ],

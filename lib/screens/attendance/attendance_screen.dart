@@ -23,7 +23,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final controller = Get.isRegistered<CrmController>() ? Get.find<CrmController>() : null;
+      final controller = Get.isRegistered<CrmController>()
+          ? Get.find<CrmController>()
+          : null;
       if (controller != null) {
         controller.fetchAttendance(
           startDate: _formatDate(_startDate),
@@ -39,21 +41,28 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     final width = MediaQuery.of(context).size.width;
 
     return Obx(() {
-      final controller = Get.isRegistered<CrmController>() ? Get.find<CrmController>() : null;
+      final controller = Get.isRegistered<CrmController>()
+          ? Get.find<CrmController>()
+          : null;
       final isLoading = controller?.isLoadingAttendance.value ?? false;
       final error = controller?.attendanceError.value;
 
-      final rawLogs = controller?.attendanceLogs.isNotEmpty == true 
-          ? controller!.attendanceLogs 
+      final rawLogs = controller?.attendanceLogs.isNotEmpty == true
+          ? controller!.attendanceLogs
           : state.attendanceLogs;
 
-      final isAdmin = state.currentRole == UserRole.superAdmin || state.currentRole == UserRole.hr;
+      final isAdmin =
+          state.currentRole == UserRole.superAdmin ||
+          state.currentRole == UserRole.hr;
       final currentLogs = isAdmin
           ? rawLogs
-          : rawLogs.where((a) => 
-              a.employeeId == state.currentUser?.id || 
-              a.employeeId == state.currentUser?.employeeId
-            ).toList();
+          : rawLogs
+                .where(
+                  (a) =>
+                      a.employeeId == state.currentUser?.id ||
+                      a.employeeId == state.currentUser?.employeeId,
+                )
+                .toList();
 
       return SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -93,24 +102,41 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text("EMPLOYEE", style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                            const Text(
+                              "EMPLOYEE",
+                              style: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             const SizedBox(height: 8),
                             DropdownButtonFormField<String>(
-                              value: 'All Employees',
+                              initialValue: 'All Employees',
                               decoration: InputDecoration(
                                 isDense: true,
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 12,
+                                ),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
-                                  borderSide: const BorderSide(color: AppColors.border),
+                                  borderSide: const BorderSide(
+                                    color: AppColors.border,
+                                  ),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
-                                  borderSide: const BorderSide(color: AppColors.border),
+                                  borderSide: const BorderSide(
+                                    color: AppColors.border,
+                                  ),
                                 ),
                               ),
                               items: const [
-                                DropdownMenuItem(value: 'All Employees', child: Text('All Employees')),
+                                DropdownMenuItem(
+                                  value: 'All Employees',
+                                  child: Text('All Employees'),
+                                ),
                               ],
                               onChanged: (val) {},
                             ),
@@ -123,7 +149,14 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text("FROM", style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                            const Text(
+                              "FROM",
+                              style: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             const SizedBox(height: 8),
                             InkWell(
                               onTap: () async {
@@ -140,21 +173,36 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                               child: InputDecorator(
                                 decoration: InputDecoration(
                                   isDense: true,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 12,
+                                  ),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
-                                    borderSide: const BorderSide(color: AppColors.border),
+                                    borderSide: const BorderSide(
+                                      color: AppColors.border,
+                                    ),
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
-                                    borderSide: const BorderSide(color: AppColors.border),
+                                    borderSide: const BorderSide(
+                                      color: AppColors.border,
+                                    ),
                                   ),
                                 ),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text("${_startDate.day.toString().padLeft(2, '0')} - ${_getMonthName(_startDate.month)} - ${_startDate.year}", style: const TextStyle(fontSize: 13)),
-                                    const Icon(Icons.calendar_today, size: 16, color: AppColors.textSecondary),
+                                    Text(
+                                      "${_startDate.day.toString().padLeft(2, '0')} - ${_getMonthName(_startDate.month)} - ${_startDate.year}",
+                                      style: const TextStyle(fontSize: 13),
+                                    ),
+                                    const Icon(
+                                      Icons.calendar_today,
+                                      size: 16,
+                                      color: AppColors.textSecondary,
+                                    ),
                                   ],
                                 ),
                               ),
@@ -168,7 +216,14 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text("TO", style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                            const Text(
+                              "TO",
+                              style: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             const SizedBox(height: 8),
                             InkWell(
                               onTap: () async {
@@ -185,21 +240,36 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                               child: InputDecorator(
                                 decoration: InputDecoration(
                                   isDense: true,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 12,
+                                  ),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
-                                    borderSide: const BorderSide(color: AppColors.border),
+                                    borderSide: const BorderSide(
+                                      color: AppColors.border,
+                                    ),
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
-                                    borderSide: const BorderSide(color: AppColors.border),
+                                    borderSide: const BorderSide(
+                                      color: AppColors.border,
+                                    ),
                                   ),
                                 ),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text("${_endDate.day.toString().padLeft(2, '0')} - ${_getMonthName(_endDate.month)} - ${_endDate.year}", style: const TextStyle(fontSize: 13)),
-                                    const Icon(Icons.calendar_today, size: 16, color: AppColors.textSecondary),
+                                    Text(
+                                      "${_endDate.day.toString().padLeft(2, '0')} - ${_getMonthName(_endDate.month)} - ${_endDate.year}",
+                                      style: const TextStyle(fontSize: 13),
+                                    ),
+                                    const Icon(
+                                      Icons.calendar_today,
+                                      size: 16,
+                                      color: AppColors.textSecondary,
+                                    ),
                                   ],
                                 ),
                               ),
@@ -213,26 +283,49 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text("STATUS", style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                            const Text(
+                              "STATUS",
+                              style: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             const SizedBox(height: 8),
                             DropdownButtonFormField<String>(
-                              value: 'All Status',
+                              initialValue: 'All Status',
                               decoration: InputDecoration(
                                 isDense: true,
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 12,
+                                ),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
-                                  borderSide: const BorderSide(color: AppColors.border),
+                                  borderSide: const BorderSide(
+                                    color: AppColors.border,
+                                  ),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
-                                  borderSide: const BorderSide(color: AppColors.border),
+                                  borderSide: const BorderSide(
+                                    color: AppColors.border,
+                                  ),
                                 ),
                               ),
                               items: const [
-                                DropdownMenuItem(value: 'All Status', child: Text('All Status')),
-                                DropdownMenuItem(value: 'Present', child: Text('Present')),
-                                DropdownMenuItem(value: 'Absent', child: Text('Absent')),
+                                DropdownMenuItem(
+                                  value: 'All Status',
+                                  child: Text('All Status'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'Present',
+                                  child: Text('Present'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'Absent',
+                                  child: Text('Absent'),
+                                ),
                               ],
                               onChanged: (val) {},
                             ),
@@ -242,10 +335,17 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       // Filter Button
                       ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF6366F1), // Matches screenshot "Filter" purple/blue
+                          backgroundColor: const Color(
+                            0xFF6366F1,
+                          ), // Matches screenshot "Filter" purple/blue
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 16,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                           elevation: 0,
                         ),
                         onPressed: () {
@@ -257,7 +357,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           }
                         },
                         icon: const Icon(Icons.search, size: 18),
-                        label: const Text("Filter", style: TextStyle(fontWeight: FontWeight.bold)),
+                        label: const Text(
+                          "Filter",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ],
                   ),
@@ -265,22 +368,38 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   // Export Button
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF10B981), // Matches screenshot "Export" green
+                      backgroundColor: const Color(
+                        0xFF10B981,
+                      ), // Matches screenshot "Export" green
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                       elevation: 0,
                     ),
                     onPressed: () {},
                     icon: const Icon(Icons.insert_drive_file, size: 18),
-                    label: const Text("Export", style: TextStyle(fontWeight: FontWeight.bold)),
+                    label: const Text(
+                      "Export",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            Text("${currentLogs.length} record(s) found", style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+            Text(
+              "${currentLogs.length} record(s) found",
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 13,
+              ),
+            ),
             const SizedBox(height: 12),
 
             // Table Card
@@ -292,62 +411,135 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 border: Border.all(color: AppColors.border),
               ),
               child: isLoading
-                  ? const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator()))
+                  ? const Padding(
+                      padding: EdgeInsets.all(40),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
                   : error != null
-                      ? Padding(padding: const EdgeInsets.all(40), child: Center(child: Text(error, style: const TextStyle(color: Colors.red))))
-                      : currentLogs.isEmpty
-                          ? const Padding(padding: EdgeInsets.all(40), child: Center(child: Text("No records found", style: TextStyle(color: AppColors.textSecondary))))
-                          : SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: DataTable(
-                                headingTextStyle: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 12),
-                                dataTextStyle: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
-                                dividerThickness: 1,
-                                headingRowColor: WidgetStateProperty.all(Colors.grey[50]),
-                                dataRowMinHeight: 60,
-                                dataRowMaxHeight: 60,
-                                columns: const [
-                                  DataColumn(label: Text("EMPLOYEE")),
-                                  DataColumn(label: Text("EMP ID")),
-                                  DataColumn(label: Text("DATE")),
-                                  DataColumn(label: Text("LOGIN TIME")),
-                                  DataColumn(label: Text("LOGOUT TIME")),
-                                  DataColumn(label: Text("HOURS")),
-                                  DataColumn(label: Text("STATUS")),
-                                  DataColumn(label: Text("LOCATION")),
-                                ],
-                                rows: currentLogs.map((log) {
-                                  return DataRow(
-                                    cells: [
-                                      DataCell(Text(log.employeeName, style: const TextStyle(fontWeight: FontWeight.bold))),
-                                      DataCell(Text(log.employeeId, style: const TextStyle(color: AppColors.textSecondary))),
-                                      DataCell(Text("${log.date.day.toString().padLeft(2, '0')} ${_getMonthName(log.date.month)} ${log.date.year}")),
-                                      DataCell(Text(log.checkInTime)),
-                                      DataCell(Text(log.checkOutTime ?? '--')),
-                                      DataCell(Text(log.durationHours != null ? "${log.durationHours!.toStringAsFixed(2)}h" : "0h", style: const TextStyle(fontWeight: FontWeight.bold))),
-                                      DataCell(
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: log.status == 'Present' || log.status == 'On Time' ? const Color(0xFFD1FAE5) : const Color(0xFFFEE2E2),
-                                            borderRadius: BorderRadius.circular(16),
-                                          ),
-                                          child: Text(
-                                            log.status,
-                                            style: TextStyle(
-                                              color: log.status == 'Present' || log.status == 'On Time' ? const Color(0xFF059669) : const Color(0xFFDC2626),
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      const DataCell(Text("Office", style: TextStyle(color: AppColors.textSecondary))),
-                                    ],
-                                  );
-                                }).toList(),
+                  ? Padding(
+                      padding: const EdgeInsets.all(40),
+                      child: Center(
+                        child: Text(
+                          error,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    )
+                  : currentLogs.isEmpty
+                  ? const Padding(
+                      padding: EdgeInsets.all(40),
+                      child: Center(
+                        child: Text(
+                          "No records found",
+                          style: TextStyle(color: AppColors.textSecondary),
+                        ),
+                      ),
+                    )
+                  : SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: DataTable(
+                        headingTextStyle: const TextStyle(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                        dataTextStyle: const TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 13,
+                        ),
+                        dividerThickness: 1,
+                        headingRowColor: WidgetStateProperty.all(
+                          Colors.grey[50],
+                        ),
+                        dataRowMinHeight: 60,
+                        dataRowMaxHeight: 60,
+                        columns: const [
+                          DataColumn(label: Text("EMPLOYEE")),
+                          DataColumn(label: Text("EMP ID")),
+                          DataColumn(label: Text("DATE")),
+                          DataColumn(label: Text("LOGIN TIME")),
+                          DataColumn(label: Text("LOGOUT TIME")),
+                          DataColumn(label: Text("HOURS")),
+                          DataColumn(label: Text("STATUS")),
+                          DataColumn(label: Text("LOCATION")),
+                        ],
+                        rows: currentLogs.map((log) {
+                          return DataRow(
+                            cells: [
+                              DataCell(
+                                Text(
+                                  log.employeeName,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
-                            ),
+                              DataCell(
+                                Text(
+                                  log.employeeId,
+                                  style: const TextStyle(
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ),
+                              DataCell(
+                                Text(
+                                  "${log.date.day.toString().padLeft(2, '0')} ${_getMonthName(log.date.month)} ${log.date.year}",
+                                ),
+                              ),
+                              DataCell(Text(log.checkInTime)),
+                              DataCell(Text(log.checkOutTime ?? '--')),
+                              DataCell(
+                                Text(
+                                  log.durationHours != null
+                                      ? "${log.durationHours!.toStringAsFixed(2)}h"
+                                      : "0h",
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              DataCell(
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        log.status == 'Present' ||
+                                            log.status == 'On Time'
+                                        ? const Color(0xFFD1FAE5)
+                                        : const Color(0xFFFEE2E2),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Text(
+                                    log.status,
+                                    style: TextStyle(
+                                      color:
+                                          log.status == 'Present' ||
+                                              log.status == 'On Time'
+                                          ? const Color(0xFF059669)
+                                          : const Color(0xFFDC2626),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const DataCell(
+                                Text(
+                                  "Office",
+                                  style: TextStyle(
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        }).toList(),
+                      ),
+                    ),
             ),
           ],
         ),
@@ -356,8 +548,20 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   String _getMonthName(int month) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return months[month - 1];
   }
 }
-

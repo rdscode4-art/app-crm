@@ -18,17 +18,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final List<OnboardingData> _pages = [
     OnboardingData(
       title: "Complete Employee Management",
-      description: "Administer profiles, salaries, leave allocations, performance scorecards, and tracking logs on one consolidated Zoho-like interface.",
+      description:
+          "Administer profiles, salaries, leave allocations, performance scorecards, and tracking logs on one consolidated Zoho-like interface.",
       icon: Icons.badge_outlined,
     ),
     OnboardingData(
       title: "Interactive Lead Pipeline",
-      description: "Nurture prospective clients across stages. Keep contact logs, assign leads to representatives, and close high-value business deals.",
+      description:
+          "Nurture prospective clients across stages. Keep contact logs, assign leads to representatives, and close high-value business deals.",
       icon: Icons.query_stats_outlined,
     ),
     OnboardingData(
       title: "Attendance & Tasks Tracker",
-      description: "Punch-in shifts easily. Submit and approve time-off requests. Move project items dynamically using a visual Kanban board.",
+      description:
+          "Punch-in shifts easily. Submit and approve time-off requests. Move project items dynamically using a visual Kanban board.",
       icon: Icons.checklist_rtl_outlined,
     ),
   ];
@@ -37,13 +40,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     MockDataService().setOnboarded(true);
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => const LoginScreen(),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const LoginScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(1, 0),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(parent: animation, curve: Curves.easeInOut)),
+            position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
+                .animate(
+                  CurvedAnimation(parent: animation, curve: Curves.easeInOut),
+                ),
             child: child,
           );
         },
@@ -62,7 +66,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         child: Container(
           width: isDesktop ? 480 : double.infinity,
           height: isDesktop ? 680 : double.infinity,
-          margin: isDesktop ? const EdgeInsets.symmetric(vertical: 40) : EdgeInsets.zero,
+          margin: isDesktop
+              ? const EdgeInsets.symmetric(vertical: 40)
+              : EdgeInsets.zero,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
           decoration: isDesktop
               ? BoxDecoration(
@@ -70,10 +76,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 15,
                       offset: const Offset(0, 8),
-                    )
+                    ),
                   ],
                   border: Border.all(color: AppColors.border),
                 )
@@ -86,7 +92,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.bolt, color: AppColors.primary, size: 24),
+                      const Icon(
+                        Icons.bolt,
+                        color: AppColors.primary,
+                        size: 24,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         "RidealCRM",
@@ -130,7 +140,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         Container(
                           padding: const EdgeInsets.all(32),
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.08),
+                            color: AppColors.primary.withValues(alpha: 0.08),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(

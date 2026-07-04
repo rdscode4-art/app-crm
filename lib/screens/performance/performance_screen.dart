@@ -8,6 +8,7 @@ import '../../core/widgets/metric_card.dart';
 import '../../core/widgets/custom_button.dart';
 import '../../core/widgets/responsive_layout.dart';
 import '../../controllers/crm_controller.dart';
+import '../../models/lead.dart';
 
 class PerformanceScreen extends StatefulWidget {
   const PerformanceScreen({super.key});
@@ -24,6 +25,7 @@ class _PerformanceScreenState extends State<PerformanceScreen>
   String _searchQuery = "";
   String _searchQueryCallLogs = "";
   String _selectedCategory = "All";
+  String _salesFilter = "All Time";
   late TabController _tabController;
 
   final List<Map<String, dynamic>> _categories = [
@@ -37,7 +39,7 @@ class _PerformanceScreenState extends State<PerformanceScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Get.find<CrmController>().fetchPerformanceReviews();
       Get.find<CrmController>().fetchCallLogs();
@@ -385,14 +387,18 @@ class _PerformanceScreenState extends State<PerformanceScreen>
             record.period.toLowerCase().contains(_searchQuery.toLowerCase());
 
         if (_selectedCategory == "All") return matchQuery;
-        if (_selectedCategory == "Exemplary")
+        if (_selectedCategory == "Exemplary") {
           return matchQuery && record.kpiScore >= 90;
-        if (_selectedCategory == "Achiever")
+        }
+        if (_selectedCategory == "Achiever") {
           return matchQuery && record.kpiScore >= 75 && record.kpiScore < 90;
-        if (_selectedCategory == "Needs Improvement")
+        }
+        if (_selectedCategory == "Needs Improvement") {
           return matchQuery && record.kpiScore >= 50 && record.kpiScore < 75;
-        if (_selectedCategory == "Unsatisfactory")
+        }
+        if (_selectedCategory == "Unsatisfactory") {
           return matchQuery && record.kpiScore < 50;
+        }
 
         return matchQuery;
       }).toList();
@@ -450,6 +456,7 @@ class _PerformanceScreenState extends State<PerformanceScreen>
             tabs: const [
               Tab(text: "Performance Reviews"),
               Tab(text: "Call Analytics"),
+              Tab(text: "Sales Performance"),
             ],
           ),
           Expanded(
@@ -684,6 +691,13 @@ class _PerformanceScreenState extends State<PerformanceScreen>
                   ResponsiveLayout.isMobile(context),
                   state,
                 ),
+                // TAB 3: Sales Performance
+                _buildSalesPerformanceTab(
+                  context,
+                  width,
+                  ResponsiveLayout.isMobile(context),
+                  state,
+                ),
               ],
             ),
           ),
@@ -718,7 +732,7 @@ class _PerformanceScreenState extends State<PerformanceScreen>
         border: Border.all(color: AppColors.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.015),
+            color: Colors.black.withValues(alpha: 0.015),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -773,7 +787,9 @@ class _PerformanceScreenState extends State<PerformanceScreen>
                                         vertical: 2,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: categoryColor.withOpacity(0.08),
+                                        color: categoryColor.withValues(
+                                          alpha: 0.08,
+                                        ),
                                         borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Text(
@@ -849,7 +865,9 @@ class _PerformanceScreenState extends State<PerformanceScreen>
                             Icon(
                               Icons.format_quote_rounded,
                               size: 18,
-                              color: AppColors.textSecondary.withOpacity(0.4),
+                              color: AppColors.textSecondary.withValues(
+                                alpha: 0.4,
+                              ),
                             ),
                             const SizedBox(width: 8),
                             Expanded(
@@ -932,10 +950,11 @@ class _PerformanceScreenState extends State<PerformanceScreen>
                 ),
                 ElevatedButton.icon(
                   onPressed: () async {
-                    await controller.fetchCallLogs(); // This will also sync native call logs
+                    await controller
+                        .fetchCallLogs(); // This will also sync native call logs
                     Get.snackbar(
-                      "Success", 
-                      "Call logs synced from device", 
+                      "Success",
+                      "Call logs synced from device",
                       snackPosition: SnackPosition.BOTTOM,
                       backgroundColor: Colors.green,
                       colorText: Colors.white,
@@ -991,7 +1010,7 @@ class _PerformanceScreenState extends State<PerformanceScreen>
                 border: Border.all(color: AppColors.border),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.02),
+                    color: Colors.black.withValues(alpha: 0.02),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -1016,12 +1035,15 @@ class _PerformanceScreenState extends State<PerformanceScreen>
                             "${t.year}-${t.month.toString().padLeft(2, '0')}-${t.day.toString().padLeft(2, '0')} • ${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}";
 
                         Color outcomeColor = AppColors.textSecondary;
-                        if (log.outcome.toLowerCase() == 'connected')
+                        if (log.outcome.toLowerCase() == 'connected') {
                           outcomeColor = Colors.green;
-                        if (log.outcome.toLowerCase() == 'no answer')
+                        }
+                        if (log.outcome.toLowerCase() == 'no answer') {
                           outcomeColor = Colors.orange;
-                        if (log.outcome.toLowerCase() == 'busy')
+                        }
+                        if (log.outcome.toLowerCase() == 'busy') {
                           outcomeColor = Colors.red;
+                        }
 
                         return ListTile(
                           contentPadding: const EdgeInsets.symmetric(
@@ -1029,7 +1051,9 @@ class _PerformanceScreenState extends State<PerformanceScreen>
                             vertical: 8,
                           ),
                           leading: CircleAvatar(
-                            backgroundColor: AppColors.primary.withOpacity(0.1),
+                            backgroundColor: AppColors.primary.withValues(
+                              alpha: 0.1,
+                            ),
                             child: const Icon(
                               Icons.call,
                               color: AppColors.primary,
@@ -1107,7 +1131,7 @@ class _PerformanceScreenState extends State<PerformanceScreen>
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: outcomeColor.withOpacity(0.1),
+                              color: outcomeColor.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
@@ -1216,7 +1240,7 @@ class _PerformanceScreenState extends State<PerformanceScreen>
         border: Border.all(color: AppColors.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -1227,7 +1251,7 @@ class _PerformanceScreenState extends State<PerformanceScreen>
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 28),
@@ -1295,7 +1319,7 @@ class _PerformanceScreenState extends State<PerformanceScreen>
         ),
         boxShadow: [
           BoxShadow(
-            color: colorPair[0].withOpacity(0.15),
+            color: colorPair[0].withValues(alpha: 0.15),
             blurRadius: 6,
             offset: const Offset(0, 3),
           ),
@@ -1344,7 +1368,7 @@ class _PerformanceScreenState extends State<PerformanceScreen>
           height: 52,
           child: CircularProgressIndicator(
             value: score / 100,
-            backgroundColor: badgeColor.withOpacity(0.08),
+            backgroundColor: badgeColor.withValues(alpha: 0.08),
             color: badgeColor,
             strokeWidth: 4.5,
           ),
@@ -1356,6 +1380,224 @@ class _PerformanceScreenState extends State<PerformanceScreen>
             fontWeight: FontWeight.bold,
             fontSize: 12,
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSalesPerformanceTab(
+    BuildContext context,
+    double width,
+    bool isMobile,
+    MockDataService state,
+  ) {
+    final crmController = Get.find<CrmController>();
+    
+    // Filter leads based on _salesFilter
+    final now = DateTime.now();
+    final leads = crmController.leads.where((l) {
+      if (_salesFilter == "Today") {
+        return l.dateCreated.year == now.year &&
+               l.dateCreated.month == now.month &&
+               l.dateCreated.day == now.day;
+      } else if (_salesFilter == "This Week") {
+        final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+        return l.dateCreated.isAfter(startOfWeek.subtract(const Duration(days: 1)));
+      } else if (_salesFilter == "This Month") {
+        return l.dateCreated.year == now.year &&
+               l.dateCreated.month == now.month;
+      }
+      return true; // All Time
+    }).toList();
+
+    Widget buildHeader(String title) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              border: Border.all(color: AppColors.border),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _salesFilter,
+                icon: const Icon(Icons.arrow_drop_down, color: AppColors.textSecondary),
+                items: ["All Time", "Today", "This Week", "This Month"].map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value, style: const TextStyle(fontSize: 14)),
+                  );
+                }).toList(),
+                onChanged: (newValue) {
+                  if (newValue != null) {
+                    setState(() {
+                      _salesFilter = newValue;
+                    });
+                  }
+                },
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (state.currentRole == UserRole.superAdmin || state.currentRole == UserRole.hr) {
+      final owners = leads.map((l) => l.owner).where((o) => o.isNotEmpty).toSet().toList();
+      
+      if (owners.isEmpty) {
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: buildHeader("Sales Team Performance"),
+            ),
+            const Expanded(child: Center(child: Text("No sales data available for this period."))),
+          ],
+        );
+      }
+
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+             buildHeader("Sales Team Performance"),
+             const SizedBox(height: 24),
+             ListView.separated(
+               shrinkWrap: true,
+               physics: const NeverScrollableScrollPhysics(),
+               itemCount: owners.length,
+               separatorBuilder: (_, __) => const SizedBox(height: 16),
+               itemBuilder: (context, index) {
+                 final owner = owners[index];
+                 return _buildSalesEmployeeCard(owner, leads, isMobile);
+               },
+             ),
+          ],
+        ),
+      );
+    } else {
+      final currentUser = state.currentUser?.name ?? "Unknown";
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+             buildHeader("My Sales Performance"),
+             const SizedBox(height: 24),
+             _buildSalesEmployeeCard(currentUser, leads, isMobile),
+          ],
+        ),
+      );
+    }
+  }
+
+  Widget _buildSalesEmployeeCard(String employeeName, List<Lead> allLeads, bool isMobile) {
+    final employeeLeads = allLeads.where((l) => l.owner == employeeName).toList();
+    final totalLeads = employeeLeads.length;
+    final convertedLeads = employeeLeads.where((l) => l.status.toLowerCase() == 'converted').toList();
+    final convertedCount = convertedLeads.length;
+    final conversionRate = totalLeads > 0 ? (convertedCount / totalLeads * 100) : 0.0;
+    
+    double revenue = 0.0;
+    for (var l in convertedLeads) {
+      revenue += l.value;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                child: const Icon(Icons.person, color: AppColors.primary),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  employeeName,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  "CR: ${conversionRate.toStringAsFixed(1)}%",
+                  style: const TextStyle(
+                    color: AppColors.success,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: _buildSalesStatItem("Total Leads", totalLeads.toString(), Icons.assignment_outlined, AppColors.info),
+              ),
+              Expanded(
+                child: _buildSalesStatItem("Converted", convertedCount.toString(), Icons.check_circle_outline, AppColors.success),
+              ),
+              Expanded(
+                child: _buildSalesStatItem("Revenue", "₹${revenue.toStringAsFixed(0)}", Icons.currency_rupee, Colors.orange),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSalesStatItem(String title, String value, IconData icon, Color color) {
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 28),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 12,
+            color: AppColors.textSecondary,
+          ),
+          textAlign: TextAlign.center,
         ),
       ],
     );

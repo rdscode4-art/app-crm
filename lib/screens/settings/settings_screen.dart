@@ -25,9 +25,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     final state = MockDataService();
-    _nameController = TextEditingController(text: state.currentUser?.name ?? "");
-    _phoneController = TextEditingController(text: state.currentUser?.phone ?? "");
-    _emailController = TextEditingController(text: state.currentUser?.email ?? "");
+    _nameController = TextEditingController(
+      text: state.currentUser?.name ?? "",
+    );
+    _phoneController = TextEditingController(
+      text: state.currentUser?.phone ?? "",
+    );
+    _emailController = TextEditingController(
+      text: state.currentUser?.email ?? "",
+    );
   }
 
   @override
@@ -46,7 +52,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         email: _emailController.text,
       );
       state.updateEmployee(updated);
-      state.addNotification("Profile Updated", "Your contact and name details have been saved.");
+      state.addNotification(
+        "Profile Updated",
+        "Your contact and name details have been saved.",
+      );
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Profile settings successfully saved.")),
       );
@@ -112,14 +121,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           children: [
                             const Text(
                               "Personal Workspace Profile",
-                              style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 16),
+                              style: TextStyle(
+                                color: AppColors.textPrimary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
                             ),
                             const SizedBox(height: 20),
                             Row(
                               children: [
                                 CircleAvatar(
                                   radius: 36,
-                                  backgroundColor: AppColors.primary.withOpacity(0.08),
+                                  backgroundColor: AppColors.primary.withValues(
+                                    alpha: 0.08,
+                                  ),
                                   child: const Icon(
                                     Icons.person,
                                     size: 36,
@@ -140,7 +155,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      state.currentUser?.designation ?? (state.currentUser?.role.isNotEmpty == true ? state.currentUser!.role[0].toUpperCase() + state.currentUser!.role.substring(1) : "Employee"),
+                                      state.currentUser?.designation ??
+                                          (state.currentUser?.role.isNotEmpty ==
+                                                  true
+                                              ? state.currentUser!.role[0]
+                                                        .toUpperCase() +
+                                                    state.currentUser!.role
+                                                        .substring(1)
+                                              : "Employee"),
                                       style: const TextStyle(
                                         color: AppColors.textSecondary,
                                         fontSize: 12,
@@ -156,7 +178,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               hint: "Full name",
                               prefixIcon: Icons.person_outline,
                               controller: _nameController,
-                              validator: (val) => val == null || val.isEmpty ? "Required" : null,
+                              validator: (val) => val == null || val.isEmpty
+                                  ? "Required"
+                                  : null,
                             ),
                             const SizedBox(height: 16),
                             CustomTextField(
@@ -164,7 +188,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               hint: "email@company.com",
                               prefixIcon: Icons.email_outlined,
                               controller: _emailController,
-                              validator: (val) => val == null || !val.contains('@') ? "Invalid email" : null,
+                              validator: (val) =>
+                                  val == null || !val.contains('@')
+                                  ? "Invalid email"
+                                  : null,
                             ),
                             const SizedBox(height: 16),
                             CustomTextField(
@@ -172,7 +199,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               hint: "+1 555-0100",
                               prefixIcon: Icons.phone_outlined,
                               controller: _phoneController,
-                              validator: (val) => val == null || val.isEmpty ? "Required" : null,
+                              validator: (val) => val == null || val.isEmpty
+                                  ? "Required"
+                                  : null,
                             ),
                             const SizedBox(height: 20),
                             const Divider(color: AppColors.border),
@@ -203,7 +232,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         children: [
                           const Text(
                             "Workspace Notifications & Safety",
-                            style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 16),
+                            style: TextStyle(
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
                           ),
                           const SizedBox(height: 16),
                           _buildSwitchItem(
@@ -250,17 +283,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       children: [
                         const Text(
                           "System Diagnostics",
-                          style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 16),
+                          style: TextStyle(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
                         const SizedBox(height: 16),
                         const Text(
                           "Troubleshooting & Workspace Data Controls",
-                          style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 12,
+                          ),
                         ),
                         const SizedBox(height: 12),
                         const Text(
                           "Restoring defaults will reset the CRM database simulator back to pre-filled configurations, signing you out.",
-                          style: TextStyle(color: AppColors.textPrimary, fontSize: 12, height: 1.4),
+                          style: TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 12,
+                            height: 1.4,
+                          ),
                         ),
                         const SizedBox(height: 20),
                         CustomButton(
@@ -271,7 +315,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           onPressed: () {
                             // Diagnostics reset
                             state.logout();
-                            Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+                            Navigator.of(context).pushNamedAndRemoveUntil(
+                              '/login',
+                              (route) => false,
+                            );
                           },
                         ),
                       ],
@@ -286,7 +333,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildSwitchItem(String title, String subtitle, bool current, Function(bool) onChanged) {
+  Widget _buildSwitchItem(
+    String title,
+    String subtitle,
+    bool current,
+    Function(bool) onChanged,
+  ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -294,9 +346,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 14)),
+              Text(
+                title,
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
               const SizedBox(height: 4),
-              Text(subtitle, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, height: 1.3)),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 12,
+                  height: 1.3,
+                ),
+              ),
             ],
           ),
         ),
@@ -304,7 +370,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         Switch(
           value: current,
           onChanged: onChanged,
-          activeColor: AppColors.primary,
+          activeThumbColor: AppColors.primary,
         ),
       ],
     );

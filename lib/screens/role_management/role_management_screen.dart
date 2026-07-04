@@ -24,7 +24,11 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
     });
   }
 
-  void _showEditRoleDialog(BuildContext context, UserRoleInfo user, MockDataService state) {
+  void _showEditRoleDialog(
+    BuildContext context,
+    UserRoleInfo user,
+    MockDataService state,
+  ) {
     String selectedRole = user.role;
 
     showDialog(
@@ -33,7 +37,9 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               backgroundColor: Colors.white,
               title: Text(
                 "Modify Role: ${user.name}",
@@ -46,7 +52,13 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("Email: ${user.email}", style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                  Text(
+                    "Email: ${user.email}",
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   const Text(
                     "Select Privileges / Role",
@@ -68,12 +80,26 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
                       child: DropdownButton<String>(
                         value: selectedRole,
                         isExpanded: true,
-                        items: ['Super Admin', 'HR Director', 'HR Generalist', 'VP of Sales', 'Senior Account Executive', 'Customer Success Lead', 'Employee']
-                            .map((s) => DropdownMenuItem(
-                                  value: s,
-                                  child: Text(s, style: const TextStyle(fontSize: 14)),
-                                ))
-                            .toList(),
+                        items:
+                            [
+                                  'Super Admin',
+                                  'HR Director',
+                                  'HR Generalist',
+                                  'VP of Sales',
+                                  'Senior Account Executive',
+                                  'Customer Success Lead',
+                                  'Employee',
+                                ]
+                                .map(
+                                  (s) => DropdownMenuItem(
+                                    value: s,
+                                    child: Text(
+                                      s,
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
+                                  ),
+                                )
+                                .toList(),
                         onChanged: (val) {
                           if (val != null) {
                             setDialogState(() {
@@ -89,7 +115,10 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text("Cancel", style: TextStyle(color: AppColors.textSecondary)),
+                  child: const Text(
+                    "Cancel",
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
                 ),
                 CustomButton(
                   text: "Save Permissions",
@@ -97,7 +126,10 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
                     final updatedUser = user.copyWith(role: selectedRole);
                     if (Get.isRegistered<CrmController>()) {
                       Get.find<CrmController>().submitRole(updatedUser);
-                      state.addNotification("Permissions Updated", "User ${user.name}'s role updated to $selectedRole.");
+                      state.addNotification(
+                        "Permissions Updated",
+                        "User ${user.name}'s role updated to $selectedRole.",
+                      );
                     }
                     Navigator.of(context).pop();
                   },
@@ -119,7 +151,13 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
       final list = state.userRoles;
 
       final total = list.length;
-      final admins = list.where((u) => u.role.toLowerCase().contains('admin') || u.role.toLowerCase().contains('vp')).length;
+      final admins = list
+          .where(
+            (u) =>
+                u.role.toLowerCase().contains('admin') ||
+                u.role.toLowerCase().contains('vp'),
+          )
+          .length;
       final hr = list.where((u) => u.role.toLowerCase().contains('hr')).length;
       final standard = total - admins - hr;
 
@@ -163,10 +201,30 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
                 childAspectRatio: isMobile ? 1.35 : 2.0,
               ),
               children: [
-                _buildMetricCard("Total Console Users", "$total", Icons.admin_panel_settings, AppColors.primary),
-                _buildMetricCard("Super Admin/VPs", "$admins", Icons.stars, AppColors.info),
-                _buildMetricCard("HR Managers", "$hr", Icons.badge_outlined, AppColors.warning),
-                _buildMetricCard("Staff / Employees", "$standard", Icons.people_outline, AppColors.textSecondary),
+                _buildMetricCard(
+                  "Total Console Users",
+                  "$total",
+                  Icons.admin_panel_settings,
+                  AppColors.primary,
+                ),
+                _buildMetricCard(
+                  "Super Admin/VPs",
+                  "$admins",
+                  Icons.stars,
+                  AppColors.info,
+                ),
+                _buildMetricCard(
+                  "HR Managers",
+                  "$hr",
+                  Icons.badge_outlined,
+                  AppColors.warning,
+                ),
+                _buildMetricCard(
+                  "Staff / Employees",
+                  "$standard",
+                  Icons.people_outline,
+                  AppColors.textSecondary,
+                ),
               ],
             ),
             const SizedBox(height: 24),
@@ -197,7 +255,8 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: list.length,
-                    separatorBuilder: (context, index) => const Divider(color: AppColors.border, height: 1),
+                    separatorBuilder: (context, index) =>
+                        const Divider(color: AppColors.border, height: 1),
                     itemBuilder: (context, index) {
                       final user = list[index];
                       return _buildUserRoleRow(context, user, state);
@@ -212,7 +271,12 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
     });
   }
 
-  Widget _buildMetricCard(String title, String value, IconData icon, Color color) {
+  Widget _buildMetricCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -225,7 +289,7 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: color, size: 20),
@@ -261,7 +325,11 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
     );
   }
 
-  Widget _buildUserRoleRow(BuildContext context, UserRoleInfo user, MockDataService state) {
+  Widget _buildUserRoleRow(
+    BuildContext context,
+    UserRoleInfo user,
+    MockDataService state,
+  ) {
     final roleLower = user.role.toLowerCase();
     Color badgeColor;
     Color textColor;
@@ -282,10 +350,14 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
         children: [
           CircleAvatar(
             radius: 16,
-            backgroundColor: AppColors.primary.withOpacity(0.12),
+            backgroundColor: AppColors.primary.withValues(alpha: 0.12),
             child: Text(
               user.name.isNotEmpty ? user.name[0] : 'U',
-              style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13),
+              style: const TextStyle(
+                color: AppColors.primary,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+              ),
             ),
           ),
           const SizedBox(width: 16),
@@ -296,12 +368,19 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
               children: [
                 Text(
                   user.name,
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   user.email,
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),
@@ -311,7 +390,10 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: badgeColor,
                     borderRadius: BorderRadius.circular(12),
@@ -329,7 +411,11 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.edit_outlined, color: AppColors.primary, size: 20),
+            icon: const Icon(
+              Icons.edit_outlined,
+              color: AppColors.primary,
+              size: 20,
+            ),
             onPressed: () => _showEditRoleDialog(context, user, state),
             tooltip: "Modify Permissions",
           ),

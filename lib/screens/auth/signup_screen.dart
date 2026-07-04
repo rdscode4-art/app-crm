@@ -70,7 +70,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 border: Border.all(color: AppColors.border),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 16,
                     offset: const Offset(0, 8),
                   ),
@@ -111,7 +111,9 @@ class _SignupScreenState extends State<SignupScreen> {
                       hint: "Enter your first and last name",
                       prefixIcon: Icons.person_outline,
                       controller: _nameController,
-                      validator: (val) => val == null || val.isEmpty ? "Name is required" : null,
+                      validator: (val) => val == null || val.isEmpty
+                          ? "Name is required"
+                          : null,
                     ),
                     const SizedBox(height: 16),
                     CustomTextField(
@@ -121,8 +123,10 @@ class _SignupScreenState extends State<SignupScreen> {
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       validator: (val) {
-                        if (val == null || val.isEmpty) return "Email is required";
-                        if (!val.contains('@')) return "Enter a valid corporate email";
+                        if (val == null || val.isEmpty)
+                          return "Email is required";
+                        if (!val.contains('@'))
+                          return "Enter a valid corporate email";
                         return null;
                       },
                     ),
@@ -135,7 +139,8 @@ class _SignupScreenState extends State<SignupScreen> {
                             hint: "Designation",
                             prefixIcon: Icons.work_outline,
                             controller: _roleController,
-                            validator: (val) => val == null || val.isEmpty ? "Required" : null,
+                            validator: (val) =>
+                                val == null || val.isEmpty ? "Required" : null,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -145,7 +150,8 @@ class _SignupScreenState extends State<SignupScreen> {
                             hint: "Department name",
                             prefixIcon: Icons.business_outlined,
                             controller: _deptController,
-                            validator: (val) => val == null || val.isEmpty ? "Required" : null,
+                            validator: (val) =>
+                                val == null || val.isEmpty ? "Required" : null,
                           ),
                         ),
                       ],
@@ -157,7 +163,9 @@ class _SignupScreenState extends State<SignupScreen> {
                       prefixIcon: Icons.phone_outlined,
                       controller: _phoneController,
                       keyboardType: TextInputType.phone,
-                      validator: (val) => val == null || val.isEmpty ? "Phone is required" : null,
+                      validator: (val) => val == null || val.isEmpty
+                          ? "Phone is required"
+                          : null,
                     ),
                     const SizedBox(height: 16),
                     CustomTextField(
@@ -166,7 +174,9 @@ class _SignupScreenState extends State<SignupScreen> {
                       prefixIcon: Icons.lock_outline,
                       controller: _passController,
                       isPassword: true,
-                      validator: (val) => val == null || val.length < 6 ? "Must be 6+ chars" : null,
+                      validator: (val) => val == null || val.length < 6
+                          ? "Must be 6+ chars"
+                          : null,
                     ),
                     const SizedBox(height: 24),
 

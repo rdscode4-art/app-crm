@@ -20,7 +20,6 @@ import 'assets/asset_screen.dart';
 import 'daily_reports/daily_report_screen.dart';
 import 'role_management/role_management_screen.dart';
 
-
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
 
@@ -95,7 +94,9 @@ class _MainLayoutState extends State<MainLayout> {
         return AnimatedBuilder(
           animation: state,
           builder: (context, child) {
-            final unreadCount = state.notifications.where((n) => !n.isRead).length;
+            final unreadCount = state.notifications
+                .where((n) => !n.isRead)
+                .length;
 
             return Padding(
               padding: const EdgeInsets.all(24),
@@ -119,9 +120,14 @@ class _MainLayoutState extends State<MainLayout> {
                           if (unreadCount > 0) ...[
                             const SizedBox(width: 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
-                                color: AppColors.primary.withOpacity(0.12),
+                                color: AppColors.primary.withValues(
+                                  alpha: 0.12,
+                                ),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
@@ -142,7 +148,11 @@ class _MainLayoutState extends State<MainLayout> {
                         },
                         child: const Text(
                           "Mark all as read",
-                          style: TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ],
@@ -161,38 +171,51 @@ class _MainLayoutState extends State<MainLayout> {
                           )
                         : ListView.separated(
                             itemCount: state.notifications.length,
-                            separatorBuilder: (context, idx) => const Divider(color: AppColors.border, height: 1),
+                            separatorBuilder: (context, idx) => const Divider(
+                              color: AppColors.border,
+                              height: 1,
+                            ),
                             itemBuilder: (context, idx) {
                               final notif = state.notifications[idx];
                               return Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                ),
                                 child: Row(
                                   children: [
                                     Container(
                                       width: 6,
                                       height: 6,
                                       decoration: BoxDecoration(
-                                        color: notif.isRead ? Colors.transparent : AppColors.primary,
+                                        color: notif.isRead
+                                            ? Colors.transparent
+                                            : AppColors.primary,
                                         shape: BoxShape.circle,
                                       ),
                                     ),
                                     const SizedBox(width: 10),
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             notif.title,
                                             style: TextStyle(
                                               color: AppColors.textPrimary,
-                                              fontWeight: notif.isRead ? FontWeight.normal : FontWeight.bold,
+                                              fontWeight: notif.isRead
+                                                  ? FontWeight.normal
+                                                  : FontWeight.bold,
                                               fontSize: 13,
                                             ),
                                           ),
                                           const SizedBox(height: 2),
                                           Text(
                                             notif.message,
-                                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                                            style: const TextStyle(
+                                              color: AppColors.textSecondary,
+                                              fontSize: 11,
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -234,7 +257,9 @@ class _MainLayoutState extends State<MainLayout> {
           state: state,
         );
 
-        final unreadNotifCount = state.notifications.where((n) => !n.isRead).length;
+        final unreadNotifCount = state.notifications
+            .where((n) => !n.isRead)
+            .length;
 
         // Custom Header Bar
         final appBarHeader = AppBar(
@@ -278,11 +303,13 @@ class _MainLayoutState extends State<MainLayout> {
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: state.isPunchedIn
-                        ? AppColors.primary.withOpacity(0.08)
+                        ? AppColors.primary.withValues(alpha: 0.08)
                         : Colors.red[50],
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: state.isPunchedIn ? AppColors.primary.withOpacity(0.3) : Colors.red[200]!,
+                      color: state.isPunchedIn
+                          ? AppColors.primary.withValues(alpha: 0.3)
+                          : Colors.red[200]!,
                     ),
                   ),
                   child: Row(
@@ -291,7 +318,9 @@ class _MainLayoutState extends State<MainLayout> {
                         width: 8,
                         height: 8,
                         decoration: BoxDecoration(
-                          color: state.isPunchedIn ? AppColors.primary : Colors.red,
+                          color: state.isPunchedIn
+                              ? AppColors.primary
+                              : Colors.red,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -300,7 +329,9 @@ class _MainLayoutState extends State<MainLayout> {
                         Text(
                           state.isPunchedIn ? "PUNCHED IN" : "PUNCHED OUT",
                           style: TextStyle(
-                            color: state.isPunchedIn ? AppColors.primary : Colors.red[700],
+                            color: state.isPunchedIn
+                                ? AppColors.primary
+                                : Colors.red[700],
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 0.5,
@@ -319,7 +350,10 @@ class _MainLayoutState extends State<MainLayout> {
               alignment: Alignment.center,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.notifications_none, color: AppColors.textPrimary),
+                  icon: const Icon(
+                    Icons.notifications_none,
+                    color: AppColors.textPrimary,
+                  ),
                   onPressed: () => _showNotificationsPanel(context, state),
                 ),
                 if (unreadNotifCount > 0)
@@ -334,7 +368,11 @@ class _MainLayoutState extends State<MainLayout> {
                       ),
                       child: Text(
                         "$unreadNotifCount",
-                        style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 8,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
@@ -386,7 +424,11 @@ class _MainLayoutState extends State<MainLayout> {
     );
   }
 
-  Widget _buildBottomNavigationBar(BuildContext context, MockDataService state, int activeIndex) {
+  Widget _buildBottomNavigationBar(
+    BuildContext context,
+    MockDataService state,
+    int activeIndex,
+  ) {
     final List<Map<String, dynamic>> items = [
       {"icon": Icons.grid_view_rounded, "label": "Home", "index": 0},
       {"icon": Icons.fingerprint_rounded, "label": "Clock", "index": 3},
@@ -401,17 +443,20 @@ class _MainLayoutState extends State<MainLayout> {
       height: 65,
       margin: EdgeInsets.fromLTRB(24, 0, 24, bottomMargin),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
+        color: Colors.white.withValues(alpha: 0.95),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.6), width: 1.5),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.6),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.04),
+            color: AppColors.primary.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),
@@ -436,27 +481,37 @@ class _MainLayoutState extends State<MainLayout> {
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 300),
                     curve: Curves.easeOutBack,
-                    transform: Matrix4.translationValues(0, isSelected ? -6 : 0, 0),
+                    transform: Matrix4.translationValues(
+                      0,
+                      isSelected ? -6 : 0,
+                      0,
+                    ),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
                       curve: Curves.easeInOut,
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: isSelected ? AppColors.primary : Colors.transparent,
+                        color: isSelected
+                            ? AppColors.primary
+                            : Colors.transparent,
                         shape: BoxShape.circle,
                         boxShadow: isSelected
                             ? [
                                 BoxShadow(
-                                  color: AppColors.primary.withOpacity(0.3),
+                                  color: AppColors.primary.withValues(
+                                    alpha: 0.3,
+                                  ),
                                   blurRadius: 8,
                                   offset: const Offset(0, 4),
-                                )
+                                ),
                               ]
                             : [],
                       ),
                       child: Icon(
                         item["icon"] as IconData,
-                        color: isSelected ? Colors.white : AppColors.textSecondary,
+                        color: isSelected
+                            ? Colors.white
+                            : AppColors.textSecondary,
                         size: 20,
                       ),
                     ),

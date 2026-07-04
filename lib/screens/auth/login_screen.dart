@@ -37,10 +37,12 @@ class _LoginScreenState extends State<LoginScreen> {
           if (!mounted) return;
           Navigator.of(context).pushReplacement(
             PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) => const MainLayout(),
-              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                return FadeTransition(opacity: animation, child: child);
-              },
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  const MainLayout(),
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
+                    return FadeTransition(opacity: animation, child: child);
+                  },
               transitionDuration: const Duration(milliseconds: 500),
             ),
           );
@@ -96,7 +98,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 border: Border.all(color: AppColors.border),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 16,
                     offset: const Offset(0, 8),
                   ),
@@ -130,7 +132,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ),
-                   // const SizedBox(height: 8),
+                    // const SizedBox(height: 8),
                     // const Center(
                     //   child: Text(
                     //     "Use admin@crm.com to access HR administration panel",
@@ -146,11 +148,16 @@ class _LoginScreenState extends State<LoginScreen> {
                     if (_errorMessage != null) ...[
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 10,
+                          horizontal: 12,
+                        ),
                         decoration: BoxDecoration(
-                          color: AppColors.danger.withOpacity(0.08),
+                          color: AppColors.danger.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: AppColors.danger.withOpacity(0.2)),
+                          border: Border.all(
+                            color: AppColors.danger.withValues(alpha: 0.2),
+                          ),
                         ),
                         child: Text(
                           _errorMessage!,
@@ -199,7 +206,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 12),
                     const SizedBox(height: 12),
-
 
                     CustomButton(
                       width: double.infinity,

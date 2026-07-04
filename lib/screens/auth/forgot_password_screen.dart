@@ -49,7 +49,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 border: Border.all(color: AppColors.border),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 16,
                     offset: const Offset(0, 8),
                   ),
@@ -89,15 +89,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppColors.success.withOpacity(0.08),
+                          color: AppColors.success.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.success.withOpacity(0.2)),
+                          border: Border.all(
+                            color: AppColors.success.withValues(alpha: 0.2),
+                          ),
                         ),
                         child: Column(
                           children: [
                             const Row(
                               children: [
-                                Icon(Icons.check_circle, color: AppColors.success),
+                                Icon(
+                                  Icons.check_circle,
+                                  color: AppColors.success,
+                                ),
                                 SizedBox(width: 10),
                                 Text(
                                   "Reset Link Transmitted",
@@ -129,8 +134,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
                         validator: (val) {
-                          if (val == null || val.isEmpty) return "Email is required";
-                          if (!val.contains('@')) return "Enter a valid corporate email";
+                          if (val == null || val.isEmpty)
+                            return "Email is required";
+                          if (!val.contains('@'))
+                            return "Enter a valid corporate email";
                           return null;
                         },
                       ),

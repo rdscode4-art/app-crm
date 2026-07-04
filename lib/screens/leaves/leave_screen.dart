@@ -49,10 +49,13 @@ class _LeaveScreenState extends State<LeaveScreen> {
               }
             }
 
-            final dateText = "${startDate.day}/${startDate.month}/${startDate.year} to ${endDate.day}/${endDate.month}/${endDate.year}";
+            final dateText =
+                "${startDate.day}/${startDate.month}/${startDate.year} to ${endDate.day}/${endDate.month}/${endDate.year}";
 
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               backgroundColor: Colors.white,
               title: const Text(
                 "Request Leave",
@@ -81,7 +84,10 @@ class _LeaveScreenState extends State<LeaveScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.border, width: 1.5),
+                          border: Border.all(
+                            color: AppColors.border,
+                            width: 1.5,
+                          ),
                           color: Colors.white,
                         ),
                         child: DropdownButtonHideUnderline(
@@ -89,10 +95,15 @@ class _LeaveScreenState extends State<LeaveScreen> {
                             value: type,
                             isExpanded: true,
                             items: ['Casual', 'Sick', 'Annual']
-                                .map((s) => DropdownMenuItem(
-                                      value: s,
-                                      child: Text(s, style: const TextStyle(fontSize: 14)),
-                                    ))
+                                .map(
+                                  (s) => DropdownMenuItem(
+                                    value: s,
+                                    child: Text(
+                                      s,
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
+                                  ),
+                                )
                                 .toList(),
                             onChanged: (val) {
                               if (val != null) {
@@ -118,17 +129,33 @@ class _LeaveScreenState extends State<LeaveScreen> {
                         onTap: selectDateRange,
                         child: Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 14,
+                            horizontal: 16,
+                          ),
                           decoration: BoxDecoration(
-                            border: Border.all(color: AppColors.border, width: 1.5),
+                            border: Border.all(
+                              color: AppColors.border,
+                              width: 1.5,
+                            ),
                             borderRadius: BorderRadius.circular(8),
                             color: Colors.grey[50],
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(dateText, style: const TextStyle(fontSize: 14, color: AppColors.textPrimary)),
-                              const Icon(Icons.calendar_month, color: AppColors.textSecondary, size: 20),
+                              Text(
+                                dateText,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              const Icon(
+                                Icons.calendar_month,
+                                color: AppColors.textSecondary,
+                                size: 20,
+                              ),
                             ],
                           ),
                         ),
@@ -139,7 +166,9 @@ class _LeaveScreenState extends State<LeaveScreen> {
                         hint: "Brief explanation of leave reason...",
                         prefixIcon: Icons.notes_outlined,
                         controller: reasonCtrl,
-                        validator: (val) => val == null || val.isEmpty ? "Reason is required" : null,
+                        validator: (val) => val == null || val.isEmpty
+                            ? "Reason is required"
+                            : null,
                       ),
                     ],
                   ),
@@ -148,13 +177,21 @@ class _LeaveScreenState extends State<LeaveScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text("Cancel", style: TextStyle(color: AppColors.textSecondary)),
+                  child: const Text(
+                    "Cancel",
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
                 ),
                 CustomButton(
                   text: "Submit Application",
                   onPressed: () {
                     if (formKey.currentState!.validate()) {
-                      state.submitLeaveRequest(type, startDate, endDate, reasonCtrl.text);
+                      state.submitLeaveRequest(
+                        type,
+                        startDate,
+                        endDate,
+                        reasonCtrl.text,
+                      );
                       Navigator.of(context).pop();
                     }
                   },
@@ -170,350 +207,501 @@ class _LeaveScreenState extends State<LeaveScreen> {
   @override
   Widget build(BuildContext context) {
     final state = MockDataService();
-    final isAdmin = state.currentRole == UserRole.superAdmin || state.currentRole == UserRole.hr;
+    final isAdmin =
+        state.currentRole == UserRole.superAdmin ||
+        state.currentRole == UserRole.hr;
     final screenWidth = MediaQuery.of(context).size.width;
     final cardWidth = screenWidth < 600 ? double.infinity : 220.0;
     final badgeText = screenWidth < 600 ? "Admin" : "HR Administrator View";
 
-    return Obx(
-      () {
-        final currentRequests = state.leaveRequests;
-        // Balance values (mocked representation)
-        final casualUsed = currentRequests.where((l) => l.employeeId == state.currentUser?.id && l.type == 'Casual' && l.status == 'Approved').length * 2;
-        final sickUsed = currentRequests.where((l) => l.employeeId == state.currentUser?.id && l.type == 'Sick' && l.status == 'Approved').length * 1;
-        final annualUsed = currentRequests.where((l) => l.employeeId == state.currentUser?.id && l.type == 'Annual' && l.status == 'Approved').length * 5;
+    return Obx(() {
+      final currentRequests = state.leaveRequests;
+      // Balance values (mocked representation)
+      final casualUsed =
+          currentRequests
+              .where(
+                (l) =>
+                    l.employeeId == state.currentUser?.id &&
+                    l.type == 'Casual' &&
+                    l.status == 'Approved',
+              )
+              .length *
+          2;
+      final sickUsed =
+          currentRequests
+              .where(
+                (l) =>
+                    l.employeeId == state.currentUser?.id &&
+                    l.type == 'Sick' &&
+                    l.status == 'Approved',
+              )
+              .length *
+          1;
+      final annualUsed =
+          currentRequests
+              .where(
+                (l) =>
+                    l.employeeId == state.currentUser?.id &&
+                    l.type == 'Annual' &&
+                    l.status == 'Approved',
+              )
+              .length *
+          5;
 
-        final casualTotal = 12;
-        final sickTotal = 10;
-        final annualTotal = 20;
+      final casualTotal = 12;
+      final sickTotal = 10;
+      final annualTotal = 20;
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Time-Off & Leave Management",
-                          style: TextStyle(
-                            color: AppColors.textPrimary,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          "Review leave balances, request paid time-off, and track approvals.",
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  CustomButton(
-                    text: "Apply Leave",
-                    icon: Icons.add,
-                    onPressed: () => _showRequestLeaveDialog(context, state),
-                  ),
-                ],
-              ),
-              if (state.isLoadingLeaves) ...[
-                const SizedBox(height: 16),
-                const ClipRRect(
-                  borderRadius: BorderRadius.all(Radius.circular(4)),
-                  child: LinearProgressIndicator(
-                    minHeight: 4,
-                    backgroundColor: AppColors.border,
-                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                  ),
-                ),
-              ],
-              if (state.leavesError != null) ...[
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: AppColors.danger.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.danger.withOpacity(0.2)),
-                  ),
-                  child: Row(
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.error_outline, color: AppColors.danger, size: 20),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          state.leavesError!,
-                          style: const TextStyle(
-                            color: AppColors.danger,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
+                      Text(
+                        "Time-Off & Leave Management",
+                        style: TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      TextButton.icon(
-                        style: TextButton.styleFrom(
-                          foregroundColor: AppColors.danger,
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          backgroundColor: AppColors.danger.withOpacity(0.1),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                      SizedBox(height: 4),
+                      Text(
+                        "Review leave balances, request paid time-off, and track approvals.",
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 14,
                         ),
-                        icon: const Icon(Icons.refresh, size: 16),
-                        label: const Text("Retry", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                        onPressed: () => state.fetchLeavesFromApi(),
                       ),
                     ],
                   ),
                 ),
-              ],
-              const SizedBox(height: 24),
-
-              // Balances Gauge Section (Responsive Column on Mobile, Wrap on Desktop)
-              screenWidth < 600
-                  ? Column(
-                      children: [
-                        _buildBalanceCard("Annual Leave Balance", annualUsed, annualTotal, Colors.blue, double.infinity),
-                        const SizedBox(height: 16),
-                        _buildBalanceCard("Sick Leave Balance", sickUsed, sickTotal, Colors.red, double.infinity),
-                        const SizedBox(height: 16),
-                        _buildBalanceCard("Casual Leave Balance", casualUsed, casualTotal, Colors.orange, double.infinity),
-                      ],
-                    )
-                  : Wrap(
-                      spacing: 16,
-                      runSpacing: 16,
-                      children: [
-                        _buildBalanceCard("Annual Leave Balance", annualUsed, annualTotal, Colors.blue, cardWidth),
-                        _buildBalanceCard("Sick Leave Balance", sickUsed, sickTotal, Colors.red, cardWidth),
-                        _buildBalanceCard("Casual Leave Balance", casualUsed, casualTotal, Colors.orange, cardWidth),
-                      ],
-                    ),
-              const SizedBox(height: 28),
-
-              // Leaves Requests list card table
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppColors.cardBackground,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.01),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    )
-                  ],
+                const SizedBox(width: 12),
+                CustomButton(
+                  text: "Apply Leave",
+                  icon: Icons.add,
+                  onPressed: () => _showRequestLeaveDialog(context, state),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              ],
+            ),
+            if (state.isLoadingLeaves) ...[
+              const SizedBox(height: 16),
+              const ClipRRect(
+                borderRadius: BorderRadius.all(Radius.circular(4)),
+                child: LinearProgressIndicator(
+                  minHeight: 4,
+                  backgroundColor: AppColors.border,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                ),
+              ),
+            ],
+            if (state.leavesError != null) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.danger.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: AppColors.danger.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: Row(
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Expanded(
-                          child: Text(
-                            "Leave Applications Logs",
-                            style: TextStyle(
-                              color: AppColors.textPrimary,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (isAdmin) ...[
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColors.primary.withOpacity(0.2)),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.shield_outlined, color: AppColors.primary, size: 12),
-                                const SizedBox(width: 4),
-                                Text(
-                                  badgeText,
-                                  style: const TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ],
+                    const Icon(
+                      Icons.error_outline,
+                      color: AppColors.danger,
+                      size: 20,
                     ),
-                    const SizedBox(height: 16),
-                    if (currentRequests.isEmpty)
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 24),
-                          child: Text("No leave requests found.", style: TextStyle(color: AppColors.textSecondary)),
-                        ),
-                      )
-                    else
-                      AnimationLimiter(
-                        child: ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: currentRequests.length,
-                          separatorBuilder: (context, idx) => const Divider(color: AppColors.border, height: 1),
-                          itemBuilder: (context, idx) {
-                            final req = currentRequests[idx];
-                            final durationText = "${req.startDate.day}/${req.startDate.month} - ${req.endDate.day}/${req.endDate.month}";
-
-                            Color statusColor;
-                            switch (req.status) {
-                              case 'Approved':
-                                statusColor = AppColors.success;
-                                break;
-                              case 'Pending':
-                                statusColor = AppColors.warning;
-                                break;
-                              default:
-                                statusColor = AppColors.danger;
-                            }
-
-                            return AnimationConfiguration.staggeredList(
-                              position: idx,
-                              duration: const Duration(milliseconds: 375),
-                              child: SlideAnimation(
-                                verticalOffset: 50.0,
-                                child: FadeInAnimation(
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 12),
-                                    child: Row(
-                                      children: [
-                                        CircleAvatar(
-                                          radius: 18,
-                                          backgroundColor: statusColor.withOpacity(0.1),
-                                          child: Icon(
-                                            req.type == 'Sick'
-                                                ? Icons.medication_outlined
-                                                : (req.type == 'Casual' ? Icons.beach_access_outlined : Icons.flight_takeoff_outlined),
-                                            color: statusColor,
-                                            size: 18,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 10),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                "${req.employeeName} (${req.type} Leave)",
-                                                style: const TextStyle(
-                                                  color: AppColors.textPrimary,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 13,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                              const SizedBox(height: 2),
-                                              Text(
-                                                "Duration: $durationText • Reason: ${req.reason}",
-                                                style: const TextStyle(
-                                                  color: AppColors.textSecondary,
-                                                  fontSize: 11,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Column(
-                                          crossAxisAlignment: CrossAxisAlignment.end,
-                                          children: [
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                              decoration: BoxDecoration(
-                                                color: statusColor.withOpacity(0.1),
-                                                borderRadius: BorderRadius.circular(12),
-                                              ),
-                                              child: Text(
-                                                req.status,
-                                                style: TextStyle(
-                                                  color: statusColor,
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ),
-                                            // If HR admin and Pending, show quick approval toggles
-                                            if (isAdmin && req.status == 'Pending') ...[
-                                              const SizedBox(height: 6),
-                                              Row(
-                                                children: [
-                                                  InkWell(
-                                                    onTap: () => state.updateLeaveStatus(req.id, 'Approved'),
-                                                    borderRadius: BorderRadius.circular(12),
-                                                    child: Container(
-                                                      padding: const EdgeInsets.all(4),
-                                                      decoration: BoxDecoration(
-                                                        color: Colors.green[50],
-                                                        shape: BoxShape.circle,
-                                                        border: Border.all(color: Colors.green[100]!),
-                                                      ),
-                                                      child: const Icon(Icons.check, color: Colors.green, size: 12),
-                                                    ),
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  InkWell(
-                                                    onTap: () => state.updateLeaveStatus(req.id, 'Rejected'),
-                                                    borderRadius: BorderRadius.circular(12),
-                                                    child: Container(
-                                                      padding: const EdgeInsets.all(4),
-                                                      decoration: BoxDecoration(
-                                                        color: Colors.red[50],
-                                                        shape: BoxShape.circle,
-                                                        border: Border.all(color: Colors.red[100]!),
-                                                      ),
-                                                      child: const Icon(Icons.close, color: Colors.red, size: 12),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        state.leavesError!,
+                        style: const TextStyle(
+                          color: AppColors.danger,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
+                    ),
+                    const SizedBox(width: 12),
+                    TextButton.icon(
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.danger,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        backgroundColor: AppColors.danger.withValues(
+                          alpha: 0.1,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                      icon: const Icon(Icons.refresh, size: 16),
+                      label: const Text(
+                        "Retry",
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      onPressed: () => state.fetchLeavesFromApi(),
+                    ),
                   ],
                 ),
               ),
             ],
-          ),
-        );
-      },
-    );
+            const SizedBox(height: 24),
+
+            // Balances Gauge Section (Responsive Column on Mobile, Wrap on Desktop)
+            screenWidth < 600
+                ? Column(
+                    children: [
+                      _buildBalanceCard(
+                        "Annual Leave Balance",
+                        annualUsed,
+                        annualTotal,
+                        Colors.blue,
+                        double.infinity,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildBalanceCard(
+                        "Sick Leave Balance",
+                        sickUsed,
+                        sickTotal,
+                        Colors.red,
+                        double.infinity,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildBalanceCard(
+                        "Casual Leave Balance",
+                        casualUsed,
+                        casualTotal,
+                        Colors.orange,
+                        double.infinity,
+                      ),
+                    ],
+                  )
+                : Wrap(
+                    spacing: 16,
+                    runSpacing: 16,
+                    children: [
+                      _buildBalanceCard(
+                        "Annual Leave Balance",
+                        annualUsed,
+                        annualTotal,
+                        Colors.blue,
+                        cardWidth,
+                      ),
+                      _buildBalanceCard(
+                        "Sick Leave Balance",
+                        sickUsed,
+                        sickTotal,
+                        Colors.red,
+                        cardWidth,
+                      ),
+                      _buildBalanceCard(
+                        "Casual Leave Balance",
+                        casualUsed,
+                        casualTotal,
+                        Colors.orange,
+                        cardWidth,
+                      ),
+                    ],
+                  ),
+            const SizedBox(height: 28),
+
+            // Leaves Requests list card table
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.cardBackground,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.01),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          "Leave Applications Logs",
+                          style: TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (isAdmin) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: AppColors.primary.withValues(alpha: 0.2),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.shield_outlined,
+                                color: AppColors.primary,
+                                size: 12,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                badgeText,
+                                style: const TextStyle(
+                                  color: AppColors.primary,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  if (currentRequests.isEmpty)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: Text(
+                          "No leave requests found.",
+                          style: TextStyle(color: AppColors.textSecondary),
+                        ),
+                      ),
+                    )
+                  else
+                    AnimationLimiter(
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: currentRequests.length,
+                        separatorBuilder: (context, idx) =>
+                            const Divider(color: AppColors.border, height: 1),
+                        itemBuilder: (context, idx) {
+                          final req = currentRequests[idx];
+                          final durationText =
+                              "${req.startDate.day}/${req.startDate.month} - ${req.endDate.day}/${req.endDate.month}";
+
+                          Color statusColor;
+                          switch (req.status) {
+                            case 'Approved':
+                              statusColor = AppColors.success;
+                              break;
+                            case 'Pending':
+                              statusColor = AppColors.warning;
+                              break;
+                            default:
+                              statusColor = AppColors.danger;
+                          }
+
+                          return AnimationConfiguration.staggeredList(
+                            position: idx,
+                            duration: const Duration(milliseconds: 375),
+                            child: SlideAnimation(
+                              verticalOffset: 50.0,
+                              child: FadeInAnimation(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 18,
+                                        backgroundColor: statusColor.withValues(
+                                          alpha: 0.1,
+                                        ),
+                                        child: Icon(
+                                          req.type == 'Sick'
+                                              ? Icons.medication_outlined
+                                              : (req.type == 'Casual'
+                                                    ? Icons
+                                                          .beach_access_outlined
+                                                    : Icons
+                                                          .flight_takeoff_outlined),
+                                          color: statusColor,
+                                          size: 18,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              "${req.employeeName} (${req.type} Leave)",
+                                              style: const TextStyle(
+                                                color: AppColors.textPrimary,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 13,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              "Duration: $durationText • Reason: ${req.reason}",
+                                              style: const TextStyle(
+                                                color: AppColors.textSecondary,
+                                                fontSize: 11,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.end,
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: statusColor.withValues(
+                                                alpha: 0.1,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            child: Text(
+                                              req.status,
+                                              style: TextStyle(
+                                                color: statusColor,
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                          // If HR admin and Pending, show quick approval toggles
+                                          if (isAdmin &&
+                                              req.status == 'Pending') ...[
+                                            const SizedBox(height: 6),
+                                            Row(
+                                              children: [
+                                                InkWell(
+                                                  onTap: () =>
+                                                      state.updateLeaveStatus(
+                                                        req.id,
+                                                        'Approved',
+                                                      ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  child: Container(
+                                                    padding:
+                                                        const EdgeInsets.all(4),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.green[50],
+                                                      shape: BoxShape.circle,
+                                                      border: Border.all(
+                                                        color:
+                                                            Colors.green[100]!,
+                                                      ),
+                                                    ),
+                                                    child: const Icon(
+                                                      Icons.check,
+                                                      color: Colors.green,
+                                                      size: 12,
+                                                    ),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                InkWell(
+                                                  onTap: () =>
+                                                      state.updateLeaveStatus(
+                                                        req.id,
+                                                        'Rejected',
+                                                      ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  child: Container(
+                                                    padding:
+                                                        const EdgeInsets.all(4),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.red[50],
+                                                      shape: BoxShape.circle,
+                                                      border: Border.all(
+                                                        color: Colors.red[100]!,
+                                                      ),
+                                                    ),
+                                                    child: const Icon(
+                                                      Icons.close,
+                                                      color: Colors.red,
+                                                      size: 12,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    });
   }
 
-  Widget _buildBalanceCard(String title, int used, int total, Color color, double cardWidth) {
+  Widget _buildBalanceCard(
+    String title,
+    int used,
+    int total,
+    Color color,
+    double cardWidth,
+  ) {
     final remaining = total - used;
     final pct = total > 0 ? (remaining / total) : 0.0;
 
@@ -534,7 +722,11 @@ class _LeaveScreenState extends State<LeaveScreen> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -543,11 +735,18 @@ class _LeaveScreenState extends State<LeaveScreen> {
                   children: [
                     Text(
                       "$remaining",
-                      style: TextStyle(color: color, fontSize: 24, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: color,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     Text(
                       "/$total days left",
-                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 11,
+                      ),
                     ),
                   ],
                 ),

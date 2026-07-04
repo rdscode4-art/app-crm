@@ -11,6 +11,7 @@ class MetricCard extends StatefulWidget {
   final Color iconBgColor;
   final Color iconColor;
   final List<double>? trendData;
+  final VoidCallback? onTap;
 
   const MetricCard({
     super.key,
@@ -22,6 +23,7 @@ class MetricCard extends StatefulWidget {
     this.iconBgColor = const Color(0xFFECFDF5),
     this.iconColor = AppColors.primary,
     this.trendData,
+    this.onTap,
   });
 
   @override
@@ -48,8 +50,8 @@ class _MetricCardState extends State<MetricCard> {
     final scale = _isPressed
         ? 0.97
         : _isHovered
-            ? 1.03
-            : 1.0;
+        ? 1.03
+        : 1.0;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -58,6 +60,7 @@ class _MetricCardState extends State<MetricCard> {
         onTapDown: (_) => setState(() => _isPressed = true),
         onTapUp: (_) => setState(() => _isPressed = false),
         onTapCancel: () => setState(() => _isPressed = false),
+        onTap: widget.onTap,
         child: AnimatedScale(
           scale: scale,
           duration: const Duration(milliseconds: 150),
@@ -67,119 +70,69 @@ class _MetricCardState extends State<MetricCard> {
             padding: EdgeInsets.all(cardPadding),
             decoration: BoxDecoration(
               color: AppColors.cardBackground,
-              borderRadius: BorderRadius.circular(16), // Softer, more modern corners
+              borderRadius: BorderRadius.circular(
+                16,
+              ), // Softer, more modern corners
               border: Border.all(
-                color: _isHovered ? widget.iconColor.withOpacity(0.3) : AppColors.border,
+                color: _isHovered
+                    ? widget.iconColor.withValues(alpha: 0.3)
+                    : AppColors.border,
                 width: 1.5,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: _isHovered 
-                      ? widget.iconColor.withOpacity(0.1) 
-                      : Colors.black.withOpacity(0.02),
+                  color: _isHovered
+                      ? widget.iconColor.withValues(alpha: 0.1)
+                      : Colors.black.withValues(alpha: 0.02),
                   blurRadius: _isHovered ? 16 : 10,
                   offset: _isHovered ? const Offset(0, 8) : const Offset(0, 4),
                 ),
               ],
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        widget.title,
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: widget.iconColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    widget.icon,
+                    size: 32,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        widget.value,
                         style: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: titleFontSize,
-                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    const SizedBox(width: 4),
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: EdgeInsets.all(iconPadding),
-                      decoration: BoxDecoration(
-                        color: _isHovered ? widget.iconBgColor.withOpacity(0.8) : widget.iconBgColor,
-                        shape: BoxShape.circle,
-                        boxShadow: _isHovered ? [
-                          BoxShadow(
-                            color: widget.iconColor.withOpacity(0.2),
-                            blurRadius: 8,
-                            spreadRadius: 1,
-                          )
-                        ] : [],
-                      ),
-                      child: Icon(
-                        widget.icon,
-                        size: iconSize,
-                        color: widget.iconColor,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.value,
-                            style: TextStyle(
-                              color: AppColors.textPrimary,
-                              fontSize: valueFontSize,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Wrap(
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            spacing: 2,
-                            children: [
-                              Icon(
-                                widget.isPositive ? Icons.arrow_upward : Icons.arrow_downward,
-                                size: trendFontSize + 2,
-                                color: widget.isPositive ? AppColors.success : AppColors.danger,
-                              ),
-                              Text(
-                                widget.changeText,
-                                style: TextStyle(
-                                  color: widget.isPositive ? AppColors.success : AppColors.danger,
-                                  fontSize: trendFontSize,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    // Sparkline
-                    Container(
-                      width: isCompact ? 40 : 55,
-                      height: isCompact ? 20 : 28,
-                      margin: const EdgeInsets.only(bottom: 2),
-                      child: CustomPaint(
-                        painter: _SparklinePainter(
-                          data: widget.trendData ?? 
-                              (widget.isPositive 
-                                  ? [10, 15, 13, 20, 18, 25] 
-                                  : [25, 20, 22, 14, 16, 10]),
-                          lineColor: widget.isPositive ? AppColors.success : AppColors.danger,
+                      const SizedBox(height: 4),
+                      Text(
+                        widget.title,
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 14,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -211,8 +164,8 @@ class _SparklinePainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          lineColor.withOpacity(0.18),
-          lineColor.withOpacity(0.0),
+          lineColor.withValues(alpha: 0.18),
+          lineColor.withValues(alpha: 0.0),
         ],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
       ..style = PaintingStyle.fill;
@@ -227,7 +180,8 @@ class _SparklinePainter extends CustomPainter {
     for (int i = 0; i < data.length; i++) {
       final x = i * stepX;
       // Invert Y because canvas coordinates start from top-left
-      final y = size.height - ((data[i] - minVal) / range) * (size.height - 4) - 2;
+      final y =
+          size.height - ((data[i] - minVal) / range) * (size.height - 4) - 2;
       points.add(Offset(x, y));
     }
 
@@ -241,9 +195,12 @@ class _SparklinePainter extends CustomPainter {
       final controlPoint1 = Offset(p1.dx + (p2.dx - p1.dx) / 2, p1.dy);
       final controlPoint2 = Offset(p1.dx + (p2.dx - p1.dx) / 2, p2.dy);
       path.cubicTo(
-        controlPoint1.dx, controlPoint1.dy,
-        controlPoint2.dx, controlPoint2.dy,
-        p2.dx, p2.dy,
+        controlPoint1.dx,
+        controlPoint1.dy,
+        controlPoint2.dx,
+        controlPoint2.dy,
+        p2.dx,
+        p2.dy,
       );
     }
 

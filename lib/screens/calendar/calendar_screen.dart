@@ -16,7 +16,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedMonth = DateTime(2026, 6); // Mock starts in June 2026 matching current timestamp year/month
+    _selectedMonth = DateTime(
+      2026,
+      6,
+    ); // Mock starts in June 2026 matching current timestamp year/month
     _selectedDay = DateTime(2026, 6, 22); // Pre-select today
   }
 
@@ -54,8 +57,18 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final totalCells = daysInMonth + startOffset;
 
     final monthsList = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
 
     return AnimatedBuilder(
@@ -71,7 +84,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
         final dayLeaves = state.leaveRequests.where((l) {
           if (_selectedDay == null || l.status != 'Approved') return false;
-          return !_selectedDay!.isBefore(l.startDate) && !_selectedDay!.isAfter(l.endDate);
+          return !_selectedDay!.isBefore(l.startDate) &&
+              !_selectedDay!.isAfter(l.endDate);
         }).toList();
 
         return SingleChildScrollView(
@@ -134,11 +148,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               Row(
                                 children: [
                                   IconButton(
-                                    icon: const Icon(Icons.chevron_left, color: AppColors.textPrimary),
+                                    icon: const Icon(
+                                      Icons.chevron_left,
+                                      color: AppColors.textPrimary,
+                                    ),
                                     onPressed: _prevMonth,
                                   ),
                                   IconButton(
-                                    icon: const Icon(Icons.chevron_right, color: AppColors.textPrimary),
+                                    icon: const Icon(
+                                      Icons.chevron_right,
+                                      color: AppColors.textPrimary,
+                                    ),
                                     onPressed: _nextMonth,
                                   ),
                                 ],
@@ -169,34 +189,44 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             itemCount: totalCells,
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 7,
-                              crossAxisSpacing: 8,
-                              mainAxisSpacing: 8,
-                              childAspectRatio: 1.0,
-                            ),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 7,
+                                  crossAxisSpacing: 8,
+                                  mainAxisSpacing: 8,
+                                  childAspectRatio: 1.0,
+                                ),
                             itemBuilder: (context, index) {
                               if (index < startOffset) {
                                 return const SizedBox.shrink(); // Empty space offset
                               }
 
                               final dayNum = index - startOffset + 1;
-                              final cellDate = DateTime(_selectedMonth.year, _selectedMonth.month, dayNum);
-                              final isSelected = _selectedDay != null &&
+                              final cellDate = DateTime(
+                                _selectedMonth.year,
+                                _selectedMonth.month,
+                                dayNum,
+                              );
+                              final isSelected =
+                                  _selectedDay != null &&
                                   _selectedDay!.year == cellDate.year &&
                                   _selectedDay!.month == cellDate.month &&
                                   _selectedDay!.day == cellDate.day;
 
                               // Check if there are tasks or leaves on this day for dots indicators
-                              final hasTasks = state.tasks.any((t) =>
-                                  t.dueDate.year == cellDate.year &&
-                                  t.dueDate.month == cellDate.month &&
-                                  t.dueDate.day == cellDate.day);
+                              final hasTasks = state.tasks.any(
+                                (t) =>
+                                    t.dueDate.year == cellDate.year &&
+                                    t.dueDate.month == cellDate.month &&
+                                    t.dueDate.day == cellDate.day,
+                              );
 
-                              final hasLeaves = state.leaveRequests.any((l) =>
-                                  l.status == 'Approved' &&
-                                  !cellDate.isBefore(l.startDate) &&
-                                  !cellDate.isAfter(l.endDate));
+                              final hasLeaves = state.leaveRequests.any(
+                                (l) =>
+                                    l.status == 'Approved' &&
+                                    !cellDate.isBefore(l.startDate) &&
+                                    !cellDate.isAfter(l.endDate),
+                              );
 
                               return InkWell(
                                 onTap: () {
@@ -209,15 +239,24 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                   decoration: BoxDecoration(
                                     color: isSelected
                                         ? AppColors.primary
-                                        : (cellDate.day == DateTime.now().day && cellDate.month == DateTime.now().month
-                                            ? AppColors.primary.withOpacity(0.08)
-                                            : Colors.transparent),
+                                        : (cellDate.day == DateTime.now().day &&
+                                                  cellDate.month ==
+                                                      DateTime.now().month
+                                              ? AppColors.primary.withValues(
+                                                  alpha: 0.08,
+                                                )
+                                              : Colors.transparent),
                                     borderRadius: BorderRadius.circular(8),
                                     border: isSelected
                                         ? null
-                                        : (cellDate.day == DateTime.now().day && cellDate.month == DateTime.now().month
-                                            ? Border.all(color: AppColors.primary.withOpacity(0.3))
-                                            : null),
+                                        : (cellDate.day == DateTime.now().day &&
+                                                  cellDate.month ==
+                                                      DateTime.now().month
+                                              ? Border.all(
+                                                  color: AppColors.primary
+                                                      .withValues(alpha: 0.3),
+                                                )
+                                              : null),
                                   ),
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
@@ -228,22 +267,30 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                           color: isSelected
                                               ? Colors.white
                                               : AppColors.textPrimary,
-                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                          fontWeight: isSelected
+                                              ? FontWeight.bold
+                                              : FontWeight.w500,
                                           fontSize: 13,
                                         ),
                                       ),
                                       const SizedBox(height: 4),
                                       // Indicator dots row
                                       Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         children: [
                                           if (hasTasks)
                                             Container(
                                               width: 5,
                                               height: 5,
-                                              margin: const EdgeInsets.symmetric(horizontal: 1.5),
+                                              margin:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 1.5,
+                                                  ),
                                               decoration: BoxDecoration(
-                                                color: isSelected ? Colors.white : AppColors.info,
+                                                color: isSelected
+                                                    ? Colors.white
+                                                    : AppColors.info,
                                                 shape: BoxShape.circle,
                                               ),
                                             ),
@@ -251,9 +298,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                             Container(
                                               width: 5,
                                               height: 5,
-                                              margin: const EdgeInsets.symmetric(horizontal: 1.5),
+                                              margin:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 1.5,
+                                                  ),
                                               decoration: BoxDecoration(
-                                                color: isSelected ? Colors.white : AppColors.warning,
+                                                color: isSelected
+                                                    ? Colors.white
+                                                    : AppColors.warning,
                                                 shape: BoxShape.circle,
                                               ),
                                             ),
@@ -303,7 +355,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                       child: Text(
                                         "No tasks or absences scheduled on this day.",
                                         textAlign: TextAlign.center,
-                                        style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                                        style: TextStyle(
+                                          color: AppColors.textSecondary,
+                                          fontSize: 13,
+                                        ),
                                       ),
                                     )
                                   : ListView(
@@ -312,15 +367,21 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                         if (dayTasks.isNotEmpty) ...[
                                           const Text(
                                             "DEADLINE CHECKLIST",
-                                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.textSecondary,
+                                            ),
                                           ),
                                           const SizedBox(height: 8),
-                                          ...dayTasks.map((task) => _buildAgendaItem(
-                                                task.title,
-                                                "Assignee: ${task.assignedTo}",
-                                                AppColors.info,
-                                                Icons.assignment_outlined,
-                                              )),
+                                          ...dayTasks.map(
+                                            (task) => _buildAgendaItem(
+                                              task.title,
+                                              "Assignee: ${task.assignedTo}",
+                                              AppColors.info,
+                                              Icons.assignment_outlined,
+                                            ),
+                                          ),
                                           const SizedBox(height: 16),
                                         ],
 
@@ -328,15 +389,21 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                         if (dayLeaves.isNotEmpty) ...[
                                           const Text(
                                             "EMPLOYEE OUT-OF-OFFICE",
-                                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.textSecondary,
+                                            ),
                                           ),
                                           const SizedBox(height: 8),
-                                          ...dayLeaves.map((leave) => _buildAgendaItem(
-                                                "${leave.employeeName} Out",
-                                                "Approved ${leave.type} Leave",
-                                                AppColors.warning,
-                                                Icons.flight_takeoff_outlined,
-                                              )),
+                                          ...dayLeaves.map(
+                                            (leave) => _buildAgendaItem(
+                                              "${leave.employeeName} Out",
+                                              "Approved ${leave.type} Leave",
+                                              AppColors.warning,
+                                              Icons.flight_takeoff_outlined,
+                                            ),
+                                          ),
                                         ],
                                       ],
                                     ),
@@ -355,7 +422,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  Widget _buildAgendaItem(String title, String subtitle, Color color, IconData icon) {
+  Widget _buildAgendaItem(
+    String title,
+    String subtitle,
+    Color color,
+    IconData icon,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
@@ -369,7 +441,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, size: 16, color: color),
@@ -381,12 +453,22 @@ class _CalendarScreenState extends State<CalendarScreen> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 13),
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
-                Text(subtitle, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 11,
+                  ),
+                ),
               ],
             ),
           ),

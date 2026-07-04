@@ -27,8 +27,10 @@ class CustomButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final buttonColor = backgroundColor ?? (isSecondary ? Colors.white : AppColors.primary);
-    final buttonTextColor = textColor ?? (isSecondary ? AppColors.textPrimary : Colors.white);
+    final buttonColor =
+        backgroundColor ?? (isSecondary ? Colors.white : AppColors.primary);
+    final buttonTextColor =
+        textColor ?? (isSecondary ? AppColors.textPrimary : Colors.white);
     final borderSide = isSecondary
         ? const BorderSide(color: AppColors.border, width: 1.5)
         : BorderSide.none;
@@ -65,32 +67,31 @@ class CustomButton extends StatelessWidget {
       width: width,
       height: height,
       child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: buttonColor,
-          elevation: 0,
-          surfaceTintColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: borderSide,
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-        ).copyWith(
-          overlayColor: MaterialStateProperty.resolveWith<Color?>(
-            (states) {
-              if (states.contains(MaterialState.hovered)) {
-                return isSecondary
-                    ? Colors.grey.withOpacity(0.05)
-                    : Colors.white.withOpacity(0.1);
-              }
-              if (states.contains(MaterialState.pressed)) {
-                return isSecondary
-                    ? Colors.grey.withOpacity(0.1)
-                    : Colors.white.withOpacity(0.2);
-              }
-              return null;
-            },
-          ),
-        ),
+        style:
+            ElevatedButton.styleFrom(
+              backgroundColor: buttonColor,
+              elevation: 0,
+              surfaceTintColor: Colors.transparent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+                side: borderSide,
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+            ).copyWith(
+              overlayColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                if (states.contains(WidgetState.hovered)) {
+                  return isSecondary
+                      ? Colors.grey.withValues(alpha: 0.05)
+                      : Colors.white.withValues(alpha: 0.1);
+                }
+                if (states.contains(WidgetState.pressed)) {
+                  return isSecondary
+                      ? Colors.grey.withValues(alpha: 0.1)
+                      : Colors.white.withValues(alpha: 0.2);
+                }
+                return null;
+              }),
+            ),
         onPressed: isLoading ? null : onPressed,
         child: childWidget,
       ),

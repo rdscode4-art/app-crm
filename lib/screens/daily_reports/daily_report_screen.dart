@@ -33,18 +33,18 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
     switch (status.toLowerCase()) {
       case 'approved':
         color = Colors.green;
-        bgColor = Colors.green.withOpacity(0.12);
+        bgColor = Colors.green.withValues(alpha: 0.12);
         text = "Approved";
         break;
       case 'reviewed':
         color = Colors.orange;
-        bgColor = Colors.orange.withOpacity(0.12);
+        bgColor = Colors.orange.withValues(alpha: 0.12);
         text = "Reviewed";
         break;
       case 'submitted':
       default:
         color = AppColors.primary;
-        bgColor = AppColors.primary.withOpacity(0.12);
+        bgColor = AppColors.primary.withValues(alpha: 0.12);
         text = "Submitted";
         break;
     }
@@ -77,7 +77,9 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
         return StatefulBuilder(
           builder: (context, setModalState) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               backgroundColor: Colors.white,
               title: Text(
                 "Review Report for ${report.employeeName}",
@@ -108,9 +110,11 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
                           ChoiceChip(
                             label: const Text("Approve"),
                             selected: selectedStatus == 'approved',
-                            selectedColor: Colors.green.withOpacity(0.12),
+                            selectedColor: Colors.green.withValues(alpha: 0.12),
                             labelStyle: TextStyle(
-                              color: selectedStatus == 'approved' ? Colors.green : AppColors.textSecondary,
+                              color: selectedStatus == 'approved'
+                                  ? Colors.green
+                                  : AppColors.textSecondary,
                               fontWeight: FontWeight.bold,
                             ),
                             onSelected: (val) {
@@ -125,9 +129,13 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
                           ChoiceChip(
                             label: const Text("Mark Reviewed"),
                             selected: selectedStatus == 'reviewed',
-                            selectedColor: Colors.orange.withOpacity(0.12),
+                            selectedColor: Colors.orange.withValues(
+                              alpha: 0.12,
+                            ),
                             labelStyle: TextStyle(
-                              color: selectedStatus == 'reviewed' ? Colors.orange : AppColors.textSecondary,
+                              color: selectedStatus == 'reviewed'
+                                  ? Colors.orange
+                                  : AppColors.textSecondary,
                               fontWeight: FontWeight.bold,
                             ),
                             onSelected: (val) {
@@ -146,7 +154,9 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
                         hint: "Write feedback, queries, or appreciation...",
                         prefixIcon: Icons.rate_review_outlined,
                         controller: reviewNoteCtrl,
-                        validator: (val) => val == null || val.isEmpty ? "Review note is required" : null,
+                        validator: (val) => val == null || val.isEmpty
+                            ? "Review note is required"
+                            : null,
                       ),
                     ],
                   ),
@@ -155,7 +165,10 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text("Cancel", style: TextStyle(color: AppColors.textSecondary)),
+                  child: const Text(
+                    "Cancel",
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
                 ),
                 CustomButton(
                   text: "Submit Review",
@@ -191,7 +204,9 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           backgroundColor: Colors.white,
           title: const Text(
             "File Daily Progress Report",
@@ -212,7 +227,9 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
                     hint: "Briefly explain what you worked on today...",
                     prefixIcon: Icons.description_outlined,
                     controller: summaryCtrl,
-                    validator: (val) => val == null || val.isEmpty ? "Summary is required" : null,
+                    validator: (val) => val == null || val.isEmpty
+                        ? "Summary is required"
+                        : null,
                   ),
                   const SizedBox(height: 16),
                   CustomTextField(
@@ -220,15 +237,20 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
                     hint: "e.g. Stark Proposal sent, Refactored Auth API",
                     prefixIcon: Icons.task_alt,
                     controller: tasksCtrl,
-                    validator: (val) => val == null || val.isEmpty ? "Completed tasks list is required" : null,
+                    validator: (val) => val == null || val.isEmpty
+                        ? "Completed tasks list is required"
+                        : null,
                   ),
                   const SizedBox(height: 16),
                   CustomTextField(
                     label: "Blockers / Impediments",
-                    hint: "e.g. API down, Waiting for assets (Write 'None' if none)",
+                    hint:
+                        "e.g. API down, Waiting for assets (Write 'None' if none)",
                     prefixIcon: Icons.block_outlined,
                     controller: blocksCtrl,
-                    validator: (val) => val == null || val.isEmpty ? "Blockers description is required" : null,
+                    validator: (val) => val == null || val.isEmpty
+                        ? "Blockers description is required"
+                        : null,
                   ),
                   const SizedBox(height: 16),
                   CustomTextField(
@@ -236,12 +258,16 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
                     hint: "e.g. 8.0",
                     prefixIcon: Icons.access_time_rounded,
                     controller: hoursCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     validator: (val) {
-                      if (val == null || val.isEmpty) return "Hours worked is required";
+                      if (val == null || val.isEmpty)
+                        return "Hours worked is required";
                       final numVal = double.tryParse(val);
                       if (numVal == null) return "Enter a valid number";
-                      if (numVal <= 0 || numVal > 24) return "Must be between 0.1 and 24";
+                      if (numVal <= 0 || numVal > 24)
+                        return "Must be between 0.1 and 24";
                       return null;
                     },
                   ),
@@ -252,7 +278,10 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text("Cancel", style: TextStyle(color: AppColors.textSecondary)),
+              child: const Text(
+                "Cancel",
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
             ),
             CustomButton(
               text: "Submit Report",
@@ -260,7 +289,8 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
                 if (formKey.currentState!.validate()) {
                   final newReport = DailyReport(
                     id: "REP-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}",
-                    employeeName: state.currentUser?.name ?? "Anonymous Employee",
+                    employeeName:
+                        state.currentUser?.name ?? "Anonymous Employee",
                     date: DateTime.now(),
                     summary: summaryCtrl.text,
                     tasksCompleted: tasksCtrl.text,
@@ -270,7 +300,10 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
                   );
                   if (Get.isRegistered<CrmController>()) {
                     Get.find<CrmController>().submitDailyReport(newReport);
-                    state.addNotification("Daily Report Filed", "Report successfully submitted by ${newReport.employeeName}.");
+                    state.addNotification(
+                      "Daily Report Filed",
+                      "Report successfully submitted by ${newReport.employeeName}.",
+                    );
                   }
                   Navigator.of(context).pop();
                 }
@@ -285,7 +318,9 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
   @override
   Widget build(BuildContext context) {
     final state = MockDataService();
-    final isPrivileged = state.currentRole == UserRole.superAdmin || state.currentRole == UserRole.hr;
+    final isPrivileged =
+        state.currentRole == UserRole.superAdmin ||
+        state.currentRole == UserRole.hr;
 
     return Obx(() {
       final list = state.dailyReports;
@@ -340,7 +375,8 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
               separatorBuilder: (context, index) => const SizedBox(height: 16),
               itemBuilder: (context, index) {
                 final report = list[index];
-                final dateStr = "${report.date.day}/${report.date.month}/${report.date.year}";
+                final dateStr =
+                    "${report.date.day}/${report.date.month}/${report.date.year}";
 
                 return Container(
                   padding: const EdgeInsets.all(20),
@@ -360,9 +396,13 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
                             children: [
                               CircleAvatar(
                                 radius: 18,
-                                backgroundColor: AppColors.primary.withOpacity(0.12),
+                                backgroundColor: AppColors.primary.withValues(
+                                  alpha: 0.12,
+                                ),
                                 child: Text(
-                                  report.employeeName.isNotEmpty ? report.employeeName[0] : 'E',
+                                  report.employeeName.isNotEmpty
+                                      ? report.employeeName[0]
+                                      : 'E',
                                   style: const TextStyle(
                                     color: AppColors.primary,
                                     fontWeight: FontWeight.bold,
@@ -387,13 +427,21 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
                               if (isPrivileged) ...[
                                 const SizedBox(width: 12),
                                 InkWell(
-                                  onTap: () => _showReviewReportDialog(context, report),
+                                  onTap: () =>
+                                      _showReviewReportDialog(context, report),
                                   borderRadius: BorderRadius.circular(4),
                                   child: const Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
                                     child: Row(
                                       children: [
-                                        Icon(Icons.rate_review_outlined, color: AppColors.primary, size: 14),
+                                        Icon(
+                                          Icons.rate_review_outlined,
+                                          color: AppColors.primary,
+                                          size: 14,
+                                        ),
                                         SizedBox(width: 4),
                                         Text(
                                           "Review",
@@ -478,7 +526,11 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
                               children: [
                                 const Row(
                                   children: [
-                                    Icon(Icons.task_alt, color: AppColors.primary, size: 14),
+                                    Icon(
+                                      Icons.task_alt,
+                                      color: AppColors.primary,
+                                      size: 14,
+                                    ),
                                     SizedBox(width: 4),
                                     Expanded(
                                       child: Text(
@@ -514,7 +566,10 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
                                   children: [
                                     Icon(
                                       Icons.block_outlined,
-                                      color: report.blocks.toLowerCase() == 'none' ? Colors.grey : AppColors.danger,
+                                      color:
+                                          report.blocks.toLowerCase() == 'none'
+                                          ? Colors.grey
+                                          : AppColors.danger,
                                       size: 14,
                                     ),
                                     const SizedBox(width: 4),
@@ -536,9 +591,14 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
                                 Text(
                                   report.blocks,
                                   style: TextStyle(
-                                    color: report.blocks.toLowerCase() == 'none' ? AppColors.textSecondary : AppColors.danger,
+                                    color: report.blocks.toLowerCase() == 'none'
+                                        ? AppColors.textSecondary
+                                        : AppColors.danger,
                                     fontSize: 13,
-                                    fontWeight: report.blocks.toLowerCase() == 'none' ? FontWeight.normal : FontWeight.w500,
+                                    fontWeight:
+                                        report.blocks.toLowerCase() == 'none'
+                                        ? FontWeight.normal
+                                        : FontWeight.w500,
                                   ),
                                 ),
                               ],
@@ -563,10 +623,14 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
                             children: [
                               Row(
                                 children: [
-                                  const Icon(Icons.rate_review_outlined, color: AppColors.primary, size: 14),
+                                  const Icon(
+                                    Icons.rate_review_outlined,
+                                    color: AppColors.primary,
+                                    size: 14,
+                                  ),
                                   const SizedBox(width: 6),
                                   Text(
-                                    "Review Notes ${report.reviewedByName.isNotEmpty ? 'by ' + report.reviewedByName : ''}",
+                                    "Review Notes ${report.reviewedByName.isNotEmpty ? 'by ${report.reviewedByName}' : ''}",
                                     style: const TextStyle(
                                       color: AppColors.textSecondary,
                                       fontSize: 11,

@@ -29,7 +29,7 @@ class MockDataService extends ChangeNotifier {
   bool _isOnboarded = false;
   bool _isLoggedIn = false;
   int _currentMenuIndex = 0; // Sidebar navigation index
-  bool _isLoadingLeaves = false;
+  final bool _isLoadingLeaves = false;
   String? _leavesError;
 
   // Auth User Session (Simulated)
@@ -102,9 +102,16 @@ class MockDataService extends ChangeNotifier {
     final role = _currentUser!.role.toLowerCase();
     final name = _currentUser!.name.toLowerCase();
 
-    if (email.contains("superadmin") || role.contains("super admin") || name.contains("marcus") || email == "marcus.aurelius@company.com") {
+    if (email.contains("superadmin") ||
+        role.contains("super admin") ||
+        name.contains("marcus") ||
+        email == "marcus.aurelius@company.com") {
       return UserRole.superAdmin;
-    } else if (email.contains("admin") || role.contains("hr") || role.contains("director") || name.contains("diana") || email == "diana.prince@company.com") {
+    } else if (email.contains("admin") ||
+        role.contains("hr") ||
+        role.contains("director") ||
+        name.contains("diana") ||
+        email == "diana.prince@company.com") {
       return UserRole.hr;
     } else {
       return UserRole.employee;
@@ -115,24 +122,28 @@ class MockDataService extends ChangeNotifier {
   bool get isPunchedIn {
     if (_currentUser == null) return false;
     final today = DateTime.now();
-    return attendanceLogs.any((a) =>
-        a.employeeId == _currentUser!.id &&
-        a.date.year == today.year &&
-        a.date.month == today.month &&
-        a.date.day == today.day &&
-        a.checkOutTime == null);
+    return attendanceLogs.any(
+      (a) =>
+          a.employeeId == _currentUser!.id &&
+          a.date.year == today.year &&
+          a.date.month == today.month &&
+          a.date.day == today.day &&
+          a.checkOutTime == null,
+    );
   }
 
   Attendance? get todayAttendance {
     if (_currentUser == null) return null;
     final today = DateTime.now();
     try {
-      return attendanceLogs.firstWhere((a) =>
-          a.employeeId == _currentUser!.id &&
-          a.date.year == today.year &&
-          a.date.month == today.month &&
-          a.date.day == today.day &&
-          a.checkOutTime == null);
+      return attendanceLogs.firstWhere(
+        (a) =>
+            a.employeeId == _currentUser!.id &&
+            a.date.year == today.year &&
+            a.date.month == today.month &&
+            a.date.day == today.day &&
+            a.checkOutTime == null,
+      );
     } catch (_) {
       return null;
     }
@@ -162,7 +173,8 @@ class MockDataService extends ChangeNotifier {
             performanceRating: 4.9,
             dateJoined: "2024-01-15",
             phone: "+1 555-0199",
-            avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+            avatarUrl:
+                "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
           );
         } else {
           _currentUser = Employee(
@@ -176,7 +188,8 @@ class MockDataService extends ChangeNotifier {
             performanceRating: 5.0,
             dateJoined: DateTime.now().toString().split(' ')[0],
             phone: "",
-            avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+            avatarUrl:
+                "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
           );
         }
       }
@@ -212,7 +225,7 @@ class MockDataService extends ChangeNotifier {
       final employeeJson = authData['employee'] as Map<String, dynamic>;
       _currentUser = Employee.fromJson(employeeJson);
       _isLoggedIn = true;
-      
+
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('is_logged_in', true);
       await prefs.setString('user_email', email);
@@ -226,8 +239,11 @@ class MockDataService extends ChangeNotifier {
           Get.find<CrmController>().onTokenLoaded();
         }
       }
-      
-      addNotification("Welcome Back!", "You have successfully signed in as ${_currentUser!.name}.");
+
+      addNotification(
+        "Welcome Back!",
+        "You have successfully signed in as ${_currentUser!.name}.",
+      );
       notifyListeners();
       return null;
     } catch (e) {
@@ -238,7 +254,7 @@ class MockDataService extends ChangeNotifier {
         );
         _currentUser = user;
         _isLoggedIn = true;
-        
+
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('is_logged_in', true);
         await prefs.setString('user_email', email);
@@ -249,8 +265,11 @@ class MockDataService extends ChangeNotifier {
         if (ApiService.token != null) {
           await prefs.setString('api_token', ApiService.token!);
         }
-        
-        addNotification("Welcome Back!", "You have successfully signed in as ${user.name} (Mock).");
+
+        addNotification(
+          "Welcome Back!",
+          "You have successfully signed in as ${user.name} (Mock).",
+        );
         notifyListeners();
         return null;
       } catch (_) {
@@ -266,10 +285,11 @@ class MockDataService extends ChangeNotifier {
             performanceRating: 4.9,
             dateJoined: "2024-01-15",
             phone: "+1 555-0199",
-            avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+            avatarUrl:
+                "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
           );
           _isLoggedIn = true;
-          
+
           final prefs = await SharedPreferences.getInstance();
           await prefs.setBool('is_logged_in', true);
           await prefs.setString('user_email', email);
@@ -280,8 +300,11 @@ class MockDataService extends ChangeNotifier {
           if (ApiService.token != null) {
             await prefs.setString('api_token', ApiService.token!);
           }
-          
-          addNotification("Welcome Back!", "Signed in as Diana Prince (HR Director) (Mock).");
+
+          addNotification(
+            "Welcome Back!",
+            "Signed in as Diana Prince (HR Director) (Mock).",
+          );
           notifyListeners();
           return null;
         }
@@ -295,7 +318,13 @@ class MockDataService extends ChangeNotifier {
     }
   }
 
-  void signup(String name, String email, String role, String department, String phone) async {
+  void signup(
+    String name,
+    String email,
+    String role,
+    String department,
+    String phone,
+  ) async {
     final newId = "EMP-00${_employees.length + 1}";
     final newUser = Employee(
       id: newId,
@@ -308,12 +337,13 @@ class MockDataService extends ChangeNotifier {
       performanceRating: 5.0,
       dateJoined: DateTime.now().toString().split(' ')[0],
       phone: phone,
-      avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+      avatarUrl:
+          "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
     );
     _employees.add(newUser);
     _currentUser = newUser;
     _isLoggedIn = true;
-    
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('is_logged_in', true);
     await prefs.setString('user_email', email);
@@ -321,8 +351,11 @@ class MockDataService extends ChangeNotifier {
     await prefs.setString('user_name', newUser.name);
     await prefs.setString('user_role', newUser.role);
     await prefs.setString('user_department', newUser.department);
-    
-    addNotification("Account Created", "Welcome to CRM, $name! Your profile is ready.");
+
+    addNotification(
+      "Account Created",
+      "Welcome to CRM, $name! Your profile is ready.",
+    );
     notifyListeners();
   }
 
@@ -331,7 +364,7 @@ class MockDataService extends ChangeNotifier {
     _currentUser = null;
     _currentMenuIndex = 0;
     ApiService.token = null;
-    
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('is_logged_in', false);
     await prefs.remove('user_email');
@@ -340,7 +373,7 @@ class MockDataService extends ChangeNotifier {
     await prefs.remove('user_role');
     await prefs.remove('user_department');
     await prefs.remove('api_token');
-    
+
     notifyListeners();
   }
 
@@ -348,36 +381,53 @@ class MockDataService extends ChangeNotifier {
   void addEmployee(Employee emp) {
     if (Get.isRegistered<CrmController>()) {
       Get.find<CrmController>().submitEmployee(emp);
-      addNotification("New Employee Boarded", "${emp.name} has been added to the ${emp.department} department.");
+      addNotification(
+        "New Employee Boarded",
+        "${emp.name} has been added to the ${emp.department} department.",
+      );
       return;
     }
     _employees.insert(0, emp);
-    addNotification("New Employee Boarded", "${emp.name} has been added to the ${emp.department} department.");
+    addNotification(
+      "New Employee Boarded",
+      "${emp.name} has been added to the ${emp.department} department.",
+    );
     // Auto-create initial performance record
-    _performanceRecords.add(Performance(
-      id: "PERF-0${_performanceRecords.length + 1}",
-      employeeId: emp.id,
-      employeeName: emp.name,
-      period: "Q2 2026",
-      kpiScore: 80.0,
-      managerFeedback: "Newly onboarded. Under training.",
-      ratingStars: 4,
-    ));
+    _performanceRecords.add(
+      Performance(
+        id: "PERF-0${_performanceRecords.length + 1}",
+        employeeId: emp.id,
+        employeeName: emp.name,
+        period: "Q2 2026",
+        kpiScore: 80.0,
+        managerFeedback: "Newly onboarded. Under training.",
+        ratingStars: 4,
+      ),
+    );
     notifyListeners();
   }
 
   Future<bool> updateEmployee(Employee updated) async {
     if (Get.isRegistered<CrmController>()) {
-      final success = await Get.find<CrmController>().updateEmployee(updated.id, updated);
+      final success = await Get.find<CrmController>().updateEmployee(
+        updated.id,
+        updated,
+      );
       if (success) {
-        addNotification("Employee Updated", "${updated.name}'s profile has been updated.");
+        addNotification(
+          "Employee Updated",
+          "${updated.name}'s profile has been updated.",
+        );
       }
       return success;
     }
     final idx = _employees.indexWhere((e) => e.id == updated.id);
     if (idx != -1) {
       _employees[idx] = updated;
-      addNotification("Employee Updated", "${updated.name}'s profile has been updated.");
+      addNotification(
+        "Employee Updated",
+        "${updated.name}'s profile has been updated.",
+      );
       notifyListeners();
       return true;
     }
@@ -388,7 +438,10 @@ class MockDataService extends ChangeNotifier {
     if (Get.isRegistered<CrmController>()) {
       final success = await Get.find<CrmController>().deleteEmployee(id);
       if (success) {
-        addNotification("Employee Deleted", "Employee record removed from directory.");
+        addNotification(
+          "Employee Deleted",
+          "Employee record removed from directory.",
+        );
       }
       return success;
     }
@@ -396,7 +449,10 @@ class MockDataService extends ChangeNotifier {
     if (idx != -1) {
       final emp = _employees[idx];
       _employees.removeAt(idx);
-      addNotification("Employee Deleted", "${emp.name} has been removed from directory.");
+      addNotification(
+        "Employee Deleted",
+        "${emp.name} has been removed from directory.",
+      );
       notifyListeners();
       return true;
     }
@@ -407,10 +463,16 @@ class MockDataService extends ChangeNotifier {
   void addLead(Lead lead) {
     if (Get.isRegistered<CrmController>()) {
       Get.find<CrmController>().submitLead(lead);
-      addNotification("New Sales Lead", "New prospect ${lead.name} from ${lead.company} registered.");
+      addNotification(
+        "New Sales Lead",
+        "New prospect ${lead.name} from ${lead.company} registered.",
+      );
     } else {
       _leads.insert(0, lead);
-      addNotification("New Sales Lead", "New prospect ${lead.name} from ${lead.company} registered.");
+      addNotification(
+        "New Sales Lead",
+        "New prospect ${lead.name} from ${lead.company} registered.",
+      );
       notifyListeners();
     }
   }
@@ -424,7 +486,10 @@ class MockDataService extends ChangeNotifier {
       if (idx != -1) {
         final oldLead = _leads[idx];
         _leads[idx] = oldLead.copyWith(status: newStatus);
-        addNotification("Lead Progressed", "${oldLead.name}'s deal status updated to: $newStatus.");
+        addNotification(
+          "Lead Progressed",
+          "${oldLead.name}'s deal status updated to: $newStatus.",
+        );
         notifyListeners();
       }
     }
@@ -433,12 +498,18 @@ class MockDataService extends ChangeNotifier {
   void updateLead(Lead lead) {
     if (Get.isRegistered<CrmController>()) {
       Get.find<CrmController>().updateLead(lead);
-      addNotification("Lead Updated", "Prospect ${lead.name} details have been updated.");
+      addNotification(
+        "Lead Updated",
+        "Prospect ${lead.name} details have been updated.",
+      );
     } else {
       final idx = _leads.indexWhere((l) => l.id == lead.id);
       if (idx != -1) {
         _leads[idx] = lead;
-        addNotification("Lead Updated", "Prospect ${lead.name} details have been updated.");
+        addNotification(
+          "Lead Updated",
+          "Prospect ${lead.name} details have been updated.",
+        );
         notifyListeners();
       }
     }
@@ -453,7 +524,10 @@ class MockDataService extends ChangeNotifier {
       if (idx != -1) {
         final oldLead = _leads[idx];
         _leads.removeAt(idx);
-        addNotification("Lead Deleted", "Prospect ${oldLead.name} has been deleted.");
+        addNotification(
+          "Lead Deleted",
+          "Prospect ${oldLead.name} has been deleted.",
+        );
         notifyListeners();
       }
     }
@@ -467,7 +541,8 @@ class MockDataService extends ChangeNotifier {
       return;
     }
     final now = DateTime.now();
-    final timeStr = "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
+    final timeStr =
+        "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
     final isLate = now.hour > 9 || (now.hour == 9 && now.minute > 30);
 
     final log = Attendance(
@@ -479,7 +554,10 @@ class MockDataService extends ChangeNotifier {
       status: isLate ? "Late" : "On Time",
     );
     _attendanceLogs.insert(0, log);
-    addNotification("Clock-In Successful", "Punched in at $timeStr. Status: ${log.status}.");
+    addNotification(
+      "Clock-In Successful",
+      "Punched in at $timeStr. Status: ${log.status}.",
+    );
     notifyListeners();
   }
 
@@ -491,14 +569,17 @@ class MockDataService extends ChangeNotifier {
     }
     final now = DateTime.now();
     final today = DateTime.now();
-    final timeStr = "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
+    final timeStr =
+        "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
 
-    final idx = _attendanceLogs.indexWhere((a) =>
-        a.employeeId == _currentUser!.id &&
-        a.date.year == today.year &&
-        a.date.month == today.month &&
-        a.date.day == today.day &&
-        a.checkOutTime == null);
+    final idx = _attendanceLogs.indexWhere(
+      (a) =>
+          a.employeeId == _currentUser!.id &&
+          a.date.year == today.year &&
+          a.date.month == today.month &&
+          a.date.day == today.day &&
+          a.checkOutTime == null,
+    );
 
     if (idx != -1) {
       final inLog = _attendanceLogs[idx];
@@ -511,7 +592,10 @@ class MockDataService extends ChangeNotifier {
         checkOutTime: timeStr,
         durationHours: double.parse(duration.toStringAsFixed(1)),
       );
-      addNotification("Clock-Out Successful", "Punched out at $timeStr. Worked for ${duration.toStringAsFixed(1)} hours.");
+      addNotification(
+        "Clock-Out Successful",
+        "Punched out at $timeStr. Worked for ${duration.toStringAsFixed(1)} hours.",
+      );
       notifyListeners();
     }
   }
@@ -523,7 +607,12 @@ class MockDataService extends ChangeNotifier {
     }
   }
 
-  Future<void> submitLeaveRequest(String type, DateTime start, DateTime end, String reason) async {
+  Future<void> submitLeaveRequest(
+    String type,
+    DateTime start,
+    DateTime end,
+    String reason,
+  ) async {
     if (_currentUser == null) return;
     if (Get.isRegistered<CrmController>()) {
       await Get.find<CrmController>().submitLeave(
@@ -554,7 +643,10 @@ class MockDataService extends ChangeNotifier {
     if (Get.isRegistered<CrmController>()) {
       Get.find<CrmController>().updateLeaveStatus(id, status).then((success) {
         if (success) {
-          addNotification("Leave Request Update", "Leave request has been $status.");
+          addNotification(
+            "Leave Request Update",
+            "Leave request has been $status.",
+          );
         }
       });
     } else {
@@ -562,7 +654,10 @@ class MockDataService extends ChangeNotifier {
       if (idx != -1) {
         final oldReq = _leaveRequests[idx];
         _leaveRequests[idx] = oldReq.copyWith(status: status);
-        addNotification("Leave Request Update", "Your $status status for leave has been updated: $status.");
+        addNotification(
+          "Leave Request Update",
+          "Your $status status for leave has been updated: $status.",
+        );
         notifyListeners();
       }
     }
@@ -572,10 +667,16 @@ class MockDataService extends ChangeNotifier {
   void addTask(CRMTask task) {
     if (Get.isRegistered<CrmController>()) {
       Get.find<CrmController>().submitTask(task);
-      addNotification("Task Assigned", "New task '${task.title}' assigned to ${task.assignedTo}.");
+      addNotification(
+        "Task Assigned",
+        "New task '${task.title}' assigned to ${task.assignedTo}.",
+      );
     } else {
       _tasks.insert(0, task);
-      addNotification("Task Assigned", "New task '${task.title}' assigned to ${task.assignedTo}.");
+      addNotification(
+        "Task Assigned",
+        "New task '${task.title}' assigned to ${task.assignedTo}.",
+      );
       notifyListeners();
     }
   }
@@ -596,7 +697,10 @@ class MockDataService extends ChangeNotifier {
   // Performance Actions
   void addPerformanceRecord(Performance record) {
     _performanceRecords.insert(0, record);
-    addNotification("Performance Review", "A new performance review was added for ${record.employeeName}.");
+    addNotification(
+      "Performance Review",
+      "A new performance review was added for ${record.employeeName}.",
+    );
     notifyListeners();
   }
 
@@ -604,10 +708,16 @@ class MockDataService extends ChangeNotifier {
   void addCallLog(CallLog log) {
     if (Get.isRegistered<CrmController>()) {
       Get.find<CrmController>().submitCallLog(log);
-      addNotification("Call Logged", "Call with ${log.leadName} logged (${log.durationMinutes} min).");
+      addNotification(
+        "Call Logged",
+        "Call with ${log.leadName} logged (${log.durationMinutes} min).",
+      );
     } else {
       _callLogs.insert(0, log);
-      addNotification("Call Logged", "Call with ${log.leadName} logged (${log.durationMinutes} min).");
+      addNotification(
+        "Call Logged",
+        "Call with ${log.leadName} logged (${log.durationMinutes} min).",
+      );
       notifyListeners();
     }
   }
@@ -616,7 +726,10 @@ class MockDataService extends ChangeNotifier {
   void updateWorkingStatus(String status) {
     if (_currentUser == null) return;
     if (Get.isRegistered<CrmController>()) {
-      Get.find<CrmController>().updateEmployeeWorkingStatus(_currentUser!.id, status);
+      Get.find<CrmController>().updateEmployeeWorkingStatus(
+        _currentUser!.id,
+        status,
+      );
     } else {
       _currentUser = _currentUser!.copyWith(workingStatus: status);
       final idx = _employees.indexWhere((e) => e.id == _currentUser!.id);
@@ -664,7 +777,8 @@ class MockDataService extends ChangeNotifier {
         performanceRating: 4.9,
         dateJoined: "2024-01-15",
         phone: "+1 (555) 010-9921",
-        avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+        avatarUrl:
+            "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
       ),
       Employee(
         id: "EMP-002",
@@ -677,7 +791,8 @@ class MockDataService extends ChangeNotifier {
         performanceRating: 4.7,
         dateJoined: "2024-02-10",
         phone: "+1 (555) 014-4421",
-        avatarUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150",
+        avatarUrl:
+            "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150",
       ),
       Employee(
         id: "EMP-003",
@@ -690,7 +805,8 @@ class MockDataService extends ChangeNotifier {
         performanceRating: 4.8,
         dateJoined: "2024-05-20",
         phone: "+1 (555) 018-9932",
-        avatarUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150",
+        avatarUrl:
+            "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150",
       ),
       Employee(
         id: "EMP-004",
@@ -703,7 +819,8 @@ class MockDataService extends ChangeNotifier {
         performanceRating: 4.4,
         dateJoined: "2024-08-11",
         phone: "+1 (555) 021-9988",
-        avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
+        avatarUrl:
+            "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
       ),
       Employee(
         id: "EMP-005",
@@ -716,7 +833,8 @@ class MockDataService extends ChangeNotifier {
         performanceRating: 4.5,
         dateJoined: "2025-01-08",
         phone: "+1 (555) 032-4411",
-        avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+        avatarUrl:
+            "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
       ),
     ]);
 
@@ -864,7 +982,8 @@ class MockDataService extends ChangeNotifier {
       CRMTask(
         id: "TSK-201",
         title: "Send Proposal to Bruce Wayne",
-        description: "Draft Enterprise SLA package for Wayne Enterprises smart grid integration and email PDF.",
+        description:
+            "Draft Enterprise SLA package for Wayne Enterprises smart grid integration and email PDF.",
         assignedTo: "Marcus Aurelius",
         dueDate: DateTime.now().add(const Duration(days: 2)),
         startDate: DateTime.now().subtract(const Duration(days: 1)),
@@ -875,7 +994,8 @@ class MockDataService extends ChangeNotifier {
       CRMTask(
         id: "TSK-202",
         title: "Onboard Elena Rostova",
-        description: "Arrange orientation session, workspace setup, and system login credentials.",
+        description:
+            "Arrange orientation session, workspace setup, and system login credentials.",
         assignedTo: "Diana Prince",
         dueDate: DateTime.now().subtract(const Duration(days: 1)),
         startDate: DateTime.now().subtract(const Duration(days: 5)),
@@ -886,7 +1006,8 @@ class MockDataService extends ChangeNotifier {
       CRMTask(
         id: "TSK-203",
         title: "Schedule Call with Clark Kent",
-        description: "Initial introductory call to understand Daily Planet CRM scalability needs.",
+        description:
+            "Initial introductory call to understand Daily Planet CRM scalability needs.",
         assignedTo: "Sarah Jenkins",
         dueDate: DateTime.now().add(const Duration(days: 5)),
         startDate: DateTime.now().add(const Duration(days: 1)),
@@ -897,7 +1018,8 @@ class MockDataService extends ChangeNotifier {
       CRMTask(
         id: "TSK-204",
         title: "Review Quarterly Leave Reports",
-        description: "HR alignment check on casual/annual leave balances before the end of the half-year.",
+        description:
+            "HR alignment check on casual/annual leave balances before the end of the half-year.",
         assignedTo: "Diana Prince",
         dueDate: DateTime.now().add(const Duration(days: 3)),
         startDate: DateTime.now(),
@@ -983,7 +1105,8 @@ class MockDataService extends ChangeNotifier {
         employeeName: "Diana Prince",
         period: "Q1 2026",
         kpiScore: 98.0,
-        managerFeedback: "Excellent HR administration, managed onboarding of 3 key additions seamlessly.",
+        managerFeedback:
+            "Excellent HR administration, managed onboarding of 3 key additions seamlessly.",
         ratingStars: 5,
       ),
       Performance(
@@ -992,7 +1115,8 @@ class MockDataService extends ChangeNotifier {
         employeeName: "Marcus Aurelius",
         period: "Q1 2026",
         kpiScore: 92.5,
-        managerFeedback: "Exceeded team sales revenue goals by 15%. Exemplary leadership.",
+        managerFeedback:
+            "Exceeded team sales revenue goals by 15%. Exemplary leadership.",
         ratingStars: 5,
       ),
       Performance(
@@ -1001,7 +1125,8 @@ class MockDataService extends ChangeNotifier {
         employeeName: "Sarah Jenkins",
         period: "Q1 2026",
         kpiScore: 89.0,
-        managerFeedback: "Consistent performer, excellent lead conversion speed. Keep it up.",
+        managerFeedback:
+            "Consistent performer, excellent lead conversion speed. Keep it up.",
         ratingStars: 4,
       ),
     ]);
@@ -1018,7 +1143,8 @@ class MockDataService extends ChangeNotifier {
       CRMNotification(
         id: "NOTIF-2",
         title: "Leave Pending Approval",
-        message: "Elena Rostova requested 1-day Casual leave. Check Leaves screen.",
+        message:
+            "Elena Rostova requested 1-day Casual leave. Check Leaves screen.",
         timestamp: DateTime.now().subtract(const Duration(hours: 1)),
         isRead: false,
       ),
@@ -1061,7 +1187,8 @@ class MockDataService extends ChangeNotifier {
         id: "REP-001",
         employeeName: "Diana Prince",
         date: DateTime.now().subtract(const Duration(days: 1)),
-        summary: "Completed HR onboarding guidelines draft and reviewed leave approval queues.",
+        summary:
+            "Completed HR onboarding guidelines draft and reviewed leave approval queues.",
         tasksCompleted: "Onboarded Elena, Reviewed Leave balance reports",
         blocks: "None",
         status: "approved",
@@ -1073,7 +1200,8 @@ class MockDataService extends ChangeNotifier {
         id: "REP-002",
         employeeName: "Marcus Aurelius",
         date: DateTime.now().subtract(const Duration(days: 1)),
-        summary: "Conducted sales alignment meetings and updated the proposal pipelines.",
+        summary:
+            "Conducted sales alignment meetings and updated the proposal pipelines.",
         tasksCompleted: "Stark Proposal draft, Wayne proposal sent",
         blocks: "Awaiting legal signature from Stark team",
         status: "reviewed",
@@ -1095,11 +1223,36 @@ class MockDataService extends ChangeNotifier {
 
     // 10. User Roles Listing
     _userRoles.addAll([
-      UserRoleInfo(id: "EMP-001", name: "Diana Prince", email: "diana.prince@company.com", role: "HR Director"),
-      UserRoleInfo(id: "EMP-002", name: "Marcus Aurelius", email: "marcus.aurelius@company.com", role: "VP of Sales"),
-      UserRoleInfo(id: "EMP-003", name: "Sarah Jenkins", email: "sarah.jenkins@company.com", role: "Senior Account Executive"),
-      UserRoleInfo(id: "EMP-004", name: "David Chen", email: "david.chen@company.com", role: "Customer Success Lead"),
-      UserRoleInfo(id: "EMP-005", name: "Elena Rostova", email: "elena.rostova@company.com", role: "HR Generalist"),
+      UserRoleInfo(
+        id: "EMP-001",
+        name: "Diana Prince",
+        email: "diana.prince@company.com",
+        role: "HR Director",
+      ),
+      UserRoleInfo(
+        id: "EMP-002",
+        name: "Marcus Aurelius",
+        email: "marcus.aurelius@company.com",
+        role: "VP of Sales",
+      ),
+      UserRoleInfo(
+        id: "EMP-003",
+        name: "Sarah Jenkins",
+        email: "sarah.jenkins@company.com",
+        role: "Senior Account Executive",
+      ),
+      UserRoleInfo(
+        id: "EMP-004",
+        name: "David Chen",
+        email: "david.chen@company.com",
+        role: "Customer Success Lead",
+      ),
+      UserRoleInfo(
+        id: "EMP-005",
+        name: "Elena Rostova",
+        email: "elena.rostova@company.com",
+        role: "HR Generalist",
+      ),
     ]);
   }
 }
